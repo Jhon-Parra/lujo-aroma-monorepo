@@ -34,5 +34,6 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
+          port: 21
           local-dir: ./frontend/dist/frontend/browser/
-          server-dir: ./public_html/
+          server-dir: public_html/

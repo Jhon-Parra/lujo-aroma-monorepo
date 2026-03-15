@@ -36,15 +36,14 @@ jobs:
           echo "🌐 Verificando conectividad al puerto 21..."
           nc -zv -w 5 82.198.227.250 21 || echo "⚠️ Advertencia: El puerto 21 parece cerrado o bloqueado desde GitHub."
 
-      - name: 📂 Sync files (FTP)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: 📂 Sync files (SFTP)
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: 82.198.227.250
           username: ${{ secrets.FTP_USER }}
+          server: 82.198.227.250
+          port: 65002
           password: ${{ secrets.FTP_PASS }}
-          local-dir: ./frontend/dist/frontend/browser/
-          server-dir: public_html/
-          protocol: ftp
-          port: 21
-          timeout: 60000
+          local_path: ./frontend/dist/frontend/browser/*
+          remote_path: /home/u498956148/domains/perfumissimocol.com/public_html
+          sftp_only: true
 

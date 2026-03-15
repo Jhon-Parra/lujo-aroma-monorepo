@@ -28,6 +28,12 @@ jobs:
         run: npm run build
         working-directory: ./frontend
 
+      - name: 🔍 Verificación Preliminar
+        run: |
+          if [ -z "${{ secrets.FTP_SERVER }}" ]; then echo "Error: FTP_SERVER no está configurado"; exit 1; fi
+          if [ -z "${{ secrets.FTP_USER }}" ]; then echo "Error: FTP_USER no está configurado"; exit 1; fi
+          echo "Variables de entorno detectadas correctamente."
+
       - name: 📂 Sync files (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -36,4 +42,3 @@ jobs:
           password: ${{ secrets.FTP_PASS }}
           local-dir: frontend/dist/frontend/browser/
           server-dir: public_html/
-          protocol: ftp

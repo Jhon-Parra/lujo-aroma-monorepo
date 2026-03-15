@@ -33,11 +33,13 @@ jobs:
           if [ -z "${{ secrets.FTP_USER }}" ]; then echo "❌ Error: FTP_USER no está configurado"; exit 1; fi
           if [ -z "${{ secrets.FTP_PASS }}" ]; then echo "❌ Error: FTP_PASS no está configurado"; exit 1; fi
           echo "✅ Secretos de usuario y contraseña detectados."
+          echo "🌐 Verificando conectividad al puerto 21..."
+          nc -zv -w 5 82.198.227.250 21 || echo "⚠️ Advertencia: El puerto 21 parece cerrado o bloqueado desde GitHub."
 
       - name: 📂 Sync files (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          server: 82.198.227.250
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./frontend/dist/frontend/browser/

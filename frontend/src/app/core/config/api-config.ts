@@ -14,7 +14,7 @@ const resolveHostname = (): string => {
 
 const host = resolveHostname();
 const isLocal = host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local');
-const serverUrl = isLocal ? `http://${host}:3000` : 'https://backend.perfumissimocol.com';
+const serverUrl = isLocal ? `http://${host}:3000` : 'https://api.perfumissimocol.com';
 
 export const API_CONFIG = {
     // Uses current frontend hostname (localhost o IP LAN)

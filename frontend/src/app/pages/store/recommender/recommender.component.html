@@ -1,0 +1,159 @@
+<div class="min-h-[70vh] bg-cream">
+  <section class="relative overflow-hidden border-b border-[#e5e5e0]">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(45,76,59,0.18),transparent_55%)]"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
+      <h1 class="font-serif text-4xl md:text-5xl text-charcoal tracking-wide">Recomendación inteligente de perfumes</h1>
+      <p class="text-sm text-soft-charcoal mt-3 max-w-2xl">Encuentra tu perfume perfecto con IA.</p>
+
+      <div class="mt-8 inline-flex rounded-full border border-[#ecece5] bg-white p-1 shadow-sm">
+        <button type="button" (click)="setTab('quiz')"
+          class="px-5 py-2 text-xs font-bold uppercase tracking-widest rounded-full transition-colors"
+          [ngClass]="tab === 'quiz' ? 'bg-charcoal text-white' : 'text-charcoal hover:bg-cream'">
+          Test guiado
+        </button>
+        <button type="button" (click)="setTab('free')"
+          class="px-5 py-2 text-xs font-bold uppercase tracking-widest rounded-full transition-colors"
+          [ngClass]="tab === 'free' ? 'bg-charcoal text-white' : 'text-charcoal hover:bg-cream'">
+          Consulta libre
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div *ngIf="tab === 'free'" class="bg-white border border-[#ecece5] rounded-2xl p-6 shadow-sm">
+      <div class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Describe tu perfume ideal</div>
+      <div class="mt-3 flex flex-col sm:flex-row gap-3">
+        <input [(ngModel)]="freeText" type="text" placeholder="Ej: Quiero un perfume fresco para clima cálido"
+          class="flex-1 border border-[#dcdcd4] rounded-md px-4 py-3 text-sm focus:outline-none focus:border-gold bg-white" />
+        <button type="button" (click)="submitFree()" [disabled]="loading"
+          class="btn-primary px-7 py-3 text-xs tracking-widest uppercase disabled:opacity-60">
+          {{ loading ? 'Analizando...' : 'Recomendar' }}
+        </button>
+      </div>
+      <div class="text-[11px] text-gray-500 mt-3">Tip: menciona ocasión, clima e intensidad.</div>
+    </div>
+
+    <div *ngIf="tab === 'quiz'" class="bg-white border border-[#ecece5] rounded-2xl p-6 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <div class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Test inteligente</div>
+          <div class="font-serif text-2xl text-charcoal mt-2">Responde 5 preguntas rápidas</div>
+        </div>
+        <button type="button" (click)="restartQuiz()" class="text-xs font-bold uppercase tracking-widest text-gold">Reiniciar</button>
+      </div>
+
+      <div class="mt-6">
+        <div class="text-[10px] uppercase tracking-widest text-gray-400">Pregunta {{ step + 1 }} / 5</div>
+
+        <div class="mt-4" *ngIf="step === 0">
+          <div class="text-sm font-bold text-charcoal mb-3">¿Para quién es el perfume?</div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button type="button" (click)="answers.for_who='hombre'; next()" class="reco-pill">Hombre</button>
+            <button type="button" (click)="answers.for_who='mujer'; next()" class="reco-pill">Mujer</button>
+            <button type="button" (click)="answers.for_who='unisex'; next()" class="reco-pill">Unisex</button>
+          </div>
+        </div>
+
+        <div class="mt-4" *ngIf="step === 1">
+          <div class="text-sm font-bold text-charcoal mb-3">¿Qué tipo de aroma prefieres?</div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <button type="button" (click)="answers.aroma='dulce'; next()" class="reco-pill">Dulce</button>
+            <button type="button" (click)="answers.aroma='fresco'; next()" class="reco-pill">Fresco</button>
+            <button type="button" (click)="answers.aroma='amaderado'; next()" class="reco-pill">Amaderado</button>
+            <button type="button" (click)="answers.aroma='floral'; next()" class="reco-pill">Floral</button>
+            <button type="button" (click)="answers.aroma='citrico'; next()" class="reco-pill">Cítrico</button>
+            <button type="button" (click)="answers.aroma='oriental'; next()" class="reco-pill">Oriental</button>
+          </div>
+          <div class="mt-6 flex justify-between">
+            <button type="button" (click)="back()" class="reco-link">Atrás</button>
+          </div>
+        </div>
+
+        <div class="mt-4" *ngIf="step === 2">
+          <div class="text-sm font-bold text-charcoal mb-3">¿En qué ocasión lo usarás?</div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <button type="button" (click)="answers.occasion='diario'; next()" class="reco-pill">Diario</button>
+            <button type="button" (click)="answers.occasion='trabajo'; next()" class="reco-pill">Trabajo</button>
+            <button type="button" (click)="answers.occasion='fiesta'; next()" class="reco-pill">Fiesta</button>
+            <button type="button" (click)="answers.occasion='citas'; next()" class="reco-pill">Citas</button>
+            <button type="button" (click)="answers.occasion='eventos'; next()" class="reco-pill">Eventos</button>
+          </div>
+          <div class="mt-6 flex justify-between">
+            <button type="button" (click)="back()" class="reco-link">Atrás</button>
+          </div>
+        </div>
+
+        <div class="mt-4" *ngIf="step === 3">
+          <div class="text-sm font-bold text-charcoal mb-3">¿Qué intensidad prefieres?</div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button type="button" (click)="answers.intensity='suave'; next()" class="reco-pill">Suave</button>
+            <button type="button" (click)="answers.intensity='moderada'; next()" class="reco-pill">Moderada</button>
+            <button type="button" (click)="answers.intensity='fuerte'; next()" class="reco-pill">Fuerte</button>
+          </div>
+          <div class="mt-6 flex justify-between">
+            <button type="button" (click)="back()" class="reco-link">Atrás</button>
+          </div>
+        </div>
+
+        <div class="mt-4" *ngIf="step === 4">
+          <div class="text-sm font-bold text-charcoal mb-3">¿Qué clima predomina donde vives?</div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button type="button" (click)="answers.climate='calido'" class="reco-pill">Cálido</button>
+            <button type="button" (click)="answers.climate='templado'" class="reco-pill">Templado</button>
+            <button type="button" (click)="answers.climate='frio'" class="reco-pill">Frío</button>
+          </div>
+
+          <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
+            <button type="button" (click)="back()" class="reco-link">Atrás</button>
+            <button type="button" (click)="submitQuiz()" [disabled]="loading"
+              class="btn-primary px-8 py-3 text-xs tracking-widest uppercase disabled:opacity-60">
+              {{ loading ? 'Analizando...' : 'Ver recomendaciones' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="error" class="mt-6 bg-white border border-red-100 text-red-600 rounded-xl p-6 text-sm">{{ error }}</div>
+
+    <div *ngIf="loading" class="mt-8 flex justify-center items-center py-10">
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-gold"></div>
+    </div>
+
+    <div *ngIf="!loading && results.length" class="mt-10">
+      <h2 class="font-serif text-3xl text-charcoal tracking-wide">Perfumes recomendados para ti</h2>
+      <p class="text-sm text-soft-charcoal mt-2">Basado en tus respuestas y el catálogo disponible.</p>
+
+      <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div *ngFor="let r of results" class="bg-white border border-[#ecece5] rounded-2xl overflow-hidden shadow-sm">
+          <div class="relative">
+            <img [src]="r.product.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=1200&auto=format&fit=crop'"
+              [alt]="r.product.nombre" class="w-full h-44 object-cover" loading="lazy" decoding="async" />
+            <div class="absolute top-3 left-3 bg-charcoal text-white text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-sm">#{{ r.rank }}</div>
+          </div>
+
+          <div class="p-5">
+            <div class="text-xs uppercase tracking-widest text-sage font-bold">{{ r.product.categoria_nombre || (r.product.genero || 'UNISEX') }}</div>
+            <div class="font-serif text-xl text-charcoal mt-1">{{ r.product.nombre }}</div>
+            <div class="text-sm font-bold text-charcoal mt-2">{{ r.product.precio | currency:'COP':'symbol-narrow':'1.0-0' }}</div>
+
+            <div class="mt-4">
+              <div class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Por qué se recomienda</div>
+              <ul class="mt-2 space-y-1 text-sm text-gray-600">
+                <li *ngFor="let reason of r.reasons.slice(0,4)">• {{ reason }}</li>
+              </ul>
+              <div *ngIf="r.short_explanation" class="text-xs text-gray-500 mt-3">{{ r.short_explanation }}</div>
+            </div>
+
+            <div class="mt-6">
+              <button type="button" (click)="openProduct(r.product.id)" class="btn-primary w-full px-6 py-3 text-xs tracking-widest uppercase">
+                Ver detalle
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

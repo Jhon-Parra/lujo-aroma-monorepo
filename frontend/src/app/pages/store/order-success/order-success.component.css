@@ -1,0 +1,5 @@
+@media print {
+  a, button, nav {
+    display: none !important;
+  }
+}

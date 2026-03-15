@@ -1,0 +1,399 @@
+<div class="min-h-screen bg-gray-50 flex">
+
+    <!-- Sidebar Administrador -->
+    <aside class="w-64 bg-charcoal text-white flex flex-col hidden md:flex">
+        <div class="h-32 flex items-center justify-center border-b border-gray-700 py-4">
+            <a routerLink="/"
+                class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300 w-full px-6">
+                <div class="bg-white rounded-md p-2 w-full flex justify-center shadow-sm">
+                    <img src="assets/images/logo.png" alt="Perfumissimo Admin" class="h-12 w-auto object-contain" />
+                </div>
+                <span class="text-[9px] text-gray-400 font-sans tracking-widest mt-3 uppercase font-bold">Panel
+                    Admin</span>
+            </a>
+        </div>
+        <nav class="flex-grow p-4 space-y-2">
+            <a routerLink="/admin"
+                class="flex items-center space-x-3 p-3 rounded-md bg-gray-800 text-gold transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <!-- Link a Usuarios (Solo SUPERADMIN) -->
+            <a *ngIf="userRole === 'SUPERADMIN'" routerLink="/admin/users"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                    </path>
+                </svg>
+                <span>Usuarios y Roles</span>
+            </a>
+            <a routerLink="/admin/products"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                <span>Productos & IA</span>
+            </a>
+            <a routerLink="/admin/categories"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <span>Categorías</span>
+            </a>
+            <a routerLink="/admin/orders" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                <span>Pedidos</span>
+            </a>
+            <a routerLink="/admin/payments" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-10V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z" />
+                </svg>
+                <span>Pagos</span>
+            </a>
+            <a routerLink="/admin/promotions" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                <span>Promociones</span>
+            </a>
+            <a routerLink="/admin/cart-recovery" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.2 6h12.4M9 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
+                </svg>
+                <span>Recuperación de carrito</span>
+            </a>
+             <a routerLink="/admin/intelligence" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                         d="M9.663 17h4.674M12 3v2m0 14v2m7-9h2M3 12H1m15.364-6.364 1.414-1.414M6.222 17.778l-1.414 1.414m12.728 0-1.414-1.414M6.222 6.222 4.808 4.808M12 7a5 5 0 100 10 5 5 0 000-10z" />
+                 </svg>
+                 <span>Inteligencia y Alertas</span>
+             </a>
+             <a routerLink="/admin/emails" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                         d="M3 8l9 6 9-6M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"></path>
+                 </svg>
+                 <span>Correos</span>
+             </a>
+             <a routerLink="/manual" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                         d="M12 6.75c-1.8-1.3-4.5-1.3-6.3 0v12c1.8-1.3 4.5-1.3 6.3 0m0-12c1.8-1.3 4.5-1.3 6.3 0v12c-1.8-1.3-4.5-1.3-6.3 0m0-12v12" />
+                 </svg>
+                 <span>Manual de uso</span>
+             </a>
+             <!-- Link a Configuración -->
+              <a routerLink="/admin/settings"
+                  class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                    </path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                 <span>Personalizar Página</span>
+             </a>
+             <a routerLink="/admin/permissions" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                         d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622C17.176 19.29 21 14.59 21 9c0-1.042-.133-2.052-.382-3.016z" />
+                 </svg>
+                 <span>Permisos</span>
+             </a>
+        </nav>
+        <div class="p-4 border-t border-gray-700">
+            <button (click)="logout()"
+                class="w-full flex items-center space-x-3 p-3 rounded-md hover:bg-red-900/50 text-red-400 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                    </path>
+                </svg>
+                <span>Salir / Tienda</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Contenido -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <div class="md:hidden mb-6">
+            <div class="flex items-center justify-between gap-3">
+                <a routerLink="/admin" class="text-xs font-bold uppercase tracking-widest text-gold">← Admin</a>
+                <a routerLink="/" class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Tienda</a>
+            </div>
+            <div class="mt-3 -mx-1 overflow-x-auto">
+                <div class="flex gap-2 px-1 whitespace-nowrap">
+                    <a routerLink="/admin/products" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Productos</a>
+                    <a routerLink="/admin/categories" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Categorias</a>
+                    <a routerLink="/admin/orders" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pedidos</a>
+                    <a routerLink="/admin/promotions" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Promos</a>
+                    <a routerLink="/admin/cart-recovery" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Recuperación</a>
+                    <a routerLink="/admin/intelligence" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Inteligencia</a>
+                     <a routerLink="/admin/payments" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pagos</a>
+                    <a routerLink="/admin/emails" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Correos</a>
+                    <a routerLink="/admin/settings" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Apariencia</a>
+                </div>
+            </div>
+        </div>
+
+        <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+            <div>
+                <h1 class="font-serif text-3xl text-charcoal tracking-wide">Dashboard General</h1>
+                <p class="text-sm text-soft-charcoal mt-1">Resumen de ventas y actividad de la tienda</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <app-low-stock-bell></app-low-stock-bell>
+                <div class="hidden md:flex items-center gap-3 bg-white px-4 py-2 rounded-full shadow-sm border border-[#dcdcd4]">
+                    <span class="text-xs font-bold text-soft-charcoal uppercase tracking-widest">Meses atrás</span>
+                    <input type="number" min="1" max="24" [(ngModel)]="monthsBack"
+                        class="w-20 border border-[#dcdcd4] rounded-sm px-2 py-1 text-xs focus:outline-none focus:border-gold bg-white" />
+                    <button type="button" (click)="refresh()" [disabled]="loading"
+                        class="text-xs font-bold uppercase tracking-widest text-gold hover:text-charcoal transition-colors">
+                        Actualizar
+                    </button>
+                </div>
+
+                <div class="hidden md:flex items-center gap-2">
+                    <button type="button" (click)="exportMonthlySalesCsv()" [disabled]="loading || !(summary.monthly_sales.length)"
+                        class="bg-white px-4 py-2 rounded-full shadow-sm border border-[#dcdcd4] text-xs font-bold uppercase tracking-widest text-charcoal hover:text-gold transition-colors">
+                        Exportar Ventas CSV
+                    </button>
+                    <button type="button" (click)="exportTopProductsCsv()" [disabled]="loading || !(summary.top_products.length)"
+                        class="bg-white px-4 py-2 rounded-full shadow-sm border border-[#dcdcd4] text-xs font-bold uppercase tracking-widest text-charcoal hover:text-gold transition-colors">
+                        Exportar Top CSV
+                    </button>
+                </div>
+                <div
+                    class="bg-white px-4 py-2 rounded-full shadow-sm text-sm font-semibold flex items-center border border-[#dcdcd4]">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Sistema Operativo
+                </div>
+            </div>
+        </header>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-[#ecece5] flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-soft-charcoal font-bold uppercase tracking-widest mb-1">Ingresos Totales</p>
+                    <p class="font-serif text-3xl text-charcoal">
+                        {{ summary.total_revenue | currency:'COP':'symbol-narrow':'1.0-0' }}
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-gold/20 rounded-full flex items-center justify-center text-gold">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-[#ecece5] flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-soft-charcoal font-bold uppercase tracking-widest mb-1">Pedidos Pendientes
+                    </p>
+                    <p class="font-serif text-3xl text-charcoal">{{ summary.pending_orders }}</p>
+                </div>
+                <div class="w-12 h-12 bg-sage/20 rounded-full flex items-center justify-center text-sage">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-[#ecece5] flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-soft-charcoal font-bold uppercase tracking-widest mb-1">Productos Catálogo
+                    </p>
+                    <p class="font-serif text-3xl text-charcoal">{{ summary.products_count }}</p>
+                </div>
+                <div class="w-12 h-12 bg-charcoal/10 rounded-full flex items-center justify-center text-charcoal">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                        </path>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-[#ecece5] flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-soft-charcoal font-bold uppercase tracking-widest mb-1">Usuarios Registrados</p>
+                    <p class="font-serif text-3xl text-charcoal">{{ summary.users_count }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6H2v-2a4 4 0 014-4h6a4 4 0 014 4v2zM9 10a4 4 0 100-8 4 4 0 000 8zm8-2a3 3 0 100-6 3 3 0 000 6z" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6 mb-8">
+            <div class="flex items-end justify-between gap-4 border-b border-[#ecece5] pb-4 mb-5">
+                <div>
+                    <h3 class="font-serif text-xl text-charcoal">Pedidos por Estado</h3>
+                    <p class="text-xs text-soft-charcoal mt-1">Haz clic para ver los pedidos de cada estado.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <a routerLink="/admin/orders" [queryParams]="{ status: 'PENDIENTE' }"
+                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-gray-50 transition-colors">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Pendiente</div>
+                    <div class="mt-2 font-serif text-2xl text-charcoal">{{ summary.orders_by_status?.['PENDIENTE'] || 0 }}</div>
+                </a>
+                <a routerLink="/admin/orders" [queryParams]="{ status: 'PAGADO' }"
+                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-gray-50 transition-colors">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Pagado</div>
+                    <div class="mt-2 font-serif text-2xl text-charcoal">{{ summary.orders_by_status?.['PAGADO'] || 0 }}</div>
+                </a>
+                <a routerLink="/admin/orders" [queryParams]="{ status: 'PROCESANDO' }"
+                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-gray-50 transition-colors">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Procesando</div>
+                    <div class="mt-2 font-serif text-2xl text-charcoal">{{ summary.orders_by_status?.['PROCESANDO'] || 0 }}</div>
+                </a>
+                <a routerLink="/admin/orders" [queryParams]="{ status: 'ENVIADO' }"
+                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-gray-50 transition-colors">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Enviado</div>
+                    <div class="mt-2 font-serif text-2xl text-charcoal">{{ summary.orders_by_status?.['ENVIADO'] || 0 }}</div>
+                </a>
+                <a routerLink="/admin/orders" [queryParams]="{ status: 'ENTREGADO' }"
+                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-gray-50 transition-colors">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Entregado</div>
+                    <div class="mt-2 font-serif text-2xl text-charcoal">{{ summary.orders_by_status?.['ENTREGADO'] || 0 }}</div>
+                </a>
+                <a routerLink="/admin/orders" [queryParams]="{ status: 'CANCELADO' }"
+                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-gray-50 transition-colors">
+                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Cancelado</div>
+                    <div class="mt-2 font-serif text-2xl text-charcoal">{{ summary.orders_by_status?.['CANCELADO'] || 0 }}</div>
+                </a>
+            </div>
+        </div>
+
+        <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-8 text-sm">
+            {{ error }}
+        </div>
+
+        <!-- Quick Actions, Monthly Sales, Top Products -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+                <h3 class="font-serif text-xl border-b border-[#ecece5] pb-4 mb-4">Acciones Rápidas</h3>
+                <div class="space-y-4">
+                    <button routerLink="/admin/products"
+                        class="w-full flex items-center justify-between p-4 bg-cream rounded-md hover:bg-[#e8e8e1] transition-colors border border-[#dcdcd4]">
+                        <span class="font-bold text-sm tracking-widest uppercase">Añadir Nuevo Producto (con IA)</span>
+                        <span class="bg-gold text-white px-2 py-1 text-xs rounded-full">Pro</span>
+                    </button>
+                    <a routerLink="/admin/orders" [queryParams]="{ status: 'PENDIENTE' }"
+                        class="w-full flex items-center justify-between p-4 bg-cream rounded-md hover:bg-[#e8e8e1] transition-colors border border-[#dcdcd4]">
+                        <span class="font-bold text-sm tracking-widest uppercase">Revisar Órdenes Pendientes</span>
+                        <span
+                            class="bg-red-500 text-white w-6 h-6 flex items-center justify-center rounded-full text-xs">{{ summary.pending_orders }}</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+                <h3 class="font-serif text-xl border-b border-[#ecece5] pb-4 mb-4">Ventas por Mes</h3>
+
+                <div *ngIf="loading" class="text-sm text-soft-charcoal">Cargando...</div>
+                <div *ngIf="!loading && (!summary.monthly_sales || summary.monthly_sales.length === 0)"
+                    class="text-sm text-soft-charcoal">
+                    Sin datos.
+                </div>
+
+                <div *ngIf="!loading && summary.monthly_sales && summary.monthly_sales.length" class="space-y-3">
+                    <div *ngFor="let m of summary.monthly_sales" class="text-xs">
+                        <div class="flex items-center justify-between gap-4 mb-1">
+                            <span class="font-bold text-charcoal">{{ m.month_start | date:'MMM yyyy' }}</span>
+                            <span class="text-soft-charcoal">
+                                {{ m.revenue | currency:'COP':'symbol-narrow':'1.0-0' }} · {{ m.orders_count }} pedidos
+                            </span>
+                        </div>
+                        <div class="h-2 bg-[#ecece5] rounded-full overflow-hidden">
+                            <div class="h-2 bg-gold" [style.width]="getMonthBarWidth(m.revenue)"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+                <h3 class="font-serif text-xl border-b border-[#ecece5] pb-4 mb-4">Productos Más Vendidos</h3>
+                <div *ngIf="loading" class="text-sm text-soft-charcoal">Cargando...</div>
+
+                <div *ngIf="!loading && (!summary.top_products || summary.top_products.length === 0)"
+                    class="text-sm text-soft-charcoal">
+                    Aún no hay ventas registradas.
+                </div>
+
+                <ul *ngIf="!loading && summary.top_products && summary.top_products.length" class="space-y-4">
+                    <li *ngFor="let p of summary.top_products; let i = index" class="flex justify-between items-center text-sm">
+                        <span class="font-bold">{{ i + 1 }}. {{ p.nombre }}</span>
+                        <span class="text-gold">{{ p.unidades }} uds</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6 mt-8">
+            <div class="flex items-end justify-between gap-4 border-b border-[#ecece5] pb-4 mb-5">
+                <div>
+                    <h3 class="font-serif text-xl text-charcoal">Pedidos Pendientes (Productos)</h3>
+                    <p class="text-xs text-soft-charcoal mt-1">Vista rapida de los productos dentro de los pedidos pendientes.</p>
+                </div>
+                <a routerLink="/admin/orders" [queryParams]="{ status: 'PENDIENTE' }" class="text-sm text-gold hover:text-charcoal transition-colors">
+                    Ver todos
+                </a>
+            </div>
+
+            <div *ngIf="loading" class="text-sm text-soft-charcoal">Cargando...</div>
+            <div *ngIf="!loading && (!summary.pending_orders_preview || summary.pending_orders_preview.length === 0)" class="text-sm text-soft-charcoal">
+                No hay pedidos pendientes.
+            </div>
+
+            <div *ngIf="!loading && summary.pending_orders_preview && summary.pending_orders_preview.length" class="space-y-4">
+                <div *ngFor="let o of summary.pending_orders_preview" class="border border-[#ecece5] rounded-lg p-4">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <div>
+                            <div class="text-xs text-gray-500">Pedido</div>
+                            <div class="font-mono font-bold text-charcoal">{{ o.id.slice(0, 8).toUpperCase() }}</div>
+                            <div class="text-xs text-gray-500">{{ o.cliente_nombre }} · {{ o.cliente_email }}</div>
+                        </div>
+                        <div class="text-sm font-bold text-charcoal">{{ o.total | currency:'COP':'symbol-narrow':'1.0-0' }}</div>
+                    </div>
+
+                    <div class="mt-3 text-xs text-soft-charcoal font-bold uppercase tracking-widest">Productos</div>
+                    <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        <div *ngFor="let it of o.items" class="flex items-center gap-3 bg-cream border border-[#ecece5] rounded-md p-2">
+                            <img *ngIf="it.imagen_url" [src]="it.imagen_url" class="w-10 h-10 rounded object-cover" alt="" />
+                            <div class="min-w-0">
+                                <div class="text-sm font-bold text-charcoal truncate">{{ it.nombre }}</div>
+                                <div class="text-xs text-gray-500">Cantidad: {{ it.cantidad }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

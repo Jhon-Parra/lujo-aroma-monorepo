@@ -1,0 +1,42 @@
+<div *ngIf="canSee()" class="low-stock-bell relative">
+  <button type="button" (click)="toggle()" class="bell-btn" aria-label="Inventario bajo">
+    <svg class="bell-ico" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round"
+        d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9a6 6 0 10-12 0v.75a8.967 8.967 0 01-2.31 5.822 23.848 23.848 0 005.454 1.31m5.713 0a3 3 0 11-5.713 0m5.713 0a24.255 24.255 0 01-5.713 0" />
+    </svg>
+
+    <span *ngIf="count > 0" class="bell-badge">{{ count > 9 ? '9+' : count }}</span>
+  </button>
+
+  <div *ngIf="open" class="bell-panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-kicker">Inventario</div>
+        <div class="panel-title">Stock bajo ({{ threshold }} o menos)</div>
+      </div>
+      <div class="panel-actions">
+        <button type="button" class="panel-link" (click)="refresh()">Actualizar</button>
+        <button type="button" class="panel-close" (click)="close()">✕</button>
+      </div>
+    </div>
+
+    <div class="panel-body" *ngIf="loading">Cargando...</div>
+    <div class="panel-body error" *ngIf="!loading && error">{{ error }}</div>
+    <div class="panel-body" *ngIf="!loading && !error && count === 0">Todo bien: no hay productos con stock bajo.</div>
+
+    <div *ngIf="!loading && !error && items.length" class="panel-list">
+      <a *ngFor="let p of items" [routerLink]="adminRoute" (click)="close()" class="panel-item">
+        <img *ngIf="p.imagen_url" [src]="p.imagen_url" alt="" class="panel-img" />
+        <div class="panel-meta">
+          <div class="panel-name">{{ p.nombre }}</div>
+          <div class="panel-sub">Quedan {{ p.stock }} unidades</div>
+        </div>
+        <div class="panel-flag">STOCK</div>
+      </a>
+    </div>
+
+    <div class="panel-foot">
+      <a [routerLink]="adminRoute" (click)="close()" class="panel-link">Ver productos</a>
+    </div>
+  </div>
+</div>

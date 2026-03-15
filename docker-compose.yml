@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # --------------------------------------------------------
+  # Backend: Node.js / Express
+  # --------------------------------------------------------
+  backend:
+    image: node:20
+    container_name: perfumissimo_backend
+    restart: always
+    working_dir: /app
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_please_change}
+      REFRESH_SECRET: ${REFRESH_SECRET:-refresh_secret_key_please_change_in_production}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    networks:
+      - perfumissimo_net
+    command: sh -c "npm install && npm run dev"
+
+  # --------------------------------------------------------
+  # Frontend: Angular
+  # --------------------------------------------------------
+  frontend:
+    image: node:20
+    container_name: perfumissimo_frontend
+    working_dir: /app
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: 'true'
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    networks:
+      - perfumissimo_net
+    depends_on:
+      - backend
+    command: sh -c "npm install && npm start -- --host 0.0.0.0 --port 4200"
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:
+
+
+networks:
+  perfumissimo_net:
+    driver: bridge

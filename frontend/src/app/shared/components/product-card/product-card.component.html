@@ -1,0 +1,84 @@
+<div (click)="openDetail()"
+    class="bg-[#ecece5] product-card border border-transparent p-2 sm:p-4 pb-4 sm:pb-6 group cursor-pointer w-full relative h-full flex flex-col">
+    <!-- Badges -->
+    <div class="absolute top-4 left-4 z-10 flex flex-col gap-1">
+        <span class="bg-gold text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm shadow-sm"
+            *ngIf="product.isNew">NUEVO</span>
+        <span
+            class="bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm shadow-sm"
+            *ngIf="product.tiene_promocion">OFERTA</span>
+    </div>
+    <div (click)="toggleFavorite($event)"
+        class="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 w-7 h-7 sm:w-8 sm:h-8 backdrop-blur-sm rounded-full flex items-center justify-center transition-colors shadow-sm cursor-pointer"
+        [ngClass]="isFavorite ? 'text-red-500 hover:text-red-600 bg-white' : 'text-soft-charcoal hover:text-red-500 hover:bg-white bg-white/70'">
+        <svg class="w-4 h-4 transition-all duration-300" [ngClass]="isFavorite ? 'fill-current' : 'fill-none'"
+            stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z">
+            </path>
+        </svg>
+    </div>
+
+    <!-- Image Container (Fixed height to prevent jumping) -->
+    <div
+        class="relative w-full h-48 sm:h-56 bg-transparent flex items-center justify-center overflow-hidden mb-3 sm:mb-4 shrink-0">
+        <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/5 to-transparent mix-blend-multiply">
+        </div>
+        <img [src]="product.imageUrl || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop'"
+            [alt]="product.name" loading="lazy" decoding="async"
+            class="object-contain h-5/6 max-w-[80%] transition-transform duration-700 group-hover:scale-105 filter drop-shadow-xl" />
+    </div>
+
+    <!-- Info (Flex-grow to fill remaining space) -->
+    <div class="text-center flex flex-col flex-grow items-center w-full">
+        <span class="text-[9px] px-2 py-0.5 mb-2 rounded-full border tracking-widest uppercase font-bold shrink-0"
+            [ngClass]="getCategoryClass()">
+            {{ getCategoryLabel() }}
+        </span>
+
+        <h3
+            class="font-sans font-bold text-charcoal text-xs sm:text-sm uppercase tracking-widest mb-1 shrink-0 line-clamp-2 h-8 sm:h-10 flex items-center justify-center">
+            {{ product.name }}</h3>
+
+        <p class="text-[10px] sm:text-[11px] text-soft-charcoal mb-4 font-medium line-clamp-2 sm:line-clamp-3 overflow-hidden text-ellipsis shrink-0 h-8 sm:h-12"
+            title="{{ product.notes }}">Notas: {{ product.notes }}</p>
+
+        <!-- Dynamic Spacer to push everything below it to the bottom -->
+        <div class="flex-grow"></div>
+
+        <!-- Price Section (Bottom aligned) -->
+        <div class="shrink-0 w-full flex flex-col items-center">
+            <div class="mb-2 sm:mb-3 flex flex-col items-center justify-end h-14 sm:h-16"
+                *ngIf="product.precio_con_descuento; else normalPrice">
+                <p class="font-serif font-bold text-sm sm:text-lg text-red-500 line-through leading-tight">{{
+                    product.precio |
+                    currency:'COP':'symbol-narrow' }}</p>
+                <p class="font-serif font-bold text-base sm:text-xl text-charcoal leading-tight">{{
+                    product.precio_con_descuento |
+                    currency:'COP':'symbol-narrow' }}</p>
+                <p class="text-[9px] sm:text-[10px] text-sage font-bold tracking-widest uppercase mt-0.5">Ahorra {{
+                    getSavings() | currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+            </div>
+            <ng-template #normalPrice>
+                <div class="mb-2 sm:mb-3 flex items-end justify-center h-14 sm:h-16">
+                    <p class="font-serif font-bold text-base sm:text-lg text-charcoal">{{ product.price |
+                        currency:'COP':'symbol-narrow' }}</p>
+                </div>
+            </ng-template>
+
+            <!-- Social Proof Badge -->
+            <div
+                class="flex items-center justify-center border border-sage/50 bg-[#F4F5F0] rounded-full px-3 py-1 mb-4 shadow-sm w-max mx-auto">
+                <span class="text-gold mr-1 text-xs">✨</span>
+                <span class="text-[10px] text-sage font-semibold tracking-wide">Más de {{ product.soldCount }} unidades
+                    vendidas</span>
+            </div>
+
+            <!-- Add to Cart Button -->
+            <button (click)="addToCart($event)"
+                class="w-full btn-secondary mt-auto px-2 sm:px-4 py-2.5 sm:text-xs text-[10px] tracking-widest uppercase transition-all duration-300 shrink-0">
+                Añadir al Carrito
+            </button>
+        </div>
+    </div>
+</div>

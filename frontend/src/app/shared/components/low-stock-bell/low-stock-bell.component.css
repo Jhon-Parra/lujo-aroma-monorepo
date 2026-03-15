@@ -1,0 +1,153 @@
+.bell-btn {
+  position: relative;
+  color: #2c2c2c;
+  transition: color 180ms ease;
+}
+
+.bell-btn:hover {
+  color: #c2a878;
+}
+
+.bell-ico {
+  width: 20px;
+  height: 20px;
+}
+
+.bell-badge {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.bell-panel {
+  position: absolute;
+  right: 0;
+  margin-top: 8px;
+  width: 320px;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  z-index: 60;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.panel-kicker {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.panel-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2c2c2c;
+}
+
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-link {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c2a878;
+}
+
+.panel-link:hover {
+  color: #2c2c2c;
+}
+
+.panel-close {
+  color: #9ca3af;
+}
+
+.panel-close:hover {
+  color: #2c2c2c;
+}
+
+.panel-body {
+  padding: 14px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.panel-body.error {
+  color: #dc2626;
+}
+
+.panel-list {
+  max-height: 288px;
+  overflow: auto;
+}
+
+.panel-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-top: 1px solid #fafafa;
+  transition: background 160ms ease;
+}
+
+.panel-item:hover {
+  background: #f9fafb;
+}
+
+.panel-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.panel-meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.panel-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #2c2c2c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.panel-flag {
+  font-size: 11px;
+  font-weight: 900;
+  color: #dc2626;
+}
+
+.panel-foot {
+  padding: 12px 14px;
+  border-top: 1px solid #f3f4f6;
+}

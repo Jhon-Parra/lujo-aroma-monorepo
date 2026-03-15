@@ -1,0 +1,82 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row min-h-[60vh]">
+    <!-- Sidebar -->
+    <aside class="w-full md:w-64 md:pr-8 mb-8 md:mb-0 border-b md:border-b-0 md:border-r border-[#ecece5]">
+        <h3 class="font-serif text-xl text-charcoal mb-4">Colección</h3>
+        <ul class="space-y-4 text-sm tracking-widest text-soft-charcoal uppercase">
+            <li>
+                <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
+                    <input type="radio" name="category" value="todos" (change)="filterCategory('todos')"
+                        [checked]="selectedCategory === 'todos'"
+                        class="form-radio text-gold focus:ring-gold accent-gold w-4 h-4">
+                    <span>Ver Todo</span>
+                </label>
+            </li>
+            <ng-container *ngIf="categories.length; else fallbackCategories">
+                <li *ngFor="let c of categories">
+                    <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
+                        <input type="radio" name="category" [value]="c.slug" (change)="filterCategory(c.slug)"
+                            [checked]="selectedCategory === c.slug"
+                            class="form-radio text-gold focus:ring-gold accent-gold w-4 h-4">
+                        <span>{{ c.nombre }}</span>
+                    </label>
+                </li>
+            </ng-container>
+            <ng-template #fallbackCategories>
+                <li>
+                    <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
+                        <input type="radio" name="category" value="mujer" (change)="filterCategory('mujer')"
+                            [checked]="selectedCategory === 'mujer'"
+                            class="form-radio text-gold focus:ring-gold accent-gold w-4 h-4">
+                        <span>Para Mujer</span>
+                    </label>
+                </li>
+                <li>
+                    <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
+                        <input type="radio" name="category" value="hombre" (change)="filterCategory('hombre')"
+                            [checked]="selectedCategory === 'hombre'"
+                            class="form-radio text-gold focus:ring-gold accent-gold w-4 h-4">
+                        <span>Para Hombre</span>
+                    </label>
+                </li>
+                <li>
+                    <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
+                        <input type="radio" name="category" value="unisex" (change)="filterCategory('unisex')"
+                            [checked]="selectedCategory === 'unisex'"
+                            class="form-radio text-gold focus:ring-gold accent-gold w-4 h-4">
+                        <span>Unisex</span>
+                    </label>
+                </li>
+            </ng-template>
+        </ul>
+    </aside>
+
+    <!-- Product Grid -->
+    <main class="flex-1 md:pl-8">
+        <h2 class="font-serif text-3xl text-charcoal mb-8 tracking-widest uppercase">Catálogo</h2>
+
+        <div *ngIf="loading" class="text-center py-20 text-soft-charcoal">
+            Preparando la exhibición...
+        </div>
+
+        <div *ngIf="error" class="text-red-500 text-center py-10">
+            {{ error }}
+        </div>
+
+        <div *ngIf="!loading && !error"
+            class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-8 md:gap-y-12">
+            <app-product-card *ngFor="let product of filteredProducts" [product]="product"></app-product-card>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loading && filteredProducts.length === 0"
+            class="text-center py-24 border border-[#ecece5] bg-[#f9f9f6] rounded-md">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-sage mb-4" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+            <p class="text-soft-charcoal tracking-widest text-sm uppercase">No se encontraron fragancias para esta
+                categoría.</p>
+        </div>
+    </main>
+</div>

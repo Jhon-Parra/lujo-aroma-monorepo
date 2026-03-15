@@ -1,0 +1,149 @@
+<div class="min-h-screen bg-gray-50 flex">
+  <aside class="w-64 bg-charcoal text-white flex flex-col hidden md:flex">
+    <div class="h-32 flex items-center justify-center border-b border-gray-700 py-4">
+      <a routerLink="/" class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300 w-full px-6">
+        <div class="bg-white rounded-md p-2 w-full flex justify-center shadow-sm">
+          <img src="assets/images/logo.png" alt="Perfumissimo Admin" class="h-12 w-auto object-contain" />
+        </div>
+        <span class="text-[9px] text-gray-400 font-sans tracking-widest mt-3 uppercase font-bold">Panel Admin</span>
+      </a>
+    </div>
+
+    <nav class="flex-grow p-4 space-y-2">
+      <a routerLink="/admin" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/admin/products" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Productos & IA</span>
+      </a>
+      <a routerLink="/admin/categories" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Categorias</span>
+      </a>
+      <a routerLink="/admin/orders" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Pedidos</span>
+      </a>
+      <a routerLink="/admin/payments" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Pagos</span>
+      </a>
+      <a routerLink="/admin/promotions" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Promociones</span>
+      </a>
+      <a routerLink="/admin/cart-recovery" class="flex items-center space-x-3 p-3 rounded-md bg-gray-800 text-gold transition-colors">
+        <span>Recuperación de carrito</span>
+      </a>
+      <a routerLink="/admin/intelligence" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Inteligencia y Alertas</span>
+      </a>
+      <a routerLink="/admin/emails" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Correos</span>
+      </a>
+      <a routerLink="/admin/settings" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Personalizar Pagina</span>
+      </a>
+      <a routerLink="/admin/permissions" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Permisos</span>
+      </a>
+    </nav>
+
+    <div class="p-4 border-t border-gray-700">
+      <a routerLink="/" class="w-full flex items-center space-x-3 p-3 rounded-md hover:bg-red-900/50 text-red-400 transition-colors">
+        <span>Salir / Tienda</span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    <div class="md:hidden mb-6">
+      <div class="flex items-center justify-between gap-3">
+        <a routerLink="/admin" class="text-xs font-bold uppercase tracking-widest text-gold">← Admin</a>
+        <a routerLink="/" class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Tienda</a>
+      </div>
+      <div class="mt-3 -mx-1 overflow-x-auto">
+        <div class="flex gap-2 px-1 whitespace-nowrap">
+          <a routerLink="/admin/products" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Productos</a>
+          <a routerLink="/admin/categories" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Categorias</a>
+          <a routerLink="/admin/orders" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pedidos</a>
+          <a routerLink="/admin/promotions" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Promos</a>
+          <a routerLink="/admin/cart-recovery" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-charcoal text-white rounded-md">Recuperación</a>
+          <a routerLink="/admin/intelligence" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Inteligencia</a>
+          <a routerLink="/admin/payments" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pagos</a>
+          <a routerLink="/admin/emails" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Correos</a>
+          <a routerLink="/admin/settings" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Apariencia</a>
+        </div>
+      </div>
+    </div>
+
+    <header class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 border-b border-[#dcdcd4] pb-4">
+      <div>
+        <h1 class="font-serif text-3xl text-charcoal tracking-wide">Recuperación de carrito</h1>
+        <p class="text-sm text-soft-charcoal mt-1">Configura la alerta de abandono para aumentar conversiones.</p>
+      </div>
+      <button class="btn-primary px-6 py-2 shadow-sm text-sm" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
+    </header>
+
+    <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 text-sm">
+      {{ error }}
+    </div>
+
+    <div *ngIf="loading" class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6 text-sm text-soft-charcoal">
+      Cargando configuración...
+    </div>
+
+    <div *ngIf="!loading" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="font-serif text-xl text-charcoal">Configuración</h2>
+            <p class="text-xs text-soft-charcoal">Activa la alerta y personaliza el mensaje.</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" [(ngModel)]="form.enabled" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gold/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+          </label>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-2">Mensaje promocional</label>
+            <textarea rows="4" [(ngModel)]="form.message"
+              class="w-full border border-[#dcdcd4] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none"></textarea>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-2">Descuento (%)</label>
+              <input type="number" min="0" max="80" [(ngModel)]="form.discountPct"
+                class="w-full border border-[#dcdcd4] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-2">Tiempo (segundos)</label>
+              <input type="number" min="10" max="900" [(ngModel)]="form.countdownSeconds"
+                class="w-full border border-[#dcdcd4] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-2">Texto del botón</label>
+            <input type="text" [(ngModel)]="form.buttonText"
+              class="w-full border border-[#dcdcd4] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+        <h2 class="font-serif text-xl text-charcoal mb-4">Vista previa</h2>
+        <div class="border border-dashed border-[#dcdcd4] rounded-xl p-6 bg-[#f9f9f6]">
+          <div class="text-xs font-bold uppercase tracking-widest text-gold">Oferta de recuperación</div>
+          <h3 class="font-serif text-2xl text-charcoal mt-2">{{ form.discountPct }}% de descuento</h3>
+          <p class="text-sm text-soft-charcoal mt-2">{{ form.message }}</p>
+          <div class="mt-4 flex items-center gap-3">
+            <div class="px-3 py-1 rounded-full bg-charcoal text-white text-xs font-bold tracking-widest">{{ form.countdownSeconds }}s</div>
+            <button type="button" class="px-4 py-2 rounded-full bg-gold text-white text-xs font-bold uppercase tracking-widest">
+              {{ form.buttonText || 'Finalizar compra' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

@@ -1,0 +1,14 @@
+<div class="toast-wrap" aria-live="polite" aria-atomic="true">
+  <div *ngFor="let toast of toastService.toasts$ | async" class="toast" [ngClass]="toast.tone">
+    <div class="toast-icon">
+      <span *ngIf="toast.tone === 'success'">✓</span>
+      <span *ngIf="toast.tone === 'info'">i</span>
+      <span *ngIf="toast.tone === 'warning'">!</span>
+      <span *ngIf="toast.tone === 'error'">×</span>
+    </div>
+    <div class="toast-body">
+      <p class="toast-message">{{ toast.message }}</p>
+    </div>
+    <button class="toast-close" type="button" (click)="toastService.dismiss(toast.id)">×</button>
+  </div>
+</div>

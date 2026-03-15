@@ -1,0 +1,208 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 min-h-[60vh]">
+  <a routerLink="/catalog"
+    class="text-xs uppercase tracking-widest font-bold text-gold hover:text-charcoal transition-colors">
+    ← Volver al catálogo
+  </a>
+
+  <div *ngIf="loading" class="py-16 text-center text-soft-charcoal">
+    Cargando producto...
+  </div>
+
+  <div *ngIf="!loading && error" class="py-10 text-center text-red-600 border border-red-100 bg-white rounded-xl">
+    {{ error }}
+  </div>
+
+  <div *ngIf="!loading && product" class="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-6">
+    <!-- Image -->
+    <div
+      class="bg-[#ecece5] border border-[#e5e5e0] rounded-xl p-8 flex items-center justify-center relative overflow-hidden">
+      <div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
+        <span *ngIf="product.es_nuevo"
+          class="bg-gold text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+          Nuevo
+        </span>
+        <span *ngIf="hasPromotion()"
+          class="bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+          Oferta
+          <ng-container *ngIf="isAmountPromotion(); else pctOff">
+            {{ getPromotionAmount() | currency:'COP':'symbol-narrow':'1.0-0' }} OFF
+          </ng-container>
+          <ng-template #pctOff>
+            {{ getPromotionPercent() }}% OFF
+          </ng-template>
+        </span>
+        <span *ngIf="product.stock <= 5"
+          class="bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+          Ultimas unidades
+        </span>
+      </div>
+
+      <img
+        [src]="product.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop'"
+        [alt]="product.nombre" loading="eager" decoding="async" fetchpriority="high"
+        class="max-h-[520px] w-auto object-contain drop-shadow-xl" />
+    </div>
+
+    <!-- Info -->
+    <div class="bg-white border border-[#ecece5] rounded-xl p-8 shadow-sm">
+      <div class="flex items-start justify-between gap-6">
+        <div>
+          <div class="inline-flex items-center gap-2 mb-3">
+            <span class="text-[10px] px-2 py-0.5 rounded-full border tracking-widest uppercase font-bold"
+              [ngClass]="getCategoryClass()">
+              {{ getCategoryLabel() }}
+            </span>
+            <span class="text-xs text-gray-500">Stock: {{ product.stock }}</span>
+          </div>
+
+          <h1 class="font-serif text-3xl text-charcoal tracking-wide">{{ product.nombre }}</h1>
+          <p class="text-sm text-soft-charcoal mt-3 leading-relaxed">{{ product.descripcion }}</p>
+
+          <div *ngIf="hasPromotion()"
+            class="mt-4 inline-flex items-center gap-2 bg-[#fff7ed] border border-[#fed7aa] text-[#9a3412] px-3 py-1.5 rounded-md">
+            <span class="text-[10px] font-bold uppercase tracking-widest">{{ getPromoName() || 'Promoción' }}</span>
+            <ng-container *ngIf="isAmountPromotion(); else pctDiscount">
+              <span class="text-[10px]">-{{ getPromotionAmount() | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
+            </ng-container>
+            <ng-template #pctDiscount>
+              <span class="text-[10px]">-{{ getPromotionPercent() }}%</span>
+            </ng-template>
+          </div>
+        </div>
+
+        <button type="button" (click)="toggleFavorite()"
+          class="w-11 h-11 rounded-full border border-[#ecece5] bg-cream flex items-center justify-center hover:bg-white transition-colors">
+          <svg class="w-5 h-5" [ngClass]="isFavorite ? 'text-red-600 fill-current' : 'text-charcoal fill-none'"
+            stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div>
+          <div class="text-xs font-bold uppercase tracking-widest text-soft-charcoal mb-2">Notas olfativas</div>
+          <div class="text-sm text-charcoal bg-cream border border-[#ecece5] rounded-md p-4">
+            {{ getNotes() }}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs font-bold uppercase tracking-widest text-soft-charcoal mb-2">Vendidos</div>
+          <div class="text-sm text-charcoal bg-cream border border-[#ecece5] rounded-md p-4">
+            {{ product.unidades_vendidas || 0 }} unidades
+          </div>
+        </div>
+      </div>
+
+      <!-- Reviews -->
+      <div class="mt-10 pt-8 border-t border-[#ecece5]">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Reseñas verificadas</div>
+            <div class="mt-2 flex items-center gap-3">
+              <div class="flex items-center gap-1">
+                <svg *ngFor="let s of [1,2,3,4,5]" class="w-4 h-4" viewBox="0 0 24 24"
+                  [ngClass]="getStarFill(s) ? 'text-gold fill-current' : 'text-gray-300 fill-current'">
+                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                </svg>
+              </div>
+              <div class="text-sm font-bold text-charcoal">{{ getAverageRating() | number:'1.1-1' }}</div>
+              <div class="text-sm text-soft-charcoal">({{ reviewSummary.count || 0 }} reseñas)</div>
+            </div>
+          </div>
+
+          <a routerLink="/my-orders" class="text-sm text-gold hover:text-charcoal transition-colors">
+            Dejar reseña (solo pedidos entregados)
+          </a>
+        </div>
+
+        <div *ngIf="reviewsLoading" class="mt-6 text-sm text-soft-charcoal">Cargando reseñas...</div>
+        <div *ngIf="!reviewsLoading && reviewsError" class="mt-6 text-sm text-soft-charcoal">
+          {{ reviewsError }}
+        </div>
+
+        <div *ngIf="!reviewsLoading && !reviewsError && (!reviews || reviews.length === 0)"
+          class="mt-6 text-sm text-soft-charcoal">
+          Aún no hay reseñas para este producto.
+        </div>
+
+        <div *ngIf="!reviewsLoading && reviews && reviews.length" class="mt-6 space-y-4">
+          <div *ngFor="let r of reviews" class="border border-[#ecece5] rounded-lg p-4 bg-cream">
+            <div class="flex items-center justify-between gap-4">
+              <div class="text-sm font-bold text-charcoal">{{ r.nombre }} {{ r.apellido }}</div>
+              <div class="flex items-center gap-1">
+                <svg *ngFor="let s of [1,2,3,4,5]" class="w-4 h-4" viewBox="0 0 24 24"
+                  [ngClass]="(r.rating || 0) >= s ? 'text-gold fill-current' : 'text-gray-300 fill-current'">
+                  <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                </svg>
+              </div>
+            </div>
+            <div *ngIf="r.comentario" class="text-sm text-soft-charcoal mt-2 leading-relaxed">{{ r.comentario }}</div>
+            <div class="text-xs text-gray-500 mt-3">{{ r.creado_en | date:'mediumDate' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div class="w-full md:w-auto">
+          <div class="text-xs font-bold uppercase tracking-widest text-soft-charcoal mb-1">Precio</div>
+          <div *ngIf="hasPromotion(); else normalPrice">
+            <div class="text-sm text-red-600 line-through font-bold">
+              {{ getOriginalPriceNumber() | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </div>
+            <div class="font-serif text-3xl text-charcoal">
+              {{ getFinalPriceNumber() | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </div>
+            <div class="text-xs text-sage font-bold uppercase tracking-widest mt-1">
+              Ahorra {{ (getOriginalPriceNumber() - getFinalPriceNumber()) | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </div>
+          </div>
+          <ng-template #normalPrice>
+            <div class="font-serif text-3xl text-charcoal">
+              {{ getPrecioNumber() | currency:'COP':'symbol-narrow':'1.0-0' }}
+            </div>
+          </ng-template>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+          <div
+            class="flex items-center justify-between sm:justify-center border border-[#dcdcd4] rounded-md overflow-hidden">
+            <button type="button" class="px-5 sm:px-3 py-3 sm:py-2 bg-cream hover:bg-[#e8e8e1]"
+              (click)="decrementQty()">-</button>
+            <input type="number" min="1" [(ngModel)]="quantity"
+              class="w-16 sm:w-16 text-center py-3 sm:py-2 outline-none flex-1 sm:flex-none" />
+            <button type="button" class="px-5 sm:px-3 py-3 sm:py-2 bg-cream hover:bg-[#e8e8e1]"
+              (click)="incrementQty()">+</button>
+          </div>
+          <button type="button" (click)="addToCart()" [disabled]="product.stock <= 0"
+            class="btn-primary w-full sm:w-auto px-6 py-3 text-xs tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed">
+            {{ product.stock <= 0 ? 'Sin stock' : 'Añadir al carrito' }} </button>
+        </div>
+      </div>
+
+      <div *ngIf="addedToCartNotice" class="mt-4 text-xs font-bold tracking-widest uppercase text-sage">
+        {{ addedToCartNotice }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Related products -->
+  <section *ngIf="!loading && product" class="mt-12">
+    <div class="flex items-end justify-between gap-6 mb-6">
+      <div>
+        <h2 class="font-serif text-2xl text-charcoal tracking-wide">También te puede gustar</h2>
+        <p class="text-sm text-soft-charcoal mt-1">Más opciones dentro de la misma colección.</p>
+      </div>
+      <a routerLink="/catalog" class="text-sm text-gold hover:text-charcoal transition-colors">Ver catálogo</a>
+    </div>
+
+    <div *ngIf="relatedLoading" class="text-sm text-soft-charcoal">Cargando relacionados...</div>
+    <div *ngIf="!relatedLoading && related.length === 0" class="text-sm text-soft-charcoal">No hay productos
+      relacionados.</div>
+
+    <div *ngIf="!relatedLoading && related.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <app-product-card *ngFor="let p of related" [product]="p"></app-product-card>
+    </div>
+  </section>
+</div>

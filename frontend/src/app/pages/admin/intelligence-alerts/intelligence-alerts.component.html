@@ -1,0 +1,389 @@
+<div class="min-h-screen bg-gray-50 flex">
+    <!-- Sidebar Administrador -->
+    <aside class="w-64 bg-charcoal text-white flex flex-col hidden md:flex">
+        <div class="h-32 flex items-center justify-center border-b border-gray-700 py-4">
+            <a routerLink="/"
+                class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300 w-full px-6">
+                <div class="bg-white rounded-md p-2 w-full flex justify-center shadow-sm">
+                    <img src="assets/images/logo.png" alt="Perfumissimo Admin" class="h-12 w-auto object-contain" />
+                </div>
+                <span class="text-[9px] text-gray-400 font-sans tracking-widest mt-3 uppercase font-bold">Panel
+                    Admin</span>
+            </a>
+        </div>
+        <nav class="flex-grow p-4 space-y-2">
+            <a routerLink="/admin"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <a routerLink="/admin/products"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                <span>Productos & IA</span>
+            </a>
+            <a routerLink="/admin/categories"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <span>Categorías</span>
+            </a>
+            <a routerLink="/admin/orders"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                <span>Pedidos</span>
+            </a>
+            <a routerLink="/admin/payments"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-10V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z" />
+                </svg>
+                <span>Pagos</span>
+            </a>
+            <a routerLink="/admin/promotions"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
+                    </path>
+                </svg>
+                <span>Promociones</span>
+            </a>
+            <a routerLink="/admin/cart-recovery" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <span>Recuperación de carrito</span>
+            </a>
+            <a routerLink="/admin/intelligence"
+                class="flex items-center space-x-3 p-3 rounded-md bg-gray-800 text-gold transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9.663 17h4.674M12 3v2m0 14v2m7-9h2M3 12H1m15.364-6.364 1.414-1.414M6.222 17.778l-1.414 1.414m12.728 0-1.414-1.414M6.222 6.222 4.808 4.808M12 7a5 5 0 100 10 5 5 0 000-10z" />
+                </svg>
+                <span>Inteligencia y Alertas</span>
+                <span class="ml-auto text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full">{{ notificationCount
+                    }}</span>
+            </a>
+            <a routerLink="/admin/emails"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 8l9 6 9-6M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"></path>
+                </svg>
+                <span>Correos</span>
+            </a>
+            <a routerLink="/admin/settings"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                    </path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>Personalizar Página</span>
+            </a>
+            <a routerLink="/admin/permissions"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622C17.176 19.29 21 14.59 21 9c0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span>Permisos</span>
+            </a>
+        </nav>
+        <div class="p-4 border-t border-gray-700">
+            <button
+                class="w-full flex items-center space-x-3 p-3 rounded-md hover:bg-red-900/50 text-red-400 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                    </path>
+                </svg>
+                <span>Salir / Tienda</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Contenido -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <div class="md:hidden mb-6">
+            <div class="flex items-center justify-between gap-3">
+                <a routerLink="/admin" class="text-xs font-bold uppercase tracking-widest text-gold">← Admin</a>
+                <a routerLink="/" class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Tienda</a>
+            </div>
+            <div class="mt-3 -mx-1 overflow-x-auto">
+                <div class="flex gap-2 px-1 whitespace-nowrap">
+                    <a routerLink="/admin/products"
+                        class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Productos</a>
+                    <a routerLink="/admin/categories"
+                        class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Categorias</a>
+                    <a routerLink="/admin/orders"
+                        class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pedidos</a>
+                    <a routerLink="/admin/promotions"
+                        class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Promos</a>
+                    <a routerLink="/admin/cart-recovery" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Recuperación</a>
+                    <a routerLink="/admin/intelligence"
+                        class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-charcoal text-white rounded-md">Inteligencia</a>
+                    <a routerLink="/admin/payments"
+                        class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pagos</a>
+                    <a routerLink="/admin/emails"
+                        class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Correos</a>
+                    <a routerLink="/admin/settings"
+                        class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Apariencia</a>
+                </div>
+            </div>
+        </div>
+
+        <header class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-gold">Centro de Control</p>
+                <h1 class="font-serif text-3xl text-charcoal tracking-wide">Inteligencia y Alertas</h1>
+                <p class="text-sm text-soft-charcoal mt-2">Analitica avanzada y alertas automáticas para decisiones
+                    rápidas.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+                <div
+                    class="bg-white px-4 py-2 rounded-full shadow-sm border border-[#dcdcd4] text-xs font-bold uppercase tracking-widest">
+                    Notificaciones activas: <span class="text-red-600">{{ notificationCount }}</span>
+                </div>
+                <button type="button"
+                    class="bg-charcoal text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest">
+                    Exportar resumen
+                </button>
+            </div>
+        </header>
+
+        <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 text-sm">
+            {{ error }}
+        </div>
+
+        <section class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6 mb-8">
+            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+                <div>
+                    <h2 class="font-serif text-xl text-charcoal">Filtros inteligentes</h2>
+                    <p class="text-xs text-soft-charcoal mt-1">Ajusta el rango de tiempo y segmenta por categoria o
+                        producto.</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <select [(ngModel)]="dateRange"
+                        class="border border-[#dcdcd4] rounded-md px-3 py-2 text-xs font-bold uppercase tracking-widest bg-white">
+                        <option value="7">Ultimos 7 dias</option>
+                        <option value="30">Ultimos 30 dias</option>
+                        <option value="90">Ultimos 90 dias</option>
+                    </select>
+                    <select [(ngModel)]="categoryFilter"
+                        class="border border-[#dcdcd4] rounded-md px-3 py-2 text-xs font-bold uppercase tracking-widest bg-white">
+                        <option value="all">Todas las categorias</option>
+                        <option *ngFor="let c of categories" [value]="c.slug">{{ c.nombre }}</option>
+                    </select>
+                    <select [(ngModel)]="productFilter"
+                        class="border border-[#dcdcd4] rounded-md px-3 py-2 text-xs font-bold uppercase tracking-widest bg-white">
+                        <option value="all">Todos los productos</option>
+                        <option *ngFor="let p of products" [value]="p.id">{{ p.nombre }}</option>
+                    </select>
+                    <button type="button" (click)="load()"
+                        class="bg-gold text-white px-4 py-2 rounded-md text-xs font-bold uppercase tracking-widest">
+                        Aplicar
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-serif text-xl text-charcoal">Productos mas buscados</h3>
+                        <p class="text-xs text-soft-charcoal">Top 10, volumen y tendencia</p>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-gold">Top 10</span>
+                </div>
+                <div *ngIf="loading" class="text-sm text-soft-charcoal">Cargando...</div>
+                <div *ngIf="!loading && (!summary?.top_searches || (summary?.top_searches?.length === 0))"
+                    class="text-sm text-soft-charcoal">
+                    Sin datos de busquedas.
+                </div>
+                <div class="mb-5" *ngIf="summary?.top_searches?.length">
+                    <canvas #topSearchChart class="w-full h-48"></canvas>
+                </div>
+                <div *ngIf="!loading && summary?.top_searches?.length" class="space-y-4">
+                    <div *ngFor="let product of summary?.top_searches; let i = index"
+                        class="border border-[#ecece5] rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-sm font-bold text-charcoal">{{ i + 1 }}. {{ product.nombre }}</div>
+                            <div class="text-xs text-soft-charcoal">{{ product.searches }} busquedas</div>
+                        </div>
+                        <div class="h-2 bg-[#ecece5] rounded-full overflow-hidden">
+                            <div class="h-2 bg-gold"
+                                [style.width]="getTrendWidth(product.trend[product.trend.length - 1] || 0)"></div>
+                        </div>
+                        <div class="mt-2 grid grid-cols-7 gap-1">
+                            <div *ngFor="let t of product.trend" class="h-8 bg-charcoal/10 rounded"
+                                [style.height.px]="t"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-serif text-xl text-charcoal">Carritos abandonados</h3>
+                        <p class="text-xs text-soft-charcoal">Impacto y seguimiento</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
+                    <div class="bg-cream border border-[#ecece5] rounded-lg p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Total</p>
+                        <p class="font-serif text-2xl text-charcoal">{{ summary?.abandoned?.total || 0 }}</p>
+                    </div>
+                    <div class="bg-cream border border-[#ecece5] rounded-lg p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Valor perdido</p>
+                        <p class="font-serif text-2xl text-charcoal">{{ (summary?.abandoned?.lost_value || 0) |
+                            currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+                    </div>
+                    <div class="bg-cream border border-[#ecece5] rounded-lg p-4">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Top abandonados
+                        </p>
+                        <p class="text-sm text-charcoal">{{ getAbandonedTopProductsLabel() }}</p>
+                    </div>
+                </div>
+                <div class="mb-5" *ngIf="summary?.abandoned?.trend_counts?.length">
+                    <canvas #abandonedTrendChart class="w-full h-40"></canvas>
+                </div>
+                <div *ngIf="!summary?.abandoned?.recent?.length" class="text-sm text-soft-charcoal">Sin carritos
+                    abandonados recientes.</div>
+                <div class="space-y-3">
+                    <div *ngFor="let cart of summary?.abandoned?.recent" class="border border-[#ecece5] rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">{{
+                                    cart.session_id }}</div>
+                                <div class="text-sm font-bold text-charcoal">{{ cart.user_email || 'Visitante' }}</div>
+                                <div class="text-xs text-soft-charcoal">{{ getCartItemsLabel(cart.items || []) }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm font-bold text-charcoal">{{ cart.total |
+                                    currency:'COP':'symbol-narrow':'1.0-0' }}</div>
+                                <div class="text-xs text-soft-charcoal">{{ cart.updated_at | date:'d MMM yyyy, HH:mm' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-serif text-xl text-charcoal">Clientes frecuentes</h3>
+                        <p class="text-xs text-soft-charcoal">Ranking y frecuencia de compra</p>
+                    </div>
+                </div>
+                <div *ngIf="!summary?.frequent_clients?.length" class="text-sm text-soft-charcoal">Sin datos de clientes
+                    frecuentes.</div>
+                <div class="mb-5" *ngIf="summary?.frequent_clients?.length">
+                    <canvas #clientsChart class="w-full h-40"></canvas>
+                </div>
+                <div class="space-y-3">
+                    <div *ngFor="let client of summary?.frequent_clients; let i = index"
+                        class="flex items-center justify-between border border-[#ecece5] rounded-lg p-4">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">#{{ i + 1 }}</p>
+                            <p class="text-sm font-bold text-charcoal">{{ client.nombre }} {{ client.apellido }}</p>
+                            <p class="text-xs text-soft-charcoal">{{ client.orders_count }} compras</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-bold text-charcoal">{{ client.total_spent |
+                                currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+                            <div class="h-2 w-32 bg-[#ecece5] rounded-full overflow-hidden mt-2">
+                                <div class="h-2 bg-charcoal" [style.width]="getTrendWidth(client.orders_count * 6)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="font-serif text-xl text-charcoal">Ventas por categoria</h3>
+                        <p class="text-xs text-soft-charcoal">Ingresos y productos mas vendidos</p>
+                    </div>
+                </div>
+                <div *ngIf="!summary?.sales_by_category?.length" class="text-sm text-soft-charcoal">Sin datos por
+                    categoria.</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5" *ngIf="summary?.sales_by_category?.length">
+                    <div class="border border-[#ecece5] rounded-lg p-4">
+                        <canvas #salesPieChart class="w-full h-48"></canvas>
+                    </div>
+                    <div class="border border-[#ecece5] rounded-lg p-4">
+                        <canvas #salesBarChart class="w-full h-48"></canvas>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <div *ngFor="let item of summary?.sales_by_category" class="border border-[#ecece5] rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-bold text-charcoal">{{ item.category }}</p>
+                                <p class="text-xs text-soft-charcoal">Top: {{ item.top_product }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-bold text-charcoal">{{ item.revenue |
+                                    currency:'COP':'symbol-narrow':'1.0-0' }}</p>
+                                <p class="text-xs text-soft-charcoal">{{ item.units }} unidades</p>
+                            </div>
+                        </div>
+                        <div class="mt-3 h-2 bg-[#ecece5] rounded-full overflow-hidden">
+                            <div class="h-2 bg-gold" [style.width]="getTrendWidth(item.units)"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h3 class="font-serif text-xl text-charcoal">Sistema de alertas inteligentes</h3>
+                    <p class="text-xs text-soft-charcoal">Eventos criticos y oportunidades detectadas automaticamente.
+                    </p>
+                </div>
+                <span class="text-xs font-bold uppercase tracking-widest text-red-600">{{ summary?.alerts?.length || 0
+                    }} alertas</span>
+            </div>
+            <div *ngIf="!summary?.alerts?.length" class="text-sm text-soft-charcoal">Sin alertas activas.</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div *ngFor="let alert of summary?.alerts" class="border border-[#ecece5] rounded-lg p-4 flex gap-4">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center"
+                        [ngClass]="alert.tone === 'up' ? 'bg-green-100 text-green-700' : alert.tone === 'down' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v3m0 4h.01M5 19h14a2 2 0 001.732-3L13.732 4a2 2 0 00-3.464 0L3.268 16A2 2 0 005 19z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">{{ alert.type }}</p>
+                        <p class="text-sm font-bold text-charcoal">{{ alert.title }}</p>
+                        <p class="text-xs text-soft-charcoal mt-1">{{ alert.detail }}</p>
+                        <p class="text-[10px] text-soft-charcoal mt-2">{{ alert.meta }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>

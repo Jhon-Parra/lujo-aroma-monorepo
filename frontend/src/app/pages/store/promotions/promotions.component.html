@@ -1,0 +1,62 @@
+<div class="min-h-[70vh] bg-cream">
+  <section class="relative overflow-hidden border-b border-[#e5e5e0]">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(194,168,120,0.25),transparent_55%)]"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
+      <h1 class="font-serif text-4xl md:text-5xl text-charcoal tracking-wide">Promociones activas</h1>
+      <p class="text-sm text-soft-charcoal mt-3 max-w-2xl">
+        Elige una promoción y te llevamos al catálogo filtrado.
+      </p>
+    </div>
+  </section>
+
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div *ngIf="loading" class="flex justify-center items-center py-16">
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-gold"></div>
+    </div>
+
+    <div *ngIf="!loading && error" class="bg-white border border-red-100 text-red-600 rounded-xl p-6 text-sm">
+      {{ error }}
+    </div>
+
+    <div *ngIf="!loading && !error && promotions.length === 0"
+      class="bg-white border border-[#ecece5] rounded-xl p-10 text-center text-soft-charcoal">
+      No hay promociones activas en este momento.
+      <div class="mt-6">
+        <a routerLink="/catalog" class="btn-primary px-8 py-2 text-xs tracking-widest uppercase">Ver catálogo</a>
+      </div>
+    </div>
+
+    <div *ngIf="!loading && !error && promotions.length" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <a *ngFor="let promo of promotions" routerLink="/catalog" [queryParams]="{ promo: promo.id }"
+        class="promo-card relative h-64 rounded-xl overflow-hidden bg-charcoal text-white flex items-center p-8 group cursor-pointer shadow-sm hover:shadow-md transition-shadow">
+
+        <img *ngIf="promo.imagen_url" [src]="promo.imagen_url" [alt]="promo.nombre" loading="lazy" decoding="async"
+          class="absolute inset-0 w-full h-full object-cover opacity-75 transition-transform duration-700 group-hover:scale-105" />
+
+        <div class="z-10 w-full md:w-2/3">
+          <div class="inline-flex items-center gap-2 mb-3">
+            <span class="bg-gold text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">Oferta</span>
+            <span class="text-xs tracking-widest uppercase text-white/85">
+              <ng-container *ngIf="isAmountPromotion(promo); else pctOff">
+                {{ getAmountOff(promo) | currency:'COP':'symbol-narrow':'1.0-0' }} OFF
+              </ng-container>
+              <ng-template #pctOff>
+                {{ getPercentOff(promo) }}% OFF
+              </ng-template>
+            </span>
+          </div>
+
+          <h2 class="font-serif text-2xl uppercase mb-2">{{ promo.nombre }}</h2>
+          <p class="text-sm font-light text-white/80 mb-6 line-clamp-3">{{ promo.descripcion || 'Promoción por tiempo limitado.' }}</p>
+          <span class="bg-gold hover:bg-[#b59a68] text-white text-xs uppercase tracking-widest px-6 py-2 rounded-md transition-colors inline-block">
+            Ver catálogo
+          </span>
+        </div>
+
+        <div class="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-transparent"></div>
+        <div class="absolute -right-16 -top-16 w-72 h-72 rounded-full bg-gold/20 blur-2xl"></div>
+        <div class="absolute -right-24 -bottom-24 w-80 h-80 rounded-full bg-white/10 blur-2xl"></div>
+      </a>
+    </div>
+  </section>
+</div>

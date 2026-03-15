@@ -1,0 +1,186 @@
+<div class="min-h-screen bg-[#f5f5f0] py-12">
+    <div class="max-w-5xl mx-auto px-4">
+
+        <!-- Header -->
+        <div class="mb-10">
+            <h1 class="text-3xl font-serif font-bold text-charcoal tracking-wide mb-2">MIS PEDIDOS</h1>
+            <p class="text-gray-500 text-sm">Historial completo de tus compras en Perfumissimo</p>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loading" class="text-center py-20">
+            <div class="inline-block w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-gray-500 text-sm mt-4">Cargando tus pedidos...</p>
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="error && !loading" class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded text-sm">
+            {{ error }}
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loading && !error && orders.length === 0" class="text-center py-20">
+            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
+                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <h3 class="text-lg font-semibold text-charcoal mb-2">Aún no tienes pedidos</h3>
+            <p class="text-gray-500 text-sm mb-6">Explora nuestro catálogo y encuentra tu fragancia perfecta</p>
+            <a routerLink="/catalog"
+                class="bg-charcoal text-white px-8 py-3 text-sm font-bold tracking-widest uppercase hover:bg-gold transition-colors block w-full sm:inline-block sm:w-auto text-center">
+                EXPLORAR CATÁLOGO
+            </a>
+        </div>
+
+        <!-- Orders List -->
+        <div *ngIf="!loading && orders.length > 0" class="space-y-6">
+            <div *ngFor="let order of orders" class="bg-white border border-gray-100 overflow-hidden shadow-sm">
+
+                <!-- Order Header -->
+                <div
+                    class="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 gap-3">
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Número de pedido</p>
+                        <p class="font-mono font-bold text-charcoal text-sm">{{ order.id.slice(0,8).toUpperCase() }}</p>
+                    </div>
+                    <div class="text-left sm:text-center">
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Fecha</p>
+                        <p class="text-sm text-charcoal">{{ order.creado_en | date:'d MMM yyyy, HH:mm' }}</p>
+                    </div>
+                    <div class="text-left sm:text-center">
+                        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Total</p>
+                        <p class="text-lg font-bold text-charcoal">{{ order.total | currency:'COP':'symbol-narrow' }}
+                        </p>
+                    </div>
+                    <div class="mt-2 sm:mt-0">
+                        <span [class]="getStatusClass(order.estado)"
+                            class="px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider inline-block">
+                            {{ orderService.getStatusLabel(order.estado) }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="px-4 sm:px-6 py-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div *ngFor="let item of order.items" class="flex items-center gap-3">
+                            <img [src]="item.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=100'"
+                                [alt]="item.nombre" class="w-14 h-14 object-cover border border-gray-100 flex-shrink-0">
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-charcoal uppercase tracking-wide truncate">{{
+                                    item.nombre }}</p>
+                                <p class="text-xs text-gray-500 mt-0.5">Cant: {{ item.cantidad }} × {{
+                                    item.precio_unitario | currency:'COP':'symbol-narrow' }}</p>
+                                <p class="text-xs font-semibold text-charcoal">{{ item.subtotal |
+                                    currency:'COP':'symbol-narrow' }}</p>
+
+                                <div class="mt-2">
+                                    <button *ngIf="canReview(order, item.producto_id)" type="button"
+                                        (click)="openReview(order.id, item.producto_id, item.nombre)"
+                                        class="text-[11px] uppercase tracking-widest font-bold text-gold hover:text-charcoal transition-colors">
+                                        Dejar reseña
+                                    </button>
+                                    <span *ngIf="!canReview(order, item.producto_id) && order.estado === 'ENTREGADO'"
+                                        class="text-[11px] uppercase tracking-widest font-bold text-gray-400 block sm:inline mt-1 sm:mt-0">
+                                        Reseña enviada
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shipping Address -->
+                    <div class="mt-4 pt-3 border-t border-gray-50 flex items-start gap-2">
+                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <p class="text-xs text-gray-500">{{ order.direccion_envio }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Prompt Modal -->
+        <div *ngIf="reviewPromptOpen" class="fixed inset-0 z-40 flex items-center justify-center px-4">
+            <div class="absolute inset-0 bg-black/40" (click)="closeReviewPrompt()"></div>
+            <div class="relative w-full max-w-md bg-white border border-gray-100 shadow-xl p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider">Pedido entregado</p>
+                        <h3 class="font-serif text-xl text-charcoal mt-1">¿Quieres dejar una reseña?</h3>
+                    </div>
+                    <button type="button" (click)="closeReviewPrompt()" class="text-gray-400 hover:text-charcoal">✕</button>
+                </div>
+
+                <p class="text-sm text-soft-charcoal mt-4">
+                    Tu opinion sobre <strong>{{ reviewPromptProductName }}</strong> ayuda a otros clientes a elegir.
+                </p>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" (click)="closeReviewPrompt()"
+                        class="px-5 py-2 text-xs font-bold uppercase tracking-widest text-soft-charcoal hover:bg-gray-50 border border-[#ecece5]">
+                        Mas tarde
+                    </button>
+                    <button type="button" (click)="acceptReviewPrompt()"
+                        class="px-6 py-2 text-xs font-bold uppercase tracking-widest bg-charcoal text-white hover:bg-gold transition-colors">
+                        Calificar ahora
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Modal -->
+        <div *ngIf="reviewOpen" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <div class="absolute inset-0 bg-black/40" (click)="closeReview()"></div>
+            <div class="relative w-full max-w-lg bg-white border border-gray-100 shadow-xl p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs text-gray-400 uppercase tracking-wider">Reseña verificada</p>
+                        <h3 class="font-serif text-xl text-charcoal mt-1">{{ reviewProductName }}</h3>
+                    </div>
+                    <button type="button" (click)="closeReview()" class="text-gray-400 hover:text-charcoal">✕</button>
+                </div>
+
+                <div class="mt-5">
+                    <p class="text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-2">Calificación</p>
+                    <div class="flex items-center gap-1">
+                        <button type="button" *ngFor="let s of [1,2,3,4,5]" (click)="setRating(s)"
+                            class="text-2xl leading-none" [class.text-gold]="reviewRating >= s"
+                            [class.text-gray-300]="reviewRating < s">
+                            ★
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-5">
+                    <p class="text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-2">Comentario (opcional)
+                    </p>
+                    <textarea [(ngModel)]="reviewComment" rows="4"
+                        class="w-full border border-[#dcdcd4] rounded-sm p-3 text-sm focus:outline-none focus:border-gold"
+                        placeholder="¿Qué te gustó? ¿Cómo fue la duración? ¿Lo recomendarías?"></textarea>
+                </div>
+
+                <div *ngIf="reviewError"
+                    class="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded">
+                    {{ reviewError }}
+                </div>
+
+                <div class="mt-6 flex justify-end gap-3">
+                    <button type="button" (click)="closeReview()"
+                        class="px-5 py-2 text-xs font-bold uppercase tracking-widest text-soft-charcoal hover:bg-gray-50 border border-[#ecece5]">
+                        Cancelar
+                    </button>
+                    <button type="button" (click)="saveReview()" [disabled]="reviewSaving"
+                        class="px-6 py-2 text-xs font-bold uppercase tracking-widest bg-charcoal text-white hover:bg-gold transition-colors disabled:opacity-60">
+                        {{ reviewSaving ? 'Guardando...' : 'Enviar reseña' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,218 @@
+<div class="min-h-screen bg-gray-50 flex">
+  <aside class="w-64 bg-charcoal text-white flex flex-col hidden md:flex">
+    <div class="h-32 flex items-center justify-center border-b border-gray-700 py-4">
+      <a routerLink="/"
+        class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300 w-full px-6">
+        <div class="bg-white rounded-md p-2 w-full flex justify-center shadow-sm">
+          <img src="assets/images/logo.png" alt="Perfumissimo Admin" class="h-12 w-auto object-contain" />
+        </div>
+        <span class="text-[9px] text-gray-400 font-sans tracking-widest mt-3 uppercase font-bold">Panel Admin</span>
+      </a>
+    </div>
+
+    <nav class="flex-grow p-4 space-y-2">
+      <a routerLink="/admin" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/admin/products" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Productos & IA</span>
+      </a>
+      <a routerLink="/admin/categories" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Categorias</span>
+      </a>
+      <a routerLink="/admin/orders" class="flex items-center space-x-3 p-3 rounded-md bg-gray-800 text-gold transition-colors">
+        <span>Pedidos</span>
+      </a>
+      <a routerLink="/admin/payments" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Pagos</span>
+      </a>
+      <a routerLink="/admin/promotions" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Promociones</span>
+      </a>
+      <a routerLink="/admin/cart-recovery" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Recuperación de carrito</span>
+      </a>
+      <a routerLink="/admin/intelligence" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Inteligencia y Alertas</span>
+      </a>
+      <a routerLink="/admin/emails" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Correos</span>
+      </a>
+      <a routerLink="/admin/settings" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Personalizar Página</span>
+      </a>
+      <a routerLink="/admin/permissions" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Permisos</span>
+      </a>
+      <a routerLink="/manual" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Manual de uso</span>
+      </a>
+    </nav>
+
+    <div class="p-4 border-t border-gray-700">
+      <button (click)="logout()" class="w-full flex items-center space-x-3 p-3 rounded-md hover:bg-red-900/50 text-red-400 transition-colors">
+        <span>Salir / Tienda</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    <div class="md:hidden mb-6">
+      <div class="flex items-center justify-between gap-3">
+        <a routerLink="/admin" class="text-xs font-bold uppercase tracking-widest text-gold">← Admin</a>
+        <a routerLink="/" class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Tienda</a>
+      </div>
+      <div class="mt-3 -mx-1 overflow-x-auto">
+        <div class="flex gap-2 px-1 whitespace-nowrap">
+          <a routerLink="/admin/products" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Productos</a>
+          <a routerLink="/admin/categories" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Categorias</a>
+          <a routerLink="/admin/orders" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pedidos</a>
+          <a routerLink="/admin/promotions" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Promos</a>
+          <a routerLink="/admin/cart-recovery" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Recuperación</a>
+          <a routerLink="/admin/intelligence" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Inteligencia</a>
+          <a routerLink="/admin/payments" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pagos</a>
+          <a routerLink="/admin/emails" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Correos</a>
+          <a routerLink="/admin/settings" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Apariencia</a>
+        </div>
+      </div>
+    </div>
+    <header class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 border-b border-[#dcdcd4] pb-4">
+      <div>
+        <h1 class="font-serif text-3xl text-charcoal tracking-wide">Pedidos</h1>
+        <p class="text-sm text-soft-charcoal mt-1">Administra estados y revisa el detalle de cada pedido.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <app-low-stock-bell></app-low-stock-bell>
+        <button class="bg-[#ecece5] hover:bg-gray-200 text-charcoal px-5 py-2 rounded-md transition-colors text-sm tracking-widest uppercase font-bold" (click)="load()">Actualizar</button>
+        <button class="btn-secondary px-5 py-2 text-sm tracking-widest uppercase" (click)="exportCsv()" [disabled]="loading || !orders.length">Exportar CSV</button>
+      </div>
+    </header>
+
+    <div class="bg-white border border-[#ecece5] rounded-xl shadow-sm p-5 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Estado</label>
+          <select [(ngModel)]="statusFilter" (change)="load()"
+            class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold bg-white">
+            <option *ngFor="let s of statuses" [ngValue]="s.value">{{ s.label }}</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Buscar</label>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input type="text" [(ngModel)]="query" placeholder="Numero de pedido o cliente (nombre/email)"
+              class="flex-1 border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold" />
+            <button (click)="load()" class="btn-primary px-6 py-2 text-sm">Buscar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 text-sm">
+      {{ error }}
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] overflow-hidden">
+      <div *ngIf="loading" class="p-6 text-sm text-soft-charcoal">Cargando pedidos...</div>
+
+      <div class="overflow-x-auto">
+      <table *ngIf="!loading" class="min-w-[920px] w-full text-left text-sm text-soft-charcoal">
+        <thead class="bg-cream border-b border-[#ecece5] text-xs uppercase tracking-widest font-bold text-charcoal">
+          <tr>
+            <th class="p-4">Pedido</th>
+            <th class="p-4">Cliente</th>
+            <th class="p-4">Fecha</th>
+            <th class="p-4">Total</th>
+            <th class="p-4">Estado</th>
+            <th class="p-4 text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let o of orders" class="border-b border-[#ecece5] hover:bg-gray-50">
+            <td class="p-4">
+              <div class="font-mono font-bold text-charcoal">{{ o.id.slice(0, 8).toUpperCase() }}</div>
+              <div class="text-xs text-gray-500">Items: {{ o.total_items || 0 }}</div>
+            </td>
+            <td class="p-4">
+              <div class="font-bold text-charcoal">{{ o.cliente_nombre || 'Cliente' }}</div>
+              <div class="text-xs text-gray-500">{{ o.cliente_email }}</div>
+            </td>
+            <td class="p-4 text-xs text-gray-600">{{ o.creado_en | date:'d MMM yyyy, HH:mm' }}</td>
+            <td class="p-4 font-bold text-charcoal">{{ o.total | currency:'COP':'symbol-narrow' }}</td>
+            <td class="p-4">
+              <span [class]="getStatusClass(o.estado)" class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                {{ orderService.getStatusLabel(o.estado) }}
+              </span>
+            </td>
+            <td class="p-4 text-right">
+              <div class="flex items-center justify-end gap-3">
+                <select [ngModel]="o.estado" (ngModelChange)="updateStatus(o, $event)" [disabled]="isSaving(o.id)"
+                  class="border border-[#dcdcd4] rounded-sm p-2 text-xs bg-white">
+                  <option *ngFor="let s of statuses" [disabled]="s.value === ''" [ngValue]="s.value">{{ s.label }}</option>
+                </select>
+                <button class="text-gold hover:text-charcoal transition-colors" (click)="openDetail(o.id)">Ver</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div *ngIf="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div class="absolute inset-0 bg-black/40" (click)="closeDetail()"></div>
+      <div class="relative w-full max-w-3xl bg-white border border-gray-100 shadow-xl p-6 max-h-[85vh] overflow-auto">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-xs text-gray-400 uppercase tracking-wider">Detalle de pedido</p>
+            <h3 class="font-serif text-xl text-charcoal mt-1">
+              {{ selectedOrder?.id?.slice(0, 8)?.toUpperCase() || '...' }}
+            </h3>
+          </div>
+          <button type="button" (click)="closeDetail()" class="text-gray-400 hover:text-charcoal">✕</button>
+        </div>
+
+        <div *ngIf="detailLoading" class="py-10 text-sm text-soft-charcoal">Cargando detalle...</div>
+        <div *ngIf="detailError" class="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded">
+          {{ detailError }}
+        </div>
+
+        <div *ngIf="!detailLoading && selectedOrder" class="mt-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="border border-[#ecece5] rounded-md p-4">
+              <p class="text-xs font-bold text-soft-charcoal uppercase tracking-widest">Cliente</p>
+              <p class="text-sm font-bold text-charcoal mt-1">{{ selectedOrder.cliente_nombre || 'Cliente' }}</p>
+              <p class="text-xs text-gray-500">{{ selectedOrder.cliente_email }}</p>
+            </div>
+            <div class="border border-[#ecece5] rounded-md p-4">
+              <p class="text-xs font-bold text-soft-charcoal uppercase tracking-widest">Envío</p>
+              <p class="text-sm text-charcoal mt-1">{{ selectedOrder.direccion_envio }}</p>
+            </div>
+          </div>
+
+          <div class="mt-5 border border-[#ecece5] rounded-md overflow-hidden">
+            <div class="bg-cream px-4 py-3 text-xs font-bold uppercase tracking-widest text-charcoal">Items</div>
+            <div class="p-4 space-y-3">
+              <div *ngFor="let it of selectedOrder.items" class="flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                  <div class="text-sm font-bold text-charcoal truncate">{{ it.nombre }}</div>
+                  <div class="text-xs text-gray-500">{{ it.cantidad }} × {{ it.precio_unitario | currency:'COP':'symbol-narrow' }}</div>
+                </div>
+                <div class="text-sm font-bold text-charcoal">{{ it.subtotal | currency:'COP':'symbol-narrow' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 flex items-center justify-between">
+            <span [class]="getStatusClass(selectedOrder.estado)" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+              {{ orderService.getStatusLabel(selectedOrder.estado) }}
+            </span>
+            <div class="text-lg font-bold text-charcoal">{{ selectedOrder.total | currency:'COP':'symbol-narrow' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

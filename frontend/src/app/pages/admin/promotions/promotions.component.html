@@ -1,0 +1,369 @@
+<div class="min-h-screen bg-gray-50 flex">
+  <aside class="w-64 bg-charcoal text-white flex flex-col hidden md:flex">
+    <div class="h-32 flex items-center justify-center border-b border-gray-700 py-4">
+      <a routerLink="/"
+        class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300 w-full px-6">
+        <div class="bg-white rounded-md p-2 w-full flex justify-center shadow-sm">
+          <img src="assets/images/logo.png" alt="Perfumissimo Admin" class="h-12 w-auto object-contain" />
+        </div>
+        <span class="text-[9px] text-gray-400 font-sans tracking-widest mt-3 uppercase font-bold">Panel Admin</span>
+      </a>
+    </div>
+
+    <nav class="flex-grow p-4 space-y-2">
+      <a routerLink="/admin" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/admin/products"
+        class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Productos & IA</span>
+      </a>
+      <a routerLink="/admin/categories"
+        class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Categorias</span>
+      </a>
+      <a routerLink="/admin/orders"
+        class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Pedidos</span>
+      </a>
+      <a routerLink="/admin/payments"
+        class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Pagos</span>
+      </a>
+      <a routerLink="/admin/promotions"
+        class="flex items-center space-x-3 p-3 rounded-md bg-gray-800 text-gold transition-colors">
+        <span>Promociones</span>
+      </a>
+      <a routerLink="/admin/cart-recovery"
+        class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Recuperación de carrito</span>
+      </a>
+      <a routerLink="/admin/intelligence"
+        class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Inteligencia y Alertas</span>
+      </a>
+      <a routerLink="/admin/emails"
+        class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Correos</span>
+      </a>
+      <a routerLink="/admin/settings"
+        class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Personalizar Pagina</span>
+      </a>
+      <a routerLink="/admin/permissions"
+        class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Permisos</span>
+      </a>
+      <a routerLink="/manual" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+        <span>Manual de uso</span>
+      </a>
+    </nav>
+
+    <div class="p-4 border-t border-gray-700">
+      <button (click)="logout()"
+        class="w-full flex items-center space-x-3 p-3 rounded-md hover:bg-red-900/50 text-red-400 transition-colors">
+        <span>Salir / Tienda</span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+    <div class="md:hidden mb-6">
+      <div class="flex items-center justify-between gap-3">
+        <a routerLink="/admin" class="text-xs font-bold uppercase tracking-widest text-gold">← Admin</a>
+        <a routerLink="/" class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Tienda</a>
+      </div>
+      <div class="mt-3 -mx-1 overflow-x-auto">
+        <div class="flex gap-2 px-1 whitespace-nowrap">
+          <a routerLink="/admin/products"
+            class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Productos</a>
+          <a routerLink="/admin/categories"
+            class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Categorias</a>
+          <a routerLink="/admin/orders"
+            class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pedidos</a>
+          <a routerLink="/admin/promotions"
+            class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Promos</a>
+          <a routerLink="/admin/cart-recovery"
+            class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Recuperación</a>
+          <a routerLink="/admin/intelligence"
+            class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Inteligencia</a>
+          <a routerLink="/admin/payments"
+            class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pagos</a>
+          <a routerLink="/admin/emails"
+            class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Correos</a>
+          <a routerLink="/admin/settings"
+            class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Apariencia</a>
+        </div>
+      </div>
+    </div>
+    <header
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 border-b border-[#dcdcd4] pb-4">
+      <div>
+        <h1 class="font-serif text-3xl text-charcoal tracking-wide">Promociones</h1>
+        <p class="text-sm text-soft-charcoal mt-1">Crea y administra descuentos activos por fecha.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <app-low-stock-bell></app-low-stock-bell>
+        <button class="btn-primary px-6 py-2 shadow-sm text-sm" (click)="openNew()">+ NUEVA PROMOCION</button>
+      </div>
+    </header>
+
+    <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 text-sm">
+      {{ error }}
+    </div>
+
+    <div *ngIf="showForm" class="bg-white p-6 rounded-xl shadow-sm border border-[#ecece5] mb-8">
+      <h3 class="font-serif text-xl mb-4 text-charcoal border-b pb-2">{{ editingId ? 'Editar promocion' : 'Nueva
+        promocion' }}</h3>
+
+      <form class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Nombre</label>
+            <input type="text" [(ngModel)]="form.nombre" name="nombre"
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
+              placeholder="Ej: Descuento de Bienvenida">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Tipo</label>
+            <select [(ngModel)]="form.discount_type" name="discount_type"
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold bg-white">
+              <option value="PERCENT">Porcentaje</option>
+              <option value="AMOUNT">Monto fijo</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Descuento</label>
+            <input *ngIf="form.discount_type !== 'AMOUNT'" type="number" min="0" max="100"
+              [(ngModel)]="form.porcentaje_descuento" name="porcentaje_descuento"
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
+              placeholder="20">
+            <input *ngIf="form.discount_type === 'AMOUNT'" type="number" min="0" [(ngModel)]="form.amount_discount"
+              name="amount_discount"
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
+              placeholder="15000">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Prioridad</label>
+            <input type="number" min="0" [(ngModel)]="form.priority" name="priority"
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
+              placeholder="0">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Descripcion</label>
+          <textarea rows="3" [(ngModel)]="form.descripcion" name="descripcion"
+            class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
+            placeholder="Detalles de la promocion..."></textarea>
+        </div>
+
+        <!-- Imagen -->
+        <div>
+          <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Imagen de la
+            promocion</label>
+          <input type="file" (change)="onImageSelected($event)" accept="image/*"
+            class="w-full text-sm text-soft-charcoal file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-[#ecece5] file:text-charcoal hover:file:bg-[#dcdcd4]">
+
+          <div *ngIf="imagePreviewUrl" class="mt-3">
+            <p class="text-xs text-gray-500 mb-2">Previsualizacion:</p>
+            <img [src]="imagePreviewUrl" alt="Promo preview"
+              class="h-32 w-full object-cover rounded-md border border-[#ecece5]" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Inicio</label>
+            <input type="datetime-local" [(ngModel)]="form.fecha_inicio" name="fecha_inicio"
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Fin</label>
+            <input type="datetime-local" [(ngModel)]="form.fecha_fin" name="fecha_fin"
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold">
+          </div>
+        </div>
+
+        <!-- Reglas de asignacion -->
+        <div class="bg-cream p-5 rounded-md border border-[#ecece5]">
+          <h4 class="text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-4">Reglas de asignacion</h4>
+
+          <!-- Alcance de productos -->
+          <div class="mb-6">
+            <p class="text-xs font-bold text-charcoal uppercase tracking-widest mb-2">Alcance de productos</p>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <label class="flex items-center gap-2 text-sm text-charcoal cursor-pointer">
+                <input type="radio" name="product_scope" [(ngModel)]="form.product_scope" value="GLOBAL">
+                <span>Todos los productos</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm text-charcoal cursor-pointer">
+                <input type="radio" name="product_scope" [(ngModel)]="form.product_scope" value="GENDER">
+                <span>Por categoria</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm text-charcoal cursor-pointer">
+                <input type="radio" name="product_scope" [(ngModel)]="form.product_scope" value="SPECIFIC">
+                <span>Productos especificos</span>
+              </label>
+            </div>
+
+            <div *ngIf="form.product_scope === 'GENDER'" class="mt-4">
+              <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Categoria</label>
+              <select [(ngModel)]="form.product_gender" name="product_gender"
+                class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold bg-white">
+                <option value="">Selecciona...</option>
+                <ng-container *ngIf="categoriesSupported; else genderFallback">
+                  <option *ngFor="let c of categories" [value]="c.slug">{{ c.nombre }}</option>
+                </ng-container>
+                <ng-template #genderFallback>
+                  <option value="mujer">Mujer</option>
+                  <option value="hombre">Hombre</option>
+                  <option value="unisex">Unisex</option>
+                </ng-template>
+              </select>
+              <p class="text-xs text-gray-500 mt-2">Aplica solo a productos de la categoria seleccionada.</p>
+            </div>
+
+            <div *ngIf="form.product_scope === 'SPECIFIC'" class="mt-4 bg-white rounded-md border border-[#ecece5] p-4">
+              <div class="flex items-center justify-between gap-3 mb-3">
+                <input type="text" [(ngModel)]="productSearch" name="productSearch"
+                  placeholder="Buscar producto por nombre..."
+                  class="w-full border border-[#dcdcd4] rounded-sm p-2 text-sm focus:outline-none focus:border-gold">
+                <span class="text-xs text-gray-500 whitespace-nowrap">Seleccionados: {{ form.product_ids.length
+                  }}</span>
+              </div>
+
+              <div class="max-h-56 overflow-auto divide-y divide-[#f1f1ec]">
+                <label *ngFor="let prod of filteredProducts"
+                  class="flex items-center gap-3 py-2 text-sm cursor-pointer">
+                  <input type="checkbox" [checked]="form.product_ids.includes(prod.id || '')"
+                    (change)="toggleProduct(prod.id || '')">
+                  <span class="text-charcoal font-medium">{{ prod.nombre }}</span>
+                </label>
+              </div>
+              <p class="text-xs text-gray-500 mt-3">Tip: si necesitas SKU, hoy usamos el nombre/ID.</p>
+            </div>
+          </div>
+
+          <!-- Publico objetivo -->
+          <div>
+            <p class="text-xs font-bold text-charcoal uppercase tracking-widest mb-2">Publico objetivo</p>
+            <div class="flex flex-col sm:flex-row gap-3">
+              <label class="flex items-center gap-2 text-sm text-charcoal cursor-pointer">
+                <input type="radio" name="audience_scope" [(ngModel)]="form.audience_scope" value="ALL">
+                <span>Todos los clientes</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm text-charcoal cursor-pointer">
+                <input type="radio" name="audience_scope" [(ngModel)]="form.audience_scope" value="SEGMENT">
+                <span>Segmento</span>
+              </label>
+              <label class="flex items-center gap-2 text-sm text-charcoal cursor-pointer">
+                <input type="radio" name="audience_scope" [(ngModel)]="form.audience_scope" value="CUSTOMERS">
+                <span>Clientes especificos</span>
+              </label>
+            </div>
+
+            <div *ngIf="form.audience_scope === 'SEGMENT'" class="mt-4">
+              <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Nombre del
+                segmento</label>
+              <input type="text" [(ngModel)]="form.audience_segment" name="audience_segment"
+                placeholder="Ej: VIP, Mayoristas"
+                class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold">
+              <p class="text-xs text-gray-500 mt-2">Se aplica a usuarios con ese segmento en su perfil.</p>
+            </div>
+
+            <div *ngIf="form.audience_scope === 'CUSTOMERS'" class="mt-4">
+              <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">IDs de clientes
+                (UUID)</label>
+              <textarea rows="3" [(ngModel)]="userIdsText" name="audience_user_ids"
+                class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
+                placeholder="Pega uno por linea o separados por coma"></textarea>
+              <p class="text-xs text-gray-500 mt-2">Ejemplo: 550e8400-e29b-41d4-a716-446655440000</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between bg-cream p-4 rounded-md border border-[#ecece5]">
+          <span class="text-sm font-bold text-soft-charcoal tracking-widest uppercase">Activa</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" [(ngModel)]="form.activo" name="activo" class="sr-only peer">
+            <div
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gold/30 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold">
+            </div>
+          </label>
+        </div>
+
+        <div class="flex justify-end space-x-4 pt-4">
+          <button type="button" (click)="cancel()"
+            class="px-6 py-2 text-sm text-soft-charcoal hover:bg-gray-100 rounded-md transition-colors font-bold uppercase tracking-widest">Cancelar</button>
+          <button type="button" (click)="save()" [disabled]="saving"
+            class="btn-primary px-6 py-2 text-sm disabled:opacity-50">{{ saving ? 'Guardando...' : (editingId ?
+            'Actualizar' : 'Crear') }}</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] overflow-hidden">
+      <div *ngIf="loading" class="p-6 text-sm text-soft-charcoal">Cargando promociones...</div>
+
+      <div class="overflow-x-auto">
+        <table *ngIf="!loading" class="min-w-[980px] w-full text-left text-sm text-soft-charcoal">
+          <thead class="bg-cream border-b border-[#ecece5] text-xs uppercase tracking-widest font-bold text-charcoal">
+            <tr>
+              <th class="p-4">Nombre</th>
+              <th class="p-4">Descuento</th>
+              <th class="p-4">Prioridad</th>
+              <th class="p-4">Vigencia</th>
+              <th class="p-4">Estado</th>
+              <th class="p-4 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of promotions" class="border-b border-[#ecece5] hover:bg-gray-50">
+              <td class="p-4">
+                <div class="font-bold text-charcoal">{{ p.nombre }}</div>
+                <div class="text-xs text-gray-500 line-clamp-2">{{ p.descripcion }}</div>
+              </td>
+              <td class="p-4 font-bold text-charcoal">
+                <ng-container *ngIf="p.discount_type === 'AMOUNT'; else pctDiscount">
+                  {{ (p.amount_discount || 0) | currency:'COP':'symbol-narrow':'1.0-0' }} OFF
+                </ng-container>
+                <ng-template #pctDiscount>
+                  {{ p.porcentaje_descuento }}% OFF
+                </ng-template>
+              </td>
+              <td class="p-4 text-xs text-gray-600">{{ p.priority || 0 }}</td>
+              <td class="p-4 text-xs text-gray-600">
+                {{ p.fecha_inicio | date:'d MMM yyyy, HH:mm' }}
+                <span class="text-gray-400">→</span>
+                {{ p.fecha_fin | date:'d MMM yyyy, HH:mm' }}
+              </td>
+              <td class="p-4">
+                <span
+                  [class]="'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ' + getStatusClass(p)">
+                  {{ getStatusLabel(p) }}
+                </span>
+              </td>
+              <td class="p-4 text-right space-x-3">
+                <!-- Botón de Activar/Desactivar con Toast Guard -->
+                <button (click)="toggleActive(p)"
+                  [class]="p.activo ? 'text-amber-600 hover:text-amber-900' : 'text-green-600 hover:text-green-900'"
+                  class="transition-colors" [title]="p.activo ? 'Desactivar Manualmente' : 'Activar'">
+                  <i [class]="p.activo ? 'fas fa-toggle-on' : 'fas fa-toggle-off'"></i>
+                </button>
+
+                <button (click)="openEdit(p)" class="text-gold hover:text-black transition-colors" title="Editar">
+                  <i class="fas fa-edit"></i>
+                </button>
+
+                <button (click)="delete(p)" class="text-red-500 hover:text-red-700 transition-colors" title="Eliminar">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>

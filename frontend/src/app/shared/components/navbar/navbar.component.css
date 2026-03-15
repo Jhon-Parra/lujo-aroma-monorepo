@@ -1,0 +1,58 @@
+:host {
+  display: block;
+  z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+}
+
+nav {
+  border-bottom: 2px solid #1B3326;
+  /* dark-green fallback */
+}
+
+.navbar-row {
+  /* Navbar fijo: el logo puede sobrepasar este alto si es necesario */
+  height: 72px;
+  overflow: visible;
+}
+
+.navbar-logo-wrap {
+  position: relative;
+  height: 100%;
+  width: clamp(160px, 50vw, 260px);
+  overflow: visible;
+}
+
+.navbar-logo {
+  position: static;
+  transform: none;
+  height: var(--logo-h-mobile, 100px);
+  /* Más grande en móvil */
+  max-height: 100%;
+  width: auto;
+  max-width: 100%;
+  z-index: 20;
+  filter: brightness(0) invert(1);
+  /* Ensure logo is visible on dark green if it's dark color */
+}
+
+@media (min-width: 1024px) {
+  .navbar-row {
+    height: 80px;
+  }
+
+  .navbar-logo-wrap {
+    height: 100%;
+    width: 300px;
+    /* Aún más ancho para albergar el logo grande */
+    overflow: visible;
+  }
+
+  .navbar-logo {
+    height: var(--logo-h-desktop, 130px);
+    /* 130px en desktop para que destaque mucho más */
+  }
+}

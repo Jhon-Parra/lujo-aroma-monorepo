@@ -1,0 +1,55 @@
+<div class="min-h-[70vh] bg-[#f9f9f6]">
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-10">
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Ayuda</p>
+        <h1 class="font-serif text-4xl md:text-5xl text-charcoal tracking-wide mt-2">Manual de uso</h1>
+        <p class="text-sm text-soft-charcoal mt-3 max-w-2xl">
+          Aprende a comprar, aprovechar promociones y conocer las herramientas con las que cuenta la tienda.
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <a routerLink="/catalog" class="btn-primary px-6 py-2 text-xs tracking-widest uppercase">Ir al catalogo</a>
+        <a routerLink="/contact" class="btn-secondary px-6 py-2 text-xs tracking-widest uppercase">Contactanos</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <div class="bg-white border border-[#ecece5] rounded-xl shadow-sm p-6">
+        <h2 class="font-serif text-2xl text-charcoal">Como comprar</h2>
+        <p class="text-xs text-soft-charcoal mt-1">Pasos rapidos para una compra sin friccion.</p>
+
+        <div class="mt-6 space-y-3">
+          <details *ngFor="let it of manual" class="group border border-[#ecece5] rounded-lg bg-cream/50 px-4 py-3">
+            <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+              <span class="text-sm font-bold text-charcoal">{{ it.title }}</span>
+              <span class="text-xs text-soft-charcoal group-open:rotate-180 transition-transform">▾</span>
+            </summary>
+            <div class="pt-3 text-sm text-soft-charcoal leading-relaxed">{{ it.body }}</div>
+          </details>
+        </div>
+      </div>
+
+      <div class="bg-white border border-[#ecece5] rounded-xl shadow-sm p-6">
+        <h2 class="font-serif text-2xl text-charcoal">Herramientas de la tienda</h2>
+        <p class="text-xs text-soft-charcoal mt-1">Disponibles segun el rol (Admin/Ventas/Productos/Superadmin).</p>
+
+        <div class="mt-6 space-y-3">
+          <details *ngFor="let it of tools" class="group border border-[#ecece5] rounded-lg bg-cream/50 px-4 py-3">
+            <summary class="cursor-pointer list-none flex items-center justify-between gap-3">
+              <span class="text-sm font-bold text-charcoal">{{ it.title }}</span>
+              <span class="text-xs text-soft-charcoal group-open:rotate-180 transition-transform">▾</span>
+            </summary>
+            <div class="pt-3 text-sm text-soft-charcoal leading-relaxed">{{ it.body }}</div>
+          </details>
+        </div>
+
+        <div class="mt-6 text-xs text-soft-charcoal border border-[#ecece5] bg-[#f9f9f6] rounded-lg px-4 py-3">
+          Tip: si eres del equipo, entra a <a routerLink="/admin" class="text-gold font-bold hover:text-charcoal transition-colors">/admin</a> para ver tu panel.
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

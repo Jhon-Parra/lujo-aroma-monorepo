@@ -1,0 +1,200 @@
+<div class="min-h-screen bg-gray-50 flex">
+    <!-- Sidebar Administrador -->
+    <aside class="w-64 bg-charcoal text-white flex flex-col hidden md:flex">
+        <div class="h-32 flex items-center justify-center border-b border-gray-700 py-4">
+            <a routerLink="/"
+                class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300 w-full px-6">
+                <div class="bg-white rounded-md p-2 w-full flex justify-center shadow-sm">
+                    <img src="assets/images/logo.png" alt="Perfumissimo Admin" class="h-12 w-auto object-contain" />
+                </div>
+                <span class="text-[9px] text-gray-400 font-sans tracking-widest mt-3 uppercase font-bold">Panel
+                    Admin</span>
+            </a>
+        </div>
+        <nav class="flex-grow p-4 space-y-2">
+            <a routerLink="/admin"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <!-- Link a Usuarios -->
+            <a routerLink="/admin/users"
+                class="flex items-center space-x-3 p-3 rounded-md bg-gray-800 text-gold transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                    </path>
+                </svg>
+                <span>Usuarios y Roles</span>
+            </a>
+            <a routerLink="/admin/products"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                <span>Productos & IA</span>
+            </a>
+            <a routerLink="/admin/categories"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+                <span>Categorías</span>
+            </a>
+            <a routerLink="/admin/orders" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                <span>Pedidos</span>
+            </a>
+            <a routerLink="/admin/payments" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-10V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z" />
+                </svg>
+                <span>Pagos</span>
+            </a>
+            <a routerLink="/admin/promotions" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                </svg>
+                <span>Promociones</span>
+            </a>
+            <a routerLink="/admin/cart-recovery" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <span>Recuperación de carrito</span>
+            </a>
+            <a routerLink="/admin/intelligence" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9.663 17h4.674M12 3v2m0 14v2m7-9h2M3 12H1m15.364-6.364 1.414-1.414M6.222 17.778l-1.414 1.414m12.728 0-1.414-1.414M6.222 6.222 4.808 4.808M12 7a5 5 0 100 10 5 5 0 000-10z" />
+                </svg>
+                <span>Inteligencia y Alertas</span>
+            </a>
+            <a routerLink="/admin/emails" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 8l9 6 9-6M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"></path>
+                </svg>
+                <span>Correos</span>
+            </a>
+            <a routerLink="/admin/settings"
+                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                    </path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span>Personalizar Página</span>
+            </a>
+            <a routerLink="/admin/permissions" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622C17.176 19.29 21 14.59 21 9c0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                <span>Permisos</span>
+            </a>
+            <a routerLink="/manual" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6.75c-1.8-1.3-4.5-1.3-6.3 0v12c1.8-1.3 4.5-1.3 6.3 0m0-12c1.8-1.3 4.5-1.3 6.3 0v12c-1.8-1.3-4.5-1.3-6.3 0m0-12v12" />
+                </svg>
+                <span>Manual de uso</span>
+            </a>
+        </nav>
+        <div class="p-4 border-t border-gray-700">
+            <a routerLink="/"
+                class="w-full flex items-center space-x-3 p-3 rounded-md hover:bg-red-900/50 text-red-400 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                    </path>
+                </svg>
+                <span>Salir / Tienda</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Contenido -->
+    <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <div class="md:hidden mb-6">
+            <div class="flex items-center justify-between gap-3">
+                <a routerLink="/admin" class="text-xs font-bold uppercase tracking-widest text-gold">← Admin</a>
+                <a routerLink="/" class="text-xs font-bold uppercase tracking-widest text-soft-charcoal">Tienda</a>
+            </div>
+            <div class="mt-3 -mx-1 overflow-x-auto">
+                <div class="flex gap-2 px-1 whitespace-nowrap">
+                    <a routerLink="/admin/products" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Productos</a>
+                    <a routerLink="/admin/categories" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Categorias</a>
+                    <a routerLink="/admin/orders" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pedidos</a>
+                    <a routerLink="/admin/promotions" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Promos</a>
+                    <a routerLink="/admin/cart-recovery" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Recuperación</a>
+                    <a routerLink="/admin/intelligence" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Inteligencia</a>
+                    <a routerLink="/admin/payments" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pagos</a>
+                    <a routerLink="/admin/emails" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Correos</a>
+                    <a routerLink="/admin/settings" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Apariencia</a>
+                </div>
+            </div>
+        </div>
+        <header class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+            <div>
+                <h1 class="font-serif text-3xl text-charcoal tracking-wide">Usuarios y Accesos</h1>
+                <p class="text-sm text-soft-charcoal mt-1">Supervisa y delega roles a tu equipo</p>
+            </div>
+            <app-low-stock-bell></app-low-stock-bell>
+        </header>
+
+        <!-- Panel de Administración de Roles -->
+        <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] overflow-hidden">
+            <h3 class="font-serif text-xl border-b border-[#ecece5] p-6 text-charcoal tracking-wide bg-cream">
+                Modificar Roles</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-soft-charcoal">
+                    <thead
+                        class="bg-gray-50 border-b border-[#ecece5] text-xs uppercase tracking-widest font-bold text-charcoal">
+                        <tr>
+                            <th class="p-4">Usuario</th>
+                            <th class="p-4">Email / Teléfono</th>
+                            <th class="p-4">Rol Asignado</th>
+                            <th class="p-4">Segmento</th>
+                            <th class="p-4 text-center">Fecha Registro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let user of users"
+                            class="border-b border-[#ecece5] hover:bg-gray-50 transition-colors">
+                            <td class="p-4 font-bold text-charcoal">{{ user.nombre }} {{ user.apellido }}</td>
+                            <td class="p-4">
+                                <span class="block text-charcoal font-medium">{{ user.email }}</span>
+                                <span class="text-xs text-gray-400">{{ user.telefono || 'Sin teléfono' }}</span>
+                            </td>
+                            <td class="p-4">
+                                <select [ngModel]="user.rol" (ngModelChange)="changeUserRole(user, $event)"
+                                    class="border border-[#dcdcd4] text-xs font-bold rounded-sm p-2 focus:outline-none focus:border-gold bg-white uppercase tracking-widest cursor-pointer w-full max-w-[200px]">
+                                    <option *ngFor="let rol of availableRoles" [value]="rol.value">{{ rol.label }}
+                                    </option>
+                                </select>
+                            </td>
+                            <td class="p-4">
+                                <input type="text" [value]="user.segmento || ''" #segmentInput
+                                    (change)="changeUserSegment(user, segmentInput.value)"
+                                    class="border border-[#dcdcd4] rounded-sm p-2 text-xs w-full max-w-[220px] focus:outline-none focus:border-gold"
+                                    placeholder="Ej: VIP">
+                            </td>
+                            <td class="p-4 text-center text-xs">{{ user.creado_en | date:'dd/MM/yyyy' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>

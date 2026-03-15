@@ -37,7 +37,7 @@ jobs:
       - name: 📂 Sync files (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: 86.38.202.54
+          server: 82.198.227.250
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./frontend/dist/frontend/browser/

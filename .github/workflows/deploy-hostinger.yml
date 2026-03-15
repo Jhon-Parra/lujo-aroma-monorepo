@@ -30,15 +30,18 @@ jobs:
 
       - name: 🔍 Verificación Preliminar
         run: |
-          if [ -z "${{ secrets.FTP_SERVER }}" ]; then echo "Error: FTP_SERVER no está configurado"; exit 1; fi
-          if [ -z "${{ secrets.FTP_USER }}" ]; then echo "Error: FTP_USER no está configurado"; exit 1; fi
-          echo "Variables de entorno detectadas correctamente."
+          if [ -z "${{ secrets.FTP_USER }}" ]; then echo "❌ Error: FTP_USER no está configurado"; exit 1; fi
+          if [ -z "${{ secrets.FTP_PASS }}" ]; then echo "❌ Error: FTP_PASS no está configurado"; exit 1; fi
+          echo "✅ Secretos de usuario y contraseña detectados."
 
       - name: 📂 Sync files (FTP)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          server: 86.38.202.54
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
-          local-dir: frontend/dist/frontend/browser/
+          local-dir: ./frontend/dist/frontend/browser/
           server-dir: public_html/
+          protocol: ftp
+          port: 21
+

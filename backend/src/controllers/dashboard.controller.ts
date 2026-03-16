@@ -36,15 +36,12 @@ const toNumber = (val: any): number => {
 };
 
 const normalizeOrderStateExpr = (colExpr: string): string => {
-    // estado puede ser VARCHAR o ENUM; forzamos a text para poder aplicar COALESCE/TRIM/UPPER
-    return `UPPER(TRIM(COALESCE((${colExpr})::text, '')))`;
+    return `UPPER(TRIM(COALESCE(${colExpr}, '')))`;
 };
 
 export const getDashboardSummary = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        // Ventas: considerar pedidos confirmados (excluye PENDIENTE/CANCELADO)
         const okStates = ['PAGADO', 'PROCESANDO', 'ENVIADO', 'ENTREGADO'];
-
         const normalizedStateExpr = normalizeOrderStateExpr('estado');
 
         const monthsBackParsed = z.coerce.number().int().min(1).max(24).catch(12).parse((req.query as any)?.months_back);
@@ -52,15 +49,15 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
 
         const [revRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
-             FROM ordenes
-             WHERE ${normalizedStateExpr} = ANY($1::text[])`,
-            [okStates]
+             FROM Ordenes
+             WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)`,
+            okStates
         );
 
         const [byStatusRows] = await pool.query<any[]>(
-            `SELECT ${normalizedStateExpr} AS estado, COUNT(*)::int AS count
-             FROM ordenes
-             GROUP BY 1`
+            `SELECT ${normalizedStateExpr} AS estado, CAST(COUNT(*) AS SIGNED) AS count
+             FROM Ordenes
+             GROUP BY estado`
         );
 
         const orders_by_status: Record<string, number> = {
@@ -79,73 +76,73 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
         }
 
         const [pendingRows] = await pool.query<any[]>(
-            `SELECT COUNT(*)::int AS count
-             FROM ordenes
+            `SELECT CAST(COUNT(*) AS SIGNED) AS count
+             FROM Ordenes
              WHERE ${normalizedStateExpr} = 'PENDIENTE'`
         );
 
         const [prodRows] = await pool.query<any[]>(
-            `SELECT COUNT(*)::int AS count
-             FROM productos`
+            `SELECT CAST(COUNT(*) AS SIGNED) AS count
+             FROM Productos`
         );
 
         const [userRows] = await pool.query<any[]>(
-            `SELECT COUNT(*)::int AS count
-             FROM usuarios`
+            `SELECT CAST(COUNT(*) AS SIGNED) AS count
+             FROM Usuarios`
         );
 
         const [monthRows] = await pool.query<any[]>(
-            `WITH months AS (
-                SELECT generate_series(
-                    date_trunc('month', NOW()) - (($2::int - 1) * interval '1 month'),
-                    date_trunc('month', NOW()),
-                    interval '1 month'
-                ) AS month_start
+            `WITH RECURSIVE months AS (
+                SELECT DATE_FORMAT(NOW(), '%Y-%m-01') AS month_start, 1 AS n
+                UNION ALL
+                SELECT DATE_FORMAT(month_start - INTERVAL 1 MONTH, '%Y-%m-01'), n + 1
+                FROM months
+                WHERE n < ?
             ),
             sales AS (
                 SELECT
-                    date_trunc('month', o.creado_en) AS month_start,
+                    DATE_FORMAT(o.creado_en, '%Y-%m-01') AS month_start,
                     COALESCE(SUM(o.total), 0) AS revenue,
-                    COUNT(*)::int AS orders_count
-                FROM ordenes o
-                WHERE ${normalizeOrderStateExpr('o.estado')} = ANY($1::text[])
-                  AND o.creado_en >= (date_trunc('month', NOW()) - (($2::int - 1) * interval '1 month'))
-                  AND o.creado_en < (date_trunc('month', NOW()) + interval '1 month')
+                    CAST(COUNT(*) AS SIGNED) AS orders_count
+                FROM Ordenes o
+                WHERE ${normalizeOrderStateExpr('o.estado')} IN (?, ?, ?, ?)
+                  AND o.creado_en >= DATE_FORMAT(NOW() - INTERVAL (? - 1) MONTH, '%Y-%m-01')
                 GROUP BY 1
             )
             SELECT
                 m.month_start,
                 COALESCE(s.revenue, 0) AS revenue,
-                COALESCE(s.orders_count, 0)::int AS orders_count
+                CAST(COALESCE(s.orders_count, 0) AS SIGNED) AS orders_count
             FROM months m
             LEFT JOIN sales s ON s.month_start = m.month_start
             ORDER BY m.month_start ASC`,
-            [okStates, monthsBack]
+            [monthsBack, ...okStates, monthsBack]
         );
 
         const [pendingPreviewRows] = await pool.query<any[]>(
             `SELECT
                 o.id,
                 o.total,
-                o.estado::text AS estado,
+                CAST(o.estado AS CHAR) AS estado,
                 o.creado_en,
-                (u.nombre || ' ' || u.apellido) AS cliente_nombre,
+                CONCAT(u.nombre, ' ', u.apellido) AS cliente_nombre,
                 u.email AS cliente_email,
-                JSON_AGG(
-                    JSON_BUILD_OBJECT(
-                        'producto_id', d.producto_id,
-                        'nombre', p.nombre,
-                        'cantidad', d.cantidad,
-                        'imagen_url', p.imagen_url
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'producto_id', d2.producto_id,
+                            'nombre', p2.nombre,
+                            'cantidad', d2.cantidad,
+                            'imagen_url', p2.imagen_url
+                        )
                     )
-                    ORDER BY p.nombre
+                    FROM DetalleOrdenes d2
+                    JOIN Productos p2 ON p2.id = d2.producto_id
+                    WHERE d2.orden_id = o.id
                 ) AS items
-            FROM ordenes o
-            JOIN usuarios u ON u.id = o.usuario_id
-            JOIN detalle_ordenes d ON d.orden_id = o.id
-            JOIN productos p ON p.id = d.producto_id
+            FROM Ordenes o
+            JOIN Usuarios u ON u.id = o.usuario_id
             WHERE ${normalizeOrderStateExpr('o.estado')} = 'PENDIENTE'
-            GROUP BY o.id, u.nombre, u.apellido, u.email
             ORDER BY o.creado_en DESC
             LIMIT 10`
         );
@@ -172,16 +169,16 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
                 p.id,
                 p.nombre,
                 p.imagen_url,
-                COALESCE(SUM(d.cantidad), 0)::int AS unidades,
+                CAST(COALESCE(SUM(d.cantidad), 0) AS SIGNED) AS unidades,
                 COALESCE(SUM(d.subtotal), 0) AS ingresos
-             FROM detalle_ordenes d
-             JOIN ordenes o ON o.id = d.orden_id
-             JOIN productos p ON p.id = d.producto_id
-             WHERE ${normalizeOrderStateExpr('o.estado')} = ANY($1::text[])
+             FROM DetalleOrdenes d
+             JOIN Ordenes o ON o.id = d.orden_id
+             JOIN Productos p ON p.id = d.producto_id
+             WHERE ${normalizeOrderStateExpr('o.estado')} IN (?, ?, ?, ?)
              GROUP BY p.id, p.nombre, p.imagen_url
              ORDER BY unidades DESC, ingresos DESC
              LIMIT 5`,
-            [okStates]
+            okStates
         );
 
         const top_products: DashboardTopProduct[] = (topRows || []).map((r) => ({

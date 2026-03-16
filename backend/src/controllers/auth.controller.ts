@@ -44,7 +44,7 @@ const logSecurityEvent = async (req: Request, email: string | null, eventType: s
         const userAgent = req.headers?.['user-agent'] ? String(req.headers['user-agent']).slice(0, 300) : null;
         await pool.query(
             `INSERT INTO AuthSecurityEvents (email, ip, user_agent, event_type)
-             VALUES ($1, $2, $3, $4)`,
+             VALUES (?, ?, ?, ?)`,
             [email, ip, userAgent, eventType]
         );
     } catch {
@@ -54,7 +54,7 @@ const logSecurityEvent = async (req: Request, email: string | null, eventType: s
 
 const getUserById = async (id: string) => {
     const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE id = $1',
+        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE id = ?',
         [id]
     );
     return (rows as any[])?.[0] || null;
@@ -62,7 +62,7 @@ const getUserById = async (id: string) => {
 
 const getUserBySupabaseId = async (supabaseUserId: string) => {
     const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE supabase_user_id = $1',
+        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE supabase_user_id = ?',
         [supabaseUserId]
     );
     return (rows as any[])?.[0] || null;
@@ -70,7 +70,7 @@ const getUserBySupabaseId = async (supabaseUserId: string) => {
 
 const getUserByEmail = async (email: string) => {
     const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE email = $1',
+        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE email = ?',
         [email]
     );
     return (rows as any[])?.[0] || null;
@@ -78,7 +78,7 @@ const getUserByEmail = async (email: string) => {
 
 const linkSupabaseUser = async (localUserId: string, supabaseUserId: string) => {
     await pool.query(
-        'UPDATE Usuarios SET supabase_user_id = $1 WHERE id = $2',
+        'UPDATE Usuarios SET supabase_user_id = ? WHERE id = ?',
         [supabaseUserId, localUserId]
     );
 };
@@ -111,7 +111,7 @@ const ensureLocalUser = async (input: {
     const passwordHash = input.passwordHash || await bcrypt.hash(Math.random().toString(36), 10);
     await pool.query(
         `INSERT INTO Usuarios (supabase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
-         VALUES ($1, $2, $3, $4, $5, $6, 'CUSTOMER', $7)`,
+         VALUES (?, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
         [
             input.supabaseUserId,
             input.nombre || 'Usuario',

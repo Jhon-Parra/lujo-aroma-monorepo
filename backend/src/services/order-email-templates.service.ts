@@ -126,7 +126,7 @@ export const OrderEmailTemplateService = {
         const [rows] = await pool.query<any[]>(
             `SELECT status, subject, body_html, body_text
              FROM OrderEmailTemplates
-             WHERE status = $1
+             WHERE status = ?
              LIMIT 1`,
             [status]
         );
@@ -150,9 +150,8 @@ export const OrderEmailTemplateService = {
 
         await pool.query(
             `INSERT INTO OrderEmailTemplates (status, subject, body_html, body_text, updated_at)
-             VALUES ($1, $2, $3, $4, NOW())
-             ON CONFLICT (status)
-             DO UPDATE SET subject = EXCLUDED.subject, body_html = EXCLUDED.body_html, body_text = EXCLUDED.body_text, updated_at = NOW()`,
+             VALUES (?, ?, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE subject = VALUES(subject), body_html = VALUES(body_html), body_text = VALUES(body_text), updated_at = NOW()`,
             [status, subject, body_html, body_text]
         );
 

@@ -35,8 +35,13 @@ let categoriesReady: boolean | null = null;
 const detectCategoriesSchema = async (): Promise<boolean> => {
     if (categoriesReady !== null) return categoriesReady;
     try {
-        const [rows] = await pool.query<any[]>("SELECT to_regclass('categorias') IS NOT NULL AS ok");
-        categoriesReady = !!rows?.[0]?.ok;
+        const [rows] = await pool.query<any[]>(
+            `SELECT COUNT(*) AS ok 
+             FROM information_schema.tables 
+             WHERE table_schema = DATABASE() 
+               AND table_name = 'Categorias'`
+        );
+        categoriesReady = Number(rows?.[0]?.ok || 0) > 0;
         return categoriesReady;
     } catch {
         categoriesReady = false;
@@ -48,8 +53,13 @@ let recoEventsReady: boolean | null = null;
 const detectRecoEventsSchema = async (): Promise<boolean> => {
     if (recoEventsReady !== null) return recoEventsReady;
     try {
-        const [rows] = await pool.query<any[]>("SELECT to_regclass('recomendacioneventos') IS NOT NULL AS ok");
-        recoEventsReady = !!rows?.[0]?.ok;
+        const [rows] = await pool.query<any[]>(
+            `SELECT COUNT(*) AS ok 
+             FROM information_schema.tables 
+             WHERE table_schema = DATABASE() 
+               AND table_name = 'RecomendacionEventos'`
+        );
+        recoEventsReady = Number(rows?.[0]?.ok || 0) > 0;
         return recoEventsReady;
     } catch {
         recoEventsReady = false;
@@ -134,7 +144,7 @@ const selectCandidates = async (opts: { preferGenero?: string | null }): Promise
     const whereParts: string[] = ['p.stock > 0'];
     const params: any[] = [];
     if (opts.preferGenero && String(opts.preferGenero).trim().toLowerCase() !== 'unisex') {
-        whereParts.push('p.genero = $' + (params.length + 1));
+        whereParts.push('p.genero = ?');
         params.push(String(opts.preferGenero).trim().toLowerCase());
     }
     const whereSql = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '';
@@ -246,8 +256,8 @@ const recordEvent = async (req: Request, event_type: string, payload: any, sessi
         if (!ok) return;
         const ua = String(req.headers['user-agent'] || '').slice(0, 800);
         await pool.query(
-            'INSERT INTO RecomendacionEventos (usuario_id, session_id, event_type, payload, user_agent) VALUES ($1, $2, $3, $4, $5)',
-            [null, session_id || null, event_type, payload ?? null, ua || null]
+            'INSERT INTO RecomendacionEventos (usuario_id, session_id, event_type, payload, user_agent) VALUES (?, ?, ?, ?, ?)',
+            [null, session_id || null, event_type, payload ? JSON.stringify(payload) : null, ua || null]
         );
     } catch {
         // ignore
@@ -379,7 +389,7 @@ export const recommendSimilar = async (req: Request, res: Response): Promise<voi
             `SELECT p.id, p.nombre, p.genero, p.descripcion, p.notas_olfativas, p.precio, p.stock, p.unidades_vendidas, p.imagen_url${categorySelect}
              FROM Productos p
              ${join}
-             WHERE p.id = $1
+             WHERE p.id = ?
              LIMIT 1`,
             [productId]
         );

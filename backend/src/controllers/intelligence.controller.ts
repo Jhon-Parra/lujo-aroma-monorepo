@@ -39,7 +39,7 @@ const getRangeDays = (req: Request): number => {
 };
 
 const normalizeOrderStateExpr = (colExpr: string): string => {
-    return `UPPER(TRIM(COALESCE((${colExpr})::text, '')))`;
+    return `UPPER(TRIM(COALESCE(${colExpr}, '')))`;
 };
 
 const detectColumns = async (columns: string[]): Promise<Record<string, boolean>> => {
@@ -47,9 +47,9 @@ const detectColumns = async (columns: string[]): Promise<Record<string, boolean>
         const [rows] = await pool.query<any[]>(
             `SELECT column_name
              FROM information_schema.columns
-             WHERE table_name = 'configuracionglobal'
-               AND column_name = ANY($1::text[])`,
-            [columns]
+             WHERE lower(table_name) = 'configuracionglobal'
+               AND column_name IN (${columns.map(() => '?').join(', ')})`,
+            columns
         );
 
         const found = new Set((rows || []).map((r: any) => String(r.column_name)));
@@ -111,26 +111,33 @@ const getAlertConfig = async (): Promise<AlertConfig> => {
 };
 
 const getSearchTrends = async (productId: string): Promise<number[]> => {
+    // MySQL 7-day series hack using UNION ALL
     const [rows] = await pool.query<any[]>(
         `WITH days AS (
-            SELECT generate_series(
-                (CURRENT_DATE - INTERVAL '6 days')::date,
-                CURRENT_DATE::date,
-                INTERVAL '1 day'
-            )::date AS day
+            SELECT CURDATE() - INTERVAL 0 DAY AS day UNION ALL
+            SELECT CURDATE() - INTERVAL 1 DAY UNION ALL
+            SELECT CURDATE() - INTERVAL 2 DAY UNION ALL
+            SELECT CURDATE() - INTERVAL 3 DAY UNION ALL
+            SELECT CURDATE() - INTERVAL 4 DAY UNION ALL
+            SELECT CURDATE() - INTERVAL 5 DAY UNION ALL
+            SELECT CURDATE() - INTERVAL 6 DAY
         ),
         hits AS (
             SELECT
-                date_trunc('day', created_at)::date AS day,
-                jsonb_array_elements_text(product_ids) AS product_id
-            FROM SearchEvents
-            WHERE created_at >= (CURRENT_DATE - INTERVAL '6 days')
-              AND product_ids IS NOT NULL
+                DATE(created_at) AS day,
+                product_id
+            FROM (
+                SELECT created_at, p_id as product_id
+                FROM SearchEvents,
+                JSON_TABLE(product_ids, "$[*]" COLUMNS (p_id VARCHAR(255) PATH "$")) as jt
+                WHERE created_at >= CURDATE() - INTERVAL 6 DAY
+                  AND product_ids IS NOT NULL
+            ) sub
         )
         SELECT d.day,
-               COALESCE(COUNT(h.product_id), 0)::int AS count
+               CAST(COALESCE(COUNT(h.product_id), 0) AS SIGNED) AS count
         FROM days d
-        LEFT JOIN hits h ON h.day = d.day AND h.product_id = $1
+        LEFT JOIN hits h ON h.day = d.day AND h.product_id = ?
         GROUP BY d.day
         ORDER BY d.day ASC`,
         [productId]
@@ -156,8 +163,8 @@ export const trackSearchEvent = async (req: AuthRequest, res: Response): Promise
         const userId = req.user?.id || null;
 
         await pool.query(
-            `INSERT INTO SearchEvents (user_id, session_id, query, product_ids, results_count)
-             VALUES ($1, $2, $3, $4, $5)`,
+            `INSERT INTO SearchEvents (user_id, session_id, \`query\`, product_ids, results_count)
+             VALUES (?, ?, ?, ?, ?)`,
             [userId, sessionId, query, productIds.length ? JSON.stringify(productIds) : null, Number.isFinite(resultsCount) ? resultsCount : 0]
         );
 
@@ -181,7 +188,7 @@ export const trackProductView = async (req: AuthRequest, res: Response): Promise
 
         await pool.query(
             `INSERT INTO ProductViewEvents (user_id, session_id, product_id)
-             VALUES ($1, $2, $3)`,
+             VALUES (?, ?, ?)`,
             [userId, sessionId, productId]
         );
 
@@ -205,15 +212,14 @@ export const trackCartSession = async (req: AuthRequest, res: Response): Promise
 
         await pool.query(
             `INSERT INTO CartSessions (session_id, user_id, items, total, status, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, 'OPEN', NOW(), NOW())
-             ON CONFLICT (session_id)
-             DO UPDATE SET
-                user_id = COALESCE(EXCLUDED.user_id, CartSessions.user_id),
-                items = EXCLUDED.items,
-                total = EXCLUDED.total,
+             VALUES (?, ?, ?, ?, 'OPEN', NOW(), NOW())
+             ON DUPLICATE KEY UPDATE
+                user_id = COALESCE(?, user_id),
+                items = ?,
+                total = ?,
                 updated_at = NOW(),
-                status = CASE WHEN CartSessions.status = 'CONVERTED' THEN CartSessions.status ELSE 'OPEN' END`,
-            [sessionId, req.user?.id || null, JSON.stringify(items), Number.isFinite(total) ? total : 0]
+                status = CASE WHEN status = 'CONVERTED' THEN status ELSE 'OPEN' END`,
+            [sessionId, req.user?.id || null, JSON.stringify(items), Number.isFinite(total) ? total : 0, req.user?.id || null, JSON.stringify(items), Number.isFinite(total) ? total : 0]
         );
 
         res.status(201).json({ ok: true });
@@ -235,9 +241,9 @@ export const convertCartSession = async (req: AuthRequest, res: Response): Promi
 
         await pool.query(
             `UPDATE CartSessions
-             SET status = 'CONVERTED', order_id = COALESCE($2, order_id), updated_at = NOW()
-             WHERE session_id = $1`,
-            [sessionId, orderId]
+             SET status = 'CONVERTED', order_id = COALESCE(?, order_id), updated_at = NOW()
+             WHERE session_id = ?`,
+            [orderId, sessionId]
         );
 
         res.status(200).json({ ok: true });
@@ -256,20 +262,22 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const productFilter = String((req.query as any)?.product_id || '').trim();
         const normalizedStateExpr = normalizeOrderStateExpr('o.estado');
 
+        // 1. Top Searches
         const [topSearchRows] = await pool.query<any[]>(
             `WITH events AS (
                 SELECT product_ids
                 FROM SearchEvents
-                WHERE created_at >= NOW() - ($1::int * INTERVAL '1 day')
+                WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
                   AND product_ids IS NOT NULL
             ),
             ids AS (
-                SELECT jsonb_array_elements_text(product_ids) AS product_id
-                FROM events
+                SELECT p_id AS product_id
+                FROM events,
+                JSON_TABLE(product_ids, "$[*]" COLUMNS (p_id VARCHAR(255) PATH "$")) as jt
             )
-            SELECT p.id, p.nombre, COUNT(*)::int AS searches
+            SELECT p.id, p.nombre, CAST(COUNT(*) AS SIGNED) AS searches
             FROM ids i
-            JOIN productos p ON p.id = i.product_id::uuid
+            JOIN Productos p ON p.id = i.product_id
             GROUP BY p.id, p.nombre
             ORDER BY searches DESC
             LIMIT 10`,
@@ -287,34 +295,38 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             });
         }
 
+        // 2. Abandoned Total
         const [abandonedRows] = await pool.query<any[]>(
             `WITH abandoned AS (
                 SELECT *
                 FROM CartSessions
                 WHERE status = 'OPEN'
-                  AND updated_at < NOW() - ($1::int * INTERVAL '1 hour')
+                  AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
             )
-            SELECT COUNT(*)::int AS total, COALESCE(SUM(total), 0) AS lost_value
+            SELECT CAST(COUNT(*) AS SIGNED) AS total, COALESCE(SUM(total), 0) AS lost_value
             FROM abandoned`,
             [abandonedHours]
         );
 
+        // 3. Abandoned Trend (7 days)
         const [abandonedTrendRows] = await pool.query<any[]>(
             `WITH days AS (
-                SELECT generate_series(
-                    (CURRENT_DATE - INTERVAL '6 days')::date,
-                    CURRENT_DATE::date,
-                    INTERVAL '1 day'
-                )::date AS day
+                SELECT CURDATE() - INTERVAL 0 DAY AS day UNION ALL
+                SELECT CURDATE() - INTERVAL 1 DAY UNION ALL
+                SELECT CURDATE() - INTERVAL 2 DAY UNION ALL
+                SELECT CURDATE() - INTERVAL 3 DAY UNION ALL
+                SELECT CURDATE() - INTERVAL 4 DAY UNION ALL
+                SELECT CURDATE() - INTERVAL 5 DAY UNION ALL
+                SELECT CURDATE() - INTERVAL 6 DAY
             ),
             abandoned AS (
-                SELECT date_trunc('day', updated_at)::date AS day
+                SELECT DATE(updated_at) AS day
                 FROM CartSessions
                 WHERE status = 'OPEN'
-                  AND updated_at < NOW() - ($1::int * INTERVAL '1 hour')
-                  AND updated_at >= (CURRENT_DATE - INTERVAL '6 days')
+                  AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
+                  AND updated_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
             )
-            SELECT d.day, COALESCE(COUNT(a.day), 0)::int AS count
+            SELECT d.day, CAST(COALESCE(COUNT(a.day), 0) AS SIGNED) AS count
             FROM days d
             LEFT JOIN abandoned a ON a.day = d.day
             GROUP BY d.day
@@ -322,75 +334,77 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             [abandonedHours]
         );
 
+        // 4. Abandoned Top Products
         const [abandonedTopRows] = await pool.query<any[]>(
             `WITH abandoned AS (
                 SELECT *
                 FROM CartSessions
                 WHERE status = 'OPEN'
-                  AND updated_at < NOW() - ($1::int * INTERVAL '1 hour')
+                  AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
             ),
             items AS (
-                SELECT jsonb_array_elements(abandoned.items) AS item
-                FROM abandoned
+                SELECT item
+                FROM abandoned,
+                JSON_TABLE(items, "$[*]" COLUMNS (item JSON PATH "$")) as jt
             ),
             flat AS (
                 SELECT
-                    (item->>'product_id')::uuid AS product_id,
-                    COALESCE((item->>'quantity')::int, 1) AS qty
+                    JSON_UNQUOTE(JSON_EXTRACT(item, '$.product_id')) AS product_id,
+                    CAST(COALESCE(JSON_EXTRACT(item, '$.quantity'), 1) AS SIGNED) AS qty
                 FROM items
-                WHERE (item->'product_id') IS NOT NULL
+                WHERE JSON_EXTRACT(item, '$.product_id') IS NOT NULL
             )
-            SELECT p.id, p.nombre, COALESCE(SUM(f.qty), 0)::int AS count
+            SELECT p.id, p.nombre, CAST(COALESCE(SUM(f.qty), 0) AS SIGNED) AS count
             FROM flat f
-            JOIN productos p ON p.id = f.product_id
+            JOIN Productos p ON p.id = f.product_id
             GROUP BY p.id, p.nombre
             ORDER BY count DESC
             LIMIT 5`,
             [abandonedHours]
         );
 
+        // 5. Abandoned Recent
         const [abandonedRecentRows] = await pool.query<any[]>(
             `WITH abandoned AS (
                 SELECT *
                 FROM CartSessions
                 WHERE status = 'OPEN'
-                  AND updated_at < NOW() - ($1::int * INTERVAL '1 hour')
+                  AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
             )
             SELECT a.session_id, a.user_id, a.total, a.updated_at, a.items,
                    u.email AS user_email
             FROM abandoned a
-            LEFT JOIN usuarios u ON u.id = a.user_id
+            LEFT JOIN Usuarios u ON u.id = a.user_id
             ORDER BY a.updated_at DESC
             LIMIT 10`,
             [abandonedHours]
         );
 
+        // 6. Frequent Clients
         const [frequentRows] = await pool.query<any[]>(
             `SELECT u.id, u.nombre, u.apellido, u.email,
-                    COUNT(*)::int AS orders_count,
+                    CAST(COUNT(*) AS SIGNED) AS orders_count,
                     COALESCE(SUM(o.total), 0) AS total_spent
-             FROM ordenes o
-             JOIN usuarios u ON u.id = o.usuario_id
-             WHERE ${normalizedStateExpr} = ANY($1::text[])
-               AND o.creado_en >= NOW() - ($2::int * INTERVAL '1 day')
+             FROM Ordenes o
+             JOIN Usuarios u ON u.id = o.usuario_id
+             WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
+               AND o.creado_en >= DATE_SUB(NOW(), INTERVAL ? DAY)
              GROUP BY u.id, u.nombre, u.apellido, u.email
              ORDER BY total_spent DESC
              LIMIT 10`,
-            [okStates, days]
+            [...okStates, days]
         );
 
-        const salesParams: any[] = [okStates, days];
-        let salesWhere = `${normalizedStateExpr} = ANY($1::text[]) AND o.creado_en >= NOW() - ($2::int * INTERVAL '1 day')`;
-        let nextIdx = 3;
+        // 7. Sales by Category
+        const salesParams: any[] = [...okStates, days];
+        let salesWhere = `${normalizedStateExpr} IN (?, ?, ?, ?) AND o.creado_en >= DATE_SUB(NOW(), INTERVAL ? DAY)`;
         if (categoryFilter) {
-            salesWhere += ` AND p.genero = $${nextIdx}`;
+            salesWhere += ` AND p.genero = ?`;
             salesParams.push(categoryFilter);
-            nextIdx += 1;
         }
         if (productFilter) {
-            salesWhere += ` AND p.id = $${nextIdx}`;
+            salesWhere += ` AND p.id = ?`;
             salesParams.push(productFilter);
-            nextIdx += 1;
         }
 
         const [salesRows] = await pool.query<any[]>(
@@ -400,29 +414,39 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
                     COALESCE(c.nombre, p.genero, 'Sin categoria') AS category_name,
                     p.id AS product_id,
                     p.nombre AS product_name,
-                    COALESCE(SUM(d.cantidad), 0)::int AS units,
-                    COALESCE(SUM(d.subtotal), 0) AS revenue
-                FROM detalle_ordenes d
-                JOIN ordenes o ON o.id = d.orden_id
-                JOIN productos p ON p.id = d.producto_id
-                LEFT JOIN categorias c ON c.slug = p.genero
+                    CAST(COALESCE(SUM(d.cantidad), 0) AS SIGNED) AS units,
+                    COALESCE(SUM(revenue), 0) AS revenue
+                FROM (
+                    SELECT 
+                        producto_id, 
+                        SUM(cantidad) as cantidad, 
+                        SUM(subtotal) as subtotal,
+                        orden_id
+                    FROM DetalleOrdenes
+                    GROUP BY producto_id, orden_id
+                ) d
+                JOIN Ordenes o ON o.id = d.orden_id
+                JOIN Productos p ON p.id = d.producto_id
+                LEFT JOIN Categorias c ON c.slug = p.genero
                 WHERE ${salesWhere}
                 GROUP BY p.genero, c.nombre, p.id, p.nombre
             ),
             category_totals AS (
                 SELECT category_slug, category_name,
-                       COALESCE(SUM(units), 0)::int AS units,
+                       CAST(COALESCE(SUM(units), 0) AS SIGNED) AS units,
                        COALESCE(SUM(revenue), 0) AS revenue
                 FROM sales
                 GROUP BY category_slug, category_name
             ),
             top_products AS (
-                SELECT DISTINCT ON (category_slug)
-                    category_slug,
-                    product_name,
-                    units
-                FROM sales
-                ORDER BY category_slug, units DESC
+                /* MySQL 8.0 rank simulate or subquery for top product per category */
+                SELECT category_slug, product_name, units
+                FROM (
+                    SELECT category_slug, product_name, units,
+                           ROW_NUMBER() OVER(PARTITION BY category_slug ORDER BY units DESC) as rn
+                    FROM sales
+                ) tmp
+                WHERE rn = 1
             )
             SELECT t.category_name, t.units, t.revenue,
                    COALESCE(tp.product_name, '') AS top_product
@@ -432,43 +456,45 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             salesParams
         );
 
+        // 8. Sales Stats
         const [salesCurrentRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
-             FROM ordenes o
-             WHERE ${normalizedStateExpr} = ANY($1::text[])
-               AND o.creado_en >= NOW() - INTERVAL '7 days'`,
-            [okStates]
+             FROM Ordenes o
+             WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
+               AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY)`,
+            [...okStates]
         );
 
         const [salesPrevRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
-             FROM ordenes o
-             WHERE ${normalizedStateExpr} = ANY($1::text[])
-               AND o.creado_en >= NOW() - INTERVAL '14 days'
-               AND o.creado_en < NOW() - INTERVAL '7 days'`,
-            [okStates]
+             FROM Ordenes o
+             WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
+               AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+               AND o.creado_en < DATE_SUB(NOW(), INTERVAL 7 DAY)`,
+            [...okStates]
         );
 
         const currentSales = toNumber(salesCurrentRows?.[0]?.total);
         const previousSales = toNumber(salesPrevRows?.[0]?.total);
         const salesDelta = previousSales > 0 ? ((currentSales - previousSales) / previousSales) * 100 : (currentSales > 0 ? 100 : 0);
 
+        // 9. Abandoned Deltas
         const [abandonedRecentCount] = await pool.query<any[]>(
-            `SELECT COUNT(*)::int AS count, COALESCE(SUM(total), 0) AS lost
+            `SELECT CAST(COUNT(*) AS SIGNED) AS count, COALESCE(SUM(total), 0) AS lost
              FROM CartSessions
              WHERE status = 'OPEN'
-               AND updated_at < NOW() - ($1::int * INTERVAL '1 hour')
-               AND updated_at >= NOW() - INTERVAL '3 days'`,
+               AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
+               AND updated_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)`,
             [abandonedHours]
         );
 
         const [abandonedPrevCount] = await pool.query<any[]>(
-            `SELECT COUNT(*)::int AS count
+            `SELECT CAST(COUNT(*) AS SIGNED) AS count
              FROM CartSessions
              WHERE status = 'OPEN'
-               AND updated_at < NOW() - ($1::int * INTERVAL '1 hour')
-               AND updated_at >= NOW() - INTERVAL '6 days'
-               AND updated_at < NOW() - INTERVAL '3 days'`,
+               AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
+               AND updated_at >= DATE_SUB(NOW(), INTERVAL 6 DAY)
+               AND updated_at < DATE_SUB(NOW(), INTERVAL 3 DAY)`,
             [abandonedHours]
         );
 
@@ -477,55 +503,59 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const abLost = toNumber(abandonedRecentCount?.[0]?.lost);
         const abDelta = abPrev > 0 ? ((abCurrent - abPrev) / abPrev) * 100 : (abCurrent > 0 ? 100 : 0);
 
+        // 10. Negative Reviews
         const [negativeRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre, COUNT(*)::int AS negative_count,
-                    ARRAY_AGG(r.comentario) FILTER (WHERE r.comentario IS NOT NULL) AS comentarios
-             FROM resenas r
-             JOIN productos p ON p.id = r.producto_id
+            `SELECT p.id, p.nombre, CAST(COUNT(*) AS SIGNED) AS negative_count,
+                    GROUP_CONCAT(r.comentario SEPARATOR ' · ') AS comentarios
+             FROM Resenas r
+             JOIN Productos p ON p.id = r.producto_id
              WHERE r.rating <= 2
-               AND r.creado_en >= NOW() - INTERVAL '7 days'
+               AND r.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+               AND r.comentario IS NOT NULL
              GROUP BY p.id, p.nombre
-             HAVING COUNT(*) >= $1
+             HAVING COUNT(*) >= ?
              ORDER BY negative_count DESC
              LIMIT 3`,
             [config.negative_reviews_threshold]
         );
 
+        // 11. Trends
         const [trendRows] = await pool.query<any[]>(
-            `WITH current AS (
-                SELECT d.producto_id, COALESCE(SUM(d.cantidad), 0)::int AS units
-                FROM detalle_ordenes d
-                JOIN ordenes o ON o.id = d.orden_id
-                WHERE ${normalizedStateExpr} = ANY($1::text[])
-                  AND o.creado_en >= NOW() - INTERVAL '7 days'
+            `WITH current_sales AS (
+                SELECT d.producto_id, CAST(COALESCE(SUM(d.cantidad), 0) AS SIGNED) AS units
+                FROM DetalleOrdenes d
+                JOIN Ordenes o ON o.id = d.orden_id
+                WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
+                  AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY)
                 GROUP BY d.producto_id
             ),
-            prev AS (
-                SELECT d.producto_id, COALESCE(SUM(d.cantidad), 0)::int AS units
-                FROM detalle_ordenes d
-                JOIN ordenes o ON o.id = d.orden_id
-                WHERE ${normalizedStateExpr} = ANY($1::text[])
-                  AND o.creado_en >= NOW() - INTERVAL '14 days'
-                  AND o.creado_en < NOW() - INTERVAL '7 days'
+            prev_sales AS (
+                SELECT d.producto_id, CAST(COALESCE(SUM(d.cantidad), 0) AS SIGNED) AS units
+                FROM DetalleOrdenes d
+                JOIN Ordenes o ON o.id = d.orden_id
+                WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
+                  AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+                  AND o.creado_en < DATE_SUB(NOW(), INTERVAL 7 DAY)
                 GROUP BY d.producto_id
             )
-            SELECT p.id, p.nombre, c.units AS current_units, COALESCE(pv.units, 0)::int AS prev_units
-            FROM current c
-            JOIN productos p ON p.id = c.producto_id
-            LEFT JOIN prev pv ON pv.producto_id = c.producto_id
-            WHERE c.units >= $2
+            SELECT p.id, p.nombre, c.units AS current_units, COALESCE(pv.units, 0) AS prev_units
+            FROM current_sales c
+            JOIN Productos p ON p.id = c.producto_id
+            LEFT JOIN prev_sales pv ON pv.producto_id = c.producto_id
+            WHERE c.units >= ?
             ORDER BY (c.units - COALESCE(pv.units, 0)) DESC
             LIMIT 5`,
-            [okStates, config.trend_min_units]
+            [...okStates, ...okStates, config.trend_min_units]
         );
 
+        // 12. Security
         const [suspiciousRows] = await pool.query<any[]>(
-            `SELECT COALESCE(email, ip) AS subject, COUNT(*)::int AS attempts
+            `SELECT COALESCE(email, ip) AS subject, CAST(COUNT(*) AS SIGNED) AS attempts
              FROM AuthSecurityEvents
              WHERE event_type = 'login_failed'
-               AND created_at >= NOW() - INTERVAL '1 hour'
+               AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
              GROUP BY subject
-             HAVING COUNT(*) >= $1
+             HAVING COUNT(*) >= ?
              ORDER BY attempts DESC
              LIMIT 3`,
             [config.failed_login_threshold]
@@ -553,7 +583,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         }
 
         for (const r of negativeRows || []) {
-            const comments = Array.isArray(r.comentarios) ? r.comentarios.filter(Boolean).slice(0, 2).join(' · ') : '';
+            const comments = String(r.comentarios || '').split(' · ').slice(0, 2).join(' · ');
             alerts.push({
                 type: 'Reseñas',
                 title: `Reseñas negativas en ${String(r.nombre || '')}`,

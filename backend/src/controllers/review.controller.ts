@@ -13,9 +13,12 @@ const detectReviewsSchema = async (): Promise<boolean> => {
     if (reviewsReady !== null) return reviewsReady;
     try {
         const [rows] = await pool.query<any[]>(
-            `SELECT to_regclass('resenas') IS NOT NULL AS has_reviews`
+            `SELECT COUNT(*) AS has_reviews 
+             FROM information_schema.tables 
+             WHERE table_schema = DATABASE() 
+               AND lower(table_name) = 'resenas'`
         );
-        reviewsReady = !!rows?.[0]?.has_reviews;
+        reviewsReady = Number(rows?.[0]?.has_reviews || 0) > 0;
         return reviewsReady;
     } catch {
         reviewsReady = false;
@@ -52,10 +55,10 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
                 `SELECT 1
                  FROM Ordenes o
                  JOIN detalle_ordenes d ON d.orden_id = o.id
-                 WHERE o.id = $1
-                   AND o.usuario_id = $2
+                 WHERE o.id = ?
+                   AND o.usuario_id = ?
                    AND o.estado = 'ENTREGADO'
-                   AND d.producto_id = $3
+                   AND d.producto_id = ?
                  LIMIT 1`,
                 [order_id, userId, product_id]
             );
@@ -68,9 +71,9 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
                 `SELECT 1
                  FROM Ordenes o
                  JOIN detalle_ordenes d ON d.orden_id = o.id
-                 WHERE o.usuario_id = $1
+                 WHERE o.usuario_id = ?
                    AND o.estado = 'ENTREGADO'
-                   AND d.producto_id = $2
+                   AND d.producto_id = ?
                  LIMIT 1`,
                 [userId, product_id]
             );
@@ -85,12 +88,12 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
         try {
             await pool.query(
                 `INSERT INTO Resenas (id, usuario_id, producto_id, orden_id, rating, comentario, verificada)
-                 VALUES ($1, $2, $3, $4, $5, $6, true)`,
+                 VALUES (?, ?, ?, ?, ?, ?, true)`,
                 [id, userId, product_id, order_id || null, rating, (comment || '').trim() || null]
             );
         } catch (e: any) {
             // Unique violation
-            if (e?.code === '23505') {
+            if (e?.code === '23505' || e?.code === 'ER_DUP_ENTRY' || e?.errno === 1062) {
                 res.status(409).json({ error: 'Ya dejaste una reseña para este producto.' });
                 return;
             }
@@ -117,7 +120,7 @@ export const getMyReviews = async (req: AuthRequest, res: Response): Promise<voi
         const [rows] = await pool.query<any[]>(
             `SELECT producto_id, rating, comentario, creado_en
              FROM Resenas
-             WHERE usuario_id = $1
+             WHERE usuario_id = ?
              ORDER BY creado_en DESC`,
             [userId]
         );
@@ -149,7 +152,7 @@ export const getProductReviews = async (req: AuthRequest, res: Response): Promis
                 u.apellido
              FROM Resenas r
              JOIN Usuarios u ON u.id = r.usuario_id
-             WHERE r.producto_id = $1
+             WHERE r.producto_id = ?
              ORDER BY r.creado_en DESC
              LIMIT 50`,
             [id]
@@ -174,10 +177,10 @@ export const getProductReviewSummary = async (req: AuthRequest, res: Response): 
 
         const [rows] = await pool.query<any[]>(
             `SELECT
-                COALESCE(AVG(rating), 0) AS average,
-                COUNT(*)::int AS count
+                AVG(rating) AS average,
+                CAST(COUNT(*) AS SIGNED) AS count
              FROM Resenas
-             WHERE producto_id = $1`,
+             WHERE producto_id = ?`,
             [id]
         );
 

@@ -84,11 +84,11 @@ export const PermissionsService = {
     async setRolePermissions(input: any): Promise<RolePermissions> {
         const value = sanitize(input);
         try {
-            await pool.query('UPDATE ConfiguracionGlobal SET role_permissions = $1 WHERE id = 1', [value]);
+            await pool.query('UPDATE ConfiguracionGlobal SET role_permissions = ? WHERE id = 1', [JSON.stringify(value)]);
         } catch (e: any) {
             const msg = String(e?.message || '');
-            if (/role_permissions/i.test(msg) && /column/i.test(msg) && /does not exist/i.test(msg)) {
-                throw new Error('Tu base de datos no soporta permisos por rol. Ejecuta database/migrations/20260312_role_permissions.sql en Supabase y vuelve a intentar.');
+            if (/role_permissions/i.test(msg) && (/column/i.test(msg) || /no existe/i.test(msg))) {
+                throw new Error('Tu base de datos no soporta permisos por rol o falta la columna. Ejecuta las migraciones de base de datos y vuelve a intentar.');
             }
             throw e;
         }

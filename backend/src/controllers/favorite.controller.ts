@@ -6,21 +6,19 @@ import { AuthRequest } from '../middleware/auth.middleware';
 const detectFavoritesSchema = async (): Promise<{ ok: boolean; createdCol: 'creado_en' | 'created_at' | null }> => {
     try {
         const [tRows] = await pool.query<any[]>(
-            `SELECT EXISTS (
-                SELECT 1
-                FROM information_schema.tables
-                WHERE table_schema = 'public'
-                  AND lower(table_name) = 'favoritos'
-            ) AS ok`
+            `SELECT COUNT(*) AS ok
+             FROM information_schema.tables
+             WHERE table_schema = DATABASE()
+               AND lower(table_name) = 'favoritos'`
         );
 
-        const ok = !!tRows?.[0]?.ok;
+        const ok = Number(tRows?.[0]?.ok || 0) > 0;
         if (!ok) return { ok: false, createdCol: null };
 
         const [cRows] = await pool.query<any[]>(
             `SELECT column_name
              FROM information_schema.columns
-             WHERE table_schema = 'public'
+             WHERE table_schema = DATABASE()
                AND lower(table_name) = 'favoritos'
                AND column_name IN ('creado_en', 'created_at')`
         );
@@ -36,15 +34,13 @@ const detectFavoritesSchema = async (): Promise<{ ok: boolean; createdCol: 'crea
 const detectProductNewUntilSchema = async (): Promise<boolean> => {
     try {
         const [rows] = await pool.query<any[]>(
-            `SELECT EXISTS (
-                SELECT 1
-                FROM information_schema.columns
-                WHERE table_schema = 'public'
-                  AND lower(table_name) = 'productos'
-                  AND column_name = 'nuevo_hasta'
-            ) AS ok`
+            `SELECT COUNT(*) AS ok
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND lower(table_name) = 'productos'
+               AND column_name = 'nuevo_hasta'`
         );
-        return !!rows?.[0]?.ok;
+        return Number(rows?.[0]?.ok || 0) > 0;
     } catch {
         return false;
     }
@@ -68,14 +64,14 @@ export const addFavorite = async (req: AuthRequest, res: Response): Promise<void
         const favSchema = await detectFavoritesSchema();
         if (!favSchema.ok) {
             res.status(400).json({
-                error: 'La tabla de favoritos no existe en la base de datos. Crea la tabla Favoritos en Supabase (schema_postgres.sql) y vuelve a intentar.'
+                error: 'La tabla de favoritos no existe en la base de datos. Ejecuta las migraciones de base de datos y vuelve a intentar.'
             });
             return;
         }
 
         const id = uuidv4();
         await pool.query(
-            `INSERT INTO favoritos (id, usuario_id, producto_id) VALUES ($1, $2, $3) ON CONFLICT (usuario_id, producto_id) DO NOTHING`,
+            `INSERT IGNORE INTO favoritos (id, usuario_id, producto_id) VALUES (?, ?, ?)`,
             [id, userId, producto_id]
         );
 
@@ -105,7 +101,7 @@ export const removeFavorite = async (req: AuthRequest, res: Response): Promise<v
         }
 
         await pool.query(
-            `DELETE FROM favoritos WHERE usuario_id = $1 AND producto_id = $2`,
+            `DELETE FROM favoritos WHERE usuario_id = ? AND producto_id = ?`,
             [userId, productId]
         );
 
@@ -159,8 +155,8 @@ export const getFavorites = async (req: AuthRequest, res: Response): Promise<voi
                 ${esNuevoExpr}
             FROM favoritos f
             JOIN productos p ON f.producto_id = p.id
-            WHERE f.usuario_id = $1
-            ORDER BY ${orderCol} DESC NULLS LAST`,
+            WHERE f.usuario_id = ?
+            ORDER BY ${orderCol} DESC`,
             [userId]
         );
 

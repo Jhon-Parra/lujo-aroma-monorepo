@@ -13,7 +13,9 @@ let categoriesReady: boolean | null = null;
 const detectCategoriesSchema = async (): Promise<boolean> => {
     if (categoriesReady !== null) return categoriesReady;
     try {
-        const [rows] = await pool.query<any[]>("SELECT to_regclass('categorias') IS NOT NULL AS ok");
+        const [rows] = await pool.query<any[]>(
+            "SELECT count(*) > 0 AS ok FROM information_schema.tables WHERE lower(table_name) = 'categorias' AND table_schema = DATABASE()"
+        );
         categoriesReady = !!rows?.[0]?.ok;
         return categoriesReady;
     } catch {
@@ -47,7 +49,7 @@ const parseBoolean = (value: any, fallback?: boolean): boolean | undefined => {
 
 const ensureCategoryExists = async (slug: string): Promise<boolean> => {
     try {
-        const [rows] = await pool.query<any[]>('SELECT 1 AS ok FROM Categorias WHERE slug = $1 LIMIT 1', [slug]);
+        const [rows] = await pool.query<any[]>('SELECT 1 AS ok FROM Categorias WHERE slug = ? LIMIT 1', [slug]);
         return !!rows?.[0]?.ok;
     } catch {
         return false;
@@ -59,17 +61,17 @@ const detectPromotionAssignmentSchema = async (): Promise<boolean> => {
     try {
         const [rows] = await pool.query<any[]>(
             `SELECT
-                to_regclass('promocionproductos') IS NOT NULL AS has_pp,
-                to_regclass('promocionusuarios') IS NOT NULL AS has_pu,
+                (SELECT COUNT(*) FROM information_schema.tables WHERE lower(table_name) = 'promocionproductos' AND table_schema = DATABASE()) > 0 AS has_pp,
+                (SELECT COUNT(*) FROM information_schema.tables WHERE lower(table_name) = 'promocionusuarios' AND table_schema = DATABASE()) > 0 AS has_pu,
                 EXISTS (
                     SELECT 1
                     FROM information_schema.columns
-                    WHERE table_name = 'promociones' AND column_name = 'product_scope'
+                    WHERE lower(table_name) = 'promociones' AND column_name = 'product_scope' AND table_schema = DATABASE()
                 ) AS has_product_scope,
                 EXISTS (
                     SELECT 1
                     FROM information_schema.columns
-                    WHERE table_name = 'promociones' AND column_name = 'audience_scope'
+                    WHERE lower(table_name) = 'promociones' AND column_name = 'audience_scope' AND table_schema = DATABASE()
                 ) AS has_audience_scope
             `
         );
@@ -91,12 +93,12 @@ const detectPromotionMediaSchema = async (): Promise<boolean> => {
                 EXISTS (
                     SELECT 1
                     FROM information_schema.columns
-                    WHERE table_name = 'promociones' AND column_name = 'product_gender'
+                    WHERE lower(table_name) = 'promociones' AND column_name = 'product_gender' AND table_schema = DATABASE()
                 ) AS has_product_gender,
                 EXISTS (
                     SELECT 1
                     FROM information_schema.columns
-                    WHERE table_name = 'promociones' AND column_name = 'imagen_url'
+                    WHERE lower(table_name) = 'promociones' AND column_name = 'imagen_url' AND table_schema = DATABASE()
                 ) AS has_imagen_url
             `
         );
@@ -118,7 +120,7 @@ const detectPromotionGenderSchema = async (): Promise<boolean> => {
                 EXISTS (
                     SELECT 1
                     FROM information_schema.columns
-                    WHERE table_name = 'promociones' AND column_name = 'product_gender'
+                    WHERE lower(table_name) = 'promociones' AND column_name = 'product_gender' AND table_schema = DATABASE()
                 ) AS has_product_gender`
         );
         promotionGenderReady = !!rows?.[0]?.has_product_gender;
@@ -137,17 +139,17 @@ const detectPromotionAdvancedSchema = async (): Promise<boolean> => {
                 EXISTS (
                     SELECT 1
                     FROM information_schema.columns
-                    WHERE table_name = 'promociones' AND column_name = 'discount_type'
+                    WHERE lower(table_name) = 'promociones' AND column_name = 'discount_type' AND table_schema = DATABASE()
                 ) AS has_discount_type,
                 EXISTS (
                     SELECT 1
                     FROM information_schema.columns
-                    WHERE table_name = 'promociones' AND column_name = 'amount_discount'
+                    WHERE lower(table_name) = 'promociones' AND column_name = 'amount_discount' AND table_schema = DATABASE()
                 ) AS has_amount_discount,
                 EXISTS (
                     SELECT 1
                     FROM information_schema.columns
-                    WHERE table_name = 'promociones' AND column_name = 'priority'
+                    WHERE lower(table_name) = 'promociones' AND column_name = 'priority' AND table_schema = DATABASE()
                 ) AS has_priority
             `
         );
@@ -229,7 +231,7 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
 
         const connection = await pool.getConnection();
         try {
-            await connection.query('BEGIN');
+            await connection.beginTransaction();
 
             const dtype = advancedReady ? (String(discount_type || 'PERCENT').toUpperCase()) : 'PERCENT';
             const pct = dtype === 'AMOUNT' ? 0 : Number(porcentaje_descuento || 0);
@@ -241,7 +243,7 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
                 const categorySlug = scope === 'GENDER' ? slugify(product_gender || '') : '';
                 if (scope === 'GENDER') {
                     if (!categorySlug) {
-                        await connection.query('ROLLBACK');
+                        await connection.rollback();
                         connection.release();
                         res.status(400).json({ error: 'Debes seleccionar una categoria' });
                         return;
@@ -249,7 +251,7 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
                     if (categoriesOk) {
                         const exists = await ensureCategoryExists(categorySlug);
                         if (!exists) {
-                            await connection.query('ROLLBACK');
+                            await connection.rollback();
                             connection.release();
                             res.status(400).json({ error: 'Categoria invalida. Crea la categoria primero en Admin > Categorias.' });
                             return;
@@ -262,7 +264,7 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
                         id, nombre, descripcion, imagen_url, porcentaje_descuento${advancedReady ? ', discount_type, amount_discount, priority' : ''}, fecha_inicio, fecha_fin,
                         product_scope, product_gender, audience_scope, audience_segment, activo
                     )
-                    VALUES (${advancedReady ? '$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15' : '$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12'})`,
+                    VALUES (?, ?, ?, ?, ?, ${advancedReady ? '?, ?, ?, ' : ''}?, ?, ?, ?, ?, ?, ?)`,
                     [
                         id,
                         nombre,
@@ -285,7 +287,7 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
                         id, nombre, descripcion, porcentaje_descuento${advancedReady ? ', discount_type, amount_discount, priority' : ''}, fecha_inicio, fecha_fin,
                         product_scope, audience_scope, audience_segment, activo
                     )
-                    VALUES (${advancedReady ? '$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13' : '$1, $2, $3, $4, $5, $6, $7, $8, $9, $10'})`,
+                    VALUES (?, ?, ?, ?, ${advancedReady ? '?, ?, ?, ' : ''}?, ?, ?, ?, ?, ?)`,
                     [
                         id,
                         nombre,
@@ -305,7 +307,7 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
             if ((product_scope || 'GLOBAL') === 'SPECIFIC') {
                 for (const pid of (product_ids || [])) {
                     await connection.query(
-                        'INSERT INTO PromocionProductos (promocion_id, producto_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                        'INSERT IGNORE INTO PromocionProductos (promocion_id, producto_id) VALUES (?, ?)',
                         [id, pid]
                     );
                 }
@@ -314,15 +316,15 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
             if ((audience_scope || 'ALL') === 'CUSTOMERS') {
                 for (const uid of (audience_user_ids || [])) {
                     await connection.query(
-                        'INSERT INTO PromocionUsuarios (promocion_id, usuario_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                        'INSERT IGNORE INTO PromocionUsuarios (promocion_id, usuario_id) VALUES (?, ?)',
                         [id, uid]
                     );
                 }
             }
 
-            await connection.query('COMMIT');
+            await connection.commit();
         } catch (e) {
-            await connection.query('ROLLBACK');
+            await connection.rollback();
             throw e;
         } finally {
             connection.release();
@@ -429,12 +431,9 @@ export const getPromotionsAdmin = async (_req: Request, res: Response): Promise<
                     ${mediaReady ? 'pr.product_gender,' : ''}
                     pr.audience_scope,
                     pr.audience_segment,
-                    COALESCE(JSON_AGG(DISTINCT pp.producto_id) FILTER (WHERE pp.producto_id IS NOT NULL), '[]') AS product_ids,
-                    COALESCE(JSON_AGG(DISTINCT pu.usuario_id) FILTER (WHERE pu.usuario_id IS NOT NULL), '[]') AS audience_user_ids
+                    COALESCE((SELECT JSON_ARRAYAGG(pp.producto_id) FROM PromocionProductos pp WHERE pp.promocion_id = pr.id), '[]') AS product_ids,
+                    COALESCE((SELECT JSON_ARRAYAGG(pu.usuario_id) FROM PromocionUsuarios pu WHERE pu.promocion_id = pr.id), '[]') AS audience_user_ids
                 FROM Promociones pr
-                LEFT JOIN PromocionProductos pp ON pp.promocion_id = pr.id
-                LEFT JOIN PromocionUsuarios pu ON pu.promocion_id = pr.id
-                GROUP BY pr.id
                 ORDER BY ${advancedReady ? 'pr.priority DESC,' : ''} pr.creado_en DESC
             `);
             res.status(200).json(rows);
@@ -521,7 +520,7 @@ export const updatePromotion = async (req: Request, res: Response): Promise<void
 
         const connection = await pool.getConnection();
         try {
-            await connection.query('BEGIN');
+            await connection.beginTransaction();
 
             const updates: string[] = [];
             const params: any[] = [];
@@ -531,39 +530,39 @@ export const updatePromotion = async (req: Request, res: Response): Promise<void
             const amount = dtype === 'AMOUNT' ? Number(amount_discount || 0) : null;
             const prio = advancedReady ? Number(priority || 0) : 0;
 
-            if (nombre !== undefined) { updates.push('nombre = $' + (params.length + 1)); params.push(nombre); }
-            if (descripcion !== undefined) { updates.push('descripcion = $' + (params.length + 1)); params.push(descripcion); }
-            if (imagen_url !== undefined) { updates.push('imagen_url = $' + (params.length + 1)); params.push(imagen_url); }
+            if (nombre !== undefined) { updates.push('nombre = ?'); params.push(nombre); }
+            if (descripcion !== undefined) { updates.push('descripcion = ?'); params.push(descripcion); }
+            if (imagen_url !== undefined) { updates.push('imagen_url = ?'); params.push(imagen_url); }
             if (porcentaje_descuento !== undefined || discount_type !== undefined || amount_discount !== undefined) {
-                updates.push('porcentaje_descuento = $' + (params.length + 1));
+                updates.push('porcentaje_descuento = ?');
                 params.push(pct);
                 if (advancedReady) {
-                    updates.push('discount_type = $' + (params.length + 1));
+                    updates.push('discount_type = ?');
                     params.push(dtype);
-                    updates.push('amount_discount = $' + (params.length + 1));
+                    updates.push('amount_discount = ?');
                     params.push(amount);
                 }
             }
             if (advancedReady && priority !== undefined) {
-                updates.push('priority = $' + (params.length + 1));
+                updates.push('priority = ?');
                 params.push(prio);
             }
-            if (fecha_inicio !== undefined) { updates.push('fecha_inicio = $' + (params.length + 1)); params.push(fecha_inicio); }
-            if (fecha_fin !== undefined) { updates.push('fecha_fin = $' + (params.length + 1)); params.push(fecha_fin); }
+            if (fecha_inicio !== undefined) { updates.push('fecha_inicio = ?'); params.push(fecha_inicio); }
+            if (fecha_fin !== undefined) { updates.push('fecha_fin = ?'); params.push(fecha_fin); }
             if (activo !== undefined) {
                 const activeParsed = parseBoolean(activo, undefined);
                 if (activeParsed !== undefined) {
-                    updates.push('activo = $' + (params.length + 1));
+                    updates.push('activo = ?');
                     params.push(activeParsed);
                 }
             }
-            if (product_scope !== undefined) { updates.push('product_scope = $' + (params.length + 1)); params.push(product_scope); }
+            if (product_scope !== undefined) { updates.push('product_scope = ?'); params.push(product_scope); }
             if (mediaReady) {
                 if (product_gender !== undefined && (product_scope === undefined || product_scope === 'GENDER')) {
                     const normalized = product_gender ? slugify(String(product_gender)) : '';
                     if (product_scope === 'GENDER' || (product_scope === undefined && normalized)) {
                         if (!normalized) {
-                            await connection.query('ROLLBACK');
+                            await connection.rollback();
                             connection.release();
                             res.status(400).json({ error: 'Debes seleccionar una categoria' });
                             return;
@@ -571,30 +570,31 @@ export const updatePromotion = async (req: Request, res: Response): Promise<void
                         if (categoriesOk) {
                             const exists = await ensureCategoryExists(normalized);
                             if (!exists) {
-                                await connection.query('ROLLBACK');
+                                await connection.rollback();
                                 connection.release();
                                 res.status(400).json({ error: 'Categoria invalida. Crea la categoria primero en Admin > Categorias.' });
                                 return;
                             }
                         }
                     }
-                    updates.push('product_gender = $' + (params.length + 1));
+                    updates.push('product_gender = ?');
                     params.push(normalized || null);
                 }
                 if (product_scope !== undefined && product_scope !== 'GENDER') {
-                    updates.push('product_gender = $' + (params.length + 1));
+                    updates.push('product_gender = ?');
                     params.push(null);
                 }
             }
-            if (audience_scope !== undefined) { updates.push('audience_scope = $' + (params.length + 1)); params.push(audience_scope); }
-            if (audience_segment !== undefined) { updates.push('audience_segment = $' + (params.length + 1)); params.push(audience_segment || null); }
+            if (audience_scope !== undefined) { updates.push('audience_scope = ?'); params.push(audience_scope); }
+            if (audience_segment !== undefined) { updates.push('audience_segment = ?'); params.push(audience_segment || null); }
 
             if (updates.length > 0) {
                 params.push(id);
-                const query = `UPDATE Promociones SET ${updates.join(', ')} WHERE id = $${params.length}`;
-                const result = await connection.query(query, params);
-                if ((result as any)?.rowCount === 0) {
-                    await connection.query('ROLLBACK');
+                const query = `UPDATE Promociones SET ${updates.join(', ')} WHERE id = ?`;
+                const [result] = await connection.query(query, params);
+                const affected = Number((result as any)?.affectedRows ?? 0);
+                if (affected === 0) {
+                    await connection.rollback();
                     res.status(404).json({ error: 'Promocion no encontrada' });
                     return;
                 }
@@ -603,51 +603,51 @@ export const updatePromotion = async (req: Request, res: Response): Promise<void
             // Reemplazar asignacion de productos si viene en el payload
             if (product_scope !== undefined) {
                 if (product_scope === 'GLOBAL') {
-                    await connection.query('DELETE FROM PromocionProductos WHERE promocion_id = $1', [id]);
+                    await connection.query('DELETE FROM PromocionProductos WHERE promocion_id = ?', [id]);
                 }
                 if (product_scope === 'SPECIFIC') {
                     if (!Array.isArray(product_ids) || product_ids.length === 0) {
-                        await connection.query('ROLLBACK');
+                        await connection.rollback();
                         res.status(400).json({ error: 'Debes seleccionar al menos un producto' });
                         return;
                     }
-                    await connection.query('DELETE FROM PromocionProductos WHERE promocion_id = $1', [id]);
+                    await connection.query('DELETE FROM PromocionProductos WHERE promocion_id = ?', [id]);
                     for (const pid of product_ids) {
                         await connection.query(
-                            'INSERT INTO PromocionProductos (promocion_id, producto_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                            'INSERT IGNORE INTO PromocionProductos (promocion_id, producto_id) VALUES (?, ?)',
                             [id, pid]
                         );
                     }
                 }
                 if (product_scope === 'GENDER') {
-                    await connection.query('DELETE FROM PromocionProductos WHERE promocion_id = $1', [id]);
+                    await connection.query('DELETE FROM PromocionProductos WHERE promocion_id = ?', [id]);
                 }
             }
 
             // Reemplazar asignacion de usuarios si viene en el payload
             if (audience_scope !== undefined) {
                 if (audience_scope === 'ALL' || audience_scope === 'SEGMENT') {
-                    await connection.query('DELETE FROM PromocionUsuarios WHERE promocion_id = $1', [id]);
+                    await connection.query('DELETE FROM PromocionUsuarios WHERE promocion_id = ?', [id]);
                 }
                 if (audience_scope === 'CUSTOMERS') {
                     if (!Array.isArray(audience_user_ids) || audience_user_ids.length === 0) {
-                        await connection.query('ROLLBACK');
+                        await connection.rollback();
                         res.status(400).json({ error: 'Debes seleccionar al menos un cliente' });
                         return;
                     }
-                    await connection.query('DELETE FROM PromocionUsuarios WHERE promocion_id = $1', [id]);
+                    await connection.query('DELETE FROM PromocionUsuarios WHERE promocion_id = ?', [id]);
                     for (const uid of audience_user_ids) {
                         await connection.query(
-                            'INSERT INTO PromocionUsuarios (promocion_id, usuario_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+                            'INSERT IGNORE INTO PromocionUsuarios (promocion_id, usuario_id) VALUES (?, ?)',
                             [id, uid]
                         );
                     }
                 }
             }
 
-            await connection.query('COMMIT');
+            await connection.commit();
         } catch (e) {
-            await connection.query('ROLLBACK');
+            await connection.rollback();
             throw e;
         } finally {
             connection.release();
@@ -671,11 +671,11 @@ export const updatePromotionActive = async (req: Request, res: Response): Promis
         }
 
         const [result] = await pool.query<any>(
-            'UPDATE Promociones SET activo = $1 WHERE id = $2',
+            'UPDATE Promociones SET activo = ? WHERE id = ?',
             [activeParsed, id]
         );
 
-        const affected = Number((result as any)?.affectedRows ?? (result as any)?.rowCount ?? 0);
+        const affected = Number((result as any)?.affectedRows ?? 0);
         if (!affected) {
             res.status(404).json({ error: 'Promocion no encontrada' });
             return;
@@ -692,12 +692,13 @@ export const deletePromotion = async (req: Request, res: Response): Promise<void
     try {
         const { id } = req.params;
 
-        const result = await pool.query<any>(
-            `DELETE FROM Promociones WHERE id = $1`,
+        const [result] = await pool.query<any>(
+            `DELETE FROM Promociones WHERE id = ?`,
             [id]
         );
 
-        if ((result as any)?.rowCount === 0) {
+        const affected = Number((result as any)?.affectedRows ?? (result as any)?.rowCount ?? 0);
+        if (affected === 0) {
             res.status(404).json({ error: 'Promocion no encontrada' });
             return;
         }

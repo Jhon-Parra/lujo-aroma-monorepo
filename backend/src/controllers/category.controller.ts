@@ -17,8 +17,13 @@ const slugify = (name: string): string => {
 
 const ensureCategoriesSchema = async (): Promise<boolean> => {
     try {
-        const [rows] = await pool.query<any[]>("SELECT to_regclass('categorias') IS NOT NULL AS ok");
-        return !!rows?.[0]?.ok;
+        const [rows] = await pool.query<any[]>(
+            `SELECT COUNT(*) AS ok 
+             FROM information_schema.tables 
+             WHERE table_schema = DATABASE() 
+               AND lower(table_name) = 'categorias'`
+        );
+        return Number(rows?.[0]?.ok || 0) > 0;
     } catch {
         return false;
     }
@@ -60,7 +65,7 @@ export const getCategoriesAdmin = async (_req: Request, res: Response): Promise<
                 c.slug,
                 c.activo,
                 c.creado_en,
-                (SELECT COUNT(*)::int FROM Productos p WHERE p.genero = c.slug) AS total_productos
+                (SELECT COUNT(*) FROM Productos p WHERE p.genero = c.slug) AS total_productos
              FROM Categorias c
              ORDER BY c.nombre ASC`
         );
@@ -92,7 +97,7 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
         }
 
         const id = uuidv4();
-        await pool.query('INSERT INTO Categorias (id, nombre, slug, activo) VALUES ($1, $2, $3, true)', [id, nombre, slug]);
+        await pool.query('INSERT INTO Categorias (id, nombre, slug, activo) VALUES (?, ?, ?, true)', [id, nombre, slug]);
         res.status(201).json({ message: 'Categoria creada', id });
     } catch (e: any) {
         const msg = String(e?.message || '');
@@ -128,18 +133,18 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
 
         if (nombre) {
             const slug = slugify(nombre);
-            updates.push('nombre = $' + (params.length + 1));
+            updates.push('nombre = ?');
             params.push(nombre);
-            updates.push('slug = $' + (params.length + 1));
+            updates.push('slug = ?');
             params.push(slug);
         }
         if (activo !== undefined) {
-            updates.push('activo = $' + (params.length + 1));
+            updates.push('activo = ?');
             params.push(activo);
         }
 
         params.push(id);
-        const sql = `UPDATE Categorias SET ${updates.join(', ')} WHERE id = $${params.length}`;
+        const sql = `UPDATE Categorias SET ${updates.join(', ')} WHERE id = ?`;
         const [result] = await pool.query<any>(sql, params);
         if ((result as any)?.affectedRows === 0) {
             res.status(404).json({ error: 'Categoria no encontrada' });
@@ -161,26 +166,26 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
     try {
         const ok = await ensureCategoriesSchema();
         if (!ok) {
-            res.status(400).json({ error: 'Tu base de datos no soporta categorias. Ejecuta database/migrations/20260312_categories.sql en Supabase.' });
+            res.status(400).json({ error: 'Tu base de datos no tiene la tabla de categorias. Ejecuta las migraciones de base de datos.' });
             return;
         }
 
         const { id } = req.params;
-        const [rows] = await pool.query<any[]>('SELECT slug FROM Categorias WHERE id = $1', [id]);
+        const [rows] = await pool.query<any[]>('SELECT slug FROM Categorias WHERE id = ?', [id]);
         const slug = rows?.[0]?.slug;
         if (!slug) {
             res.status(404).json({ error: 'Categoria no encontrada' });
             return;
         }
 
-        const [countRows] = await pool.query<any[]>('SELECT COUNT(*)::int AS n FROM Productos WHERE genero = $1', [slug]);
+        const [countRows] = await pool.query<any[]>('SELECT COUNT(*) AS n FROM Productos WHERE genero = ?', [slug]);
         const n = Number(countRows?.[0]?.n || 0);
         if (n > 0) {
             res.status(409).json({ error: 'No puedes eliminar una categoria con productos asociados.' });
             return;
         }
 
-        const [result] = await pool.query<any>('DELETE FROM Categorias WHERE id = $1', [id]);
+        const [result] = await pool.query<any>('DELETE FROM Categorias WHERE id = ?', [id]);
         if ((result as any)?.affectedRows === 0) {
             res.status(404).json({ error: 'Categoria no encontrada' });
             return;

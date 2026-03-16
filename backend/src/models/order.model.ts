@@ -52,9 +52,10 @@ const round2 = (n: number): number => Math.round(n * 100) / 100;
 const detectAddonConfigColumns = async (): Promise<boolean> => {
     try {
         const [rows] = await pool.query<any[]>(
-            `SELECT COUNT(*)::int AS cnt
+            `SELECT COUNT(*) AS cnt
              FROM information_schema.columns
-             WHERE table_name = 'configuracionglobal'
+             WHERE table_schema = DATABASE()
+               AND lower(table_name) = 'configuracionglobal'
                AND column_name IN ('envio_prioritario_precio','perfume_lujo_precio')`
         );
         return Number(rows?.[0]?.cnt || 0) >= 2;
@@ -91,10 +92,11 @@ const detectOrderAddonColumns = async (): Promise<OrderAddonCols> => {
         const [rows] = await pool.query<any[]>(
             `SELECT column_name
              FROM information_schema.columns
-             WHERE table_name = 'ordenes'
+             WHERE table_schema = DATABASE()
+               AND lower(table_name) = 'ordenes'
                AND column_name IN ('subtotal_productos','envio_prioritario','costo_envio_prioritario','perfume_lujo','costo_perfume_lujo','cart_recovery_applied','cart_recovery_discount_pct','cart_recovery_discount_amount')`
         );
-        const cols = new Set((rows || []).map((r: any) => String(r.column_name)));
+        const cols = new Set((rows || []).map((r: any) => String(r.COLUMN_NAME || r.column_name || r.Column_Name).toLowerCase()));
         return {
             subtotal_productos: cols.has('subtotal_productos'),
             envio_prioritario: cols.has('envio_prioritario'),
@@ -135,7 +137,7 @@ export class OrderModel {
         const id = String(orderId || '').trim();
         if (!id) return null;
         const [rows] = await pool.query<any[]>(
-            'SELECT estado FROM ordenes WHERE id = $1 LIMIT 1',
+            'SELECT estado FROM ordenes WHERE id = ? LIMIT 1',
             [id]
         );
         const estado = String(rows?.[0]?.estado || '').trim();
@@ -183,7 +185,7 @@ export class OrderModel {
             if (addonCols.cart_recovery_discount_pct) { cols.push('cart_recovery_discount_pct'); vals.push(cart_recovery_discount_pct); }
             if (addonCols.cart_recovery_discount_amount) { cols.push('cart_recovery_discount_amount'); vals.push(cart_recovery_discount_amount); }
 
-            const placeholders = cols.map((_, i) => `$${i + 1}`).join(', ');
+            const placeholders = cols.map(() => `?`).join(', ');
             await connection.query(
                 `INSERT INTO ordenes (${cols.join(', ')}) VALUES (${placeholders})`,
                 vals
@@ -194,17 +196,17 @@ export class OrderModel {
                 const itemId = uuidv4();
                 await connection.query(
                     `INSERT INTO detalle_ordenes (id, orden_id, producto_id, cantidad, precio_unitario)
-                     VALUES ($1, $2, $3, $4, $5)`,
+                     VALUES (?, ?, ?, ?, ?)`,
                     [itemId, orderId, item.product_id, item.quantity, item.price]
                 );
 
                 // Descontar stock del producto
-                const stockResult = await connection.query(
-                    'UPDATE productos SET stock = stock - $1 WHERE id = $2 AND stock >= $1',
-                    [item.quantity, item.product_id]
+                const [stockResult] = await connection.query(
+                    'UPDATE productos SET stock = stock - ? WHERE id = ? AND stock >= ?',
+                    [item.quantity, item.product_id, item.quantity]
                 );
 
-                if ((stockResult as any)?.rowCount === 0) {
+                if ((stockResult as any)?.affectedRows === 0) {
                     throw new Error('Stock insuficiente para completar la orden');
                 }
             }
@@ -230,9 +232,9 @@ export class OrderModel {
     static async markCartSessionConverted(sessionId: string, orderId: string): Promise<void> {
         await pool.query(
             `UPDATE CartSessions
-             SET status = 'CONVERTED', order_id = $2, updated_at = NOW()
-             WHERE session_id = $1`,
-            [sessionId, orderId]
+             SET status = 'CONVERTED', order_id = ?, updated_at = NOW()
+             WHERE session_id = ?`,
+            [orderId, sessionId]
         );
     }
 
@@ -262,8 +264,8 @@ export class OrderModel {
                 o.codigo_transaccion,
                 o.creado_en
                 ${extraSelect ? `, ${extraSelect}` : ''},
-                JSON_AGG(
-                    JSON_BUILD_OBJECT(
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
                         'producto_id', d.producto_id,
                         'nombre', p.nombre,
                         'cantidad', d.cantidad,
@@ -275,7 +277,7 @@ export class OrderModel {
             FROM ordenes o
             JOIN detalle_ordenes d ON d.orden_id = o.id
             JOIN productos p ON p.id = d.producto_id
-            WHERE o.usuario_id = $1
+            WHERE o.usuario_id = ?
             GROUP BY ${groupBy.join(', ')}
             ORDER BY o.creado_en DESC`,
             [userId]
@@ -292,16 +294,18 @@ export class OrderModel {
 
         if (status) {
             params.push(status);
-            where += ` AND o.estado = $${params.length}`;
+            where += ` AND o.estado = ?`;
         }
 
         if (q) {
             params.push(`%${q}%`);
+            const pIdx = params.length;
             where += ` AND (
-                o.id::text ILIKE $${params.length}
-                OR (u.nombre || ' ' || u.apellido) ILIKE $${params.length}
-                OR u.email ILIKE $${params.length}
+                o.id LIKE ?
+                OR CONCAT(u.nombre, ' ', u.apellido) LIKE ?
+                OR u.email LIKE ?
             )`;
+            params.push(`%${q}%`, `%${q}%`); // Duplicate for the 3 '?'
         }
 
         const [rows] = await pool.query(
@@ -312,7 +316,7 @@ export class OrderModel {
                 o.direccion_envio,
                 o.codigo_transaccion,
                 o.creado_en,
-                u.nombre || ' ' || u.apellido AS cliente_nombre,
+                CONCAT(u.nombre, ' ', u.apellido) AS cliente_nombre,
                 u.email AS cliente_email,
                 COUNT(d.id) AS total_items
             FROM ordenes o
@@ -329,14 +333,14 @@ export class OrderModel {
 
     static async updateOrderStatus(orderId: string, estado: string) {
         await pool.query(
-            'UPDATE ordenes SET estado = $1, actualizado_en = NOW() WHERE id = $2',
+            'UPDATE ordenes SET estado = ?, actualizado_en = NOW() WHERE id = ?',
             [estado, orderId]
         );
         return true;
     }
 
     static async updateTransactionCode(orderId: string, transactionCode: string | null): Promise<void> {
-        await pool.query('UPDATE ordenes SET codigo_transaccion = $1, actualizado_en = NOW() WHERE id = $2', [transactionCode, orderId]);
+        await pool.query('UPDATE ordenes SET codigo_transaccion = ?, actualizado_en = NOW() WHERE id = ?', [transactionCode, orderId]);
     }
 
     static async cancelAndRestock(orderId: string): Promise<void> {
@@ -344,28 +348,28 @@ export class OrderModel {
         try {
             await connection.query('BEGIN');
 
-            const resOrder = await connection.query(
-                'SELECT estado FROM ordenes WHERE id = $1 FOR UPDATE',
+            const [resOrder] = await connection.query(
+                'SELECT estado FROM ordenes WHERE id = ? FOR UPDATE',
                 [orderId]
             );
-            const current = (resOrder as any)?.rows?.[0]?.estado;
+            const current = (resOrder as any)?.[0]?.estado;
             if (String(current || '').toUpperCase() === 'CANCELADO') {
                 await connection.query('COMMIT');
                 return;
             }
 
-            await connection.query('UPDATE ordenes SET estado = $1, actualizado_en = NOW() WHERE id = $2', ['CANCELADO', orderId]);
+            await connection.query('UPDATE ordenes SET estado = ?, actualizado_en = NOW() WHERE id = ?', ['CANCELADO', orderId]);
 
-            const resItems = await connection.query(
-                'SELECT producto_id, cantidad FROM detalle_ordenes WHERE orden_id = $1',
+            const [resItems] = await connection.query(
+                'SELECT producto_id, cantidad FROM detalle_ordenes WHERE orden_id = ?',
                 [orderId]
             );
-            const items: any[] = (resItems as any)?.rows || [];
+            const items: any[] = resItems as any[] || [];
             for (const it of items) {
                 const pid = it?.producto_id;
                 const qty = Number(it?.cantidad || 0);
                 if (!pid || !Number.isFinite(qty) || qty <= 0) continue;
-                await connection.query('UPDATE productos SET stock = stock + $1 WHERE id = $2', [qty, pid]);
+                await connection.query('UPDATE productos SET stock = stock + ? WHERE id = ?', [qty, pid]);
             }
 
             await connection.query('COMMIT');
@@ -390,8 +394,8 @@ export class OrderModel {
         let query = `
             SELECT 
                 o.id, o.total, o.estado, o.direccion_envio, o.codigo_transaccion, o.creado_en${extraSelect ? `, ${extraSelect}` : ''},
-                JSON_AGG(
-                    JSON_BUILD_OBJECT(
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
                         'producto_id', d.producto_id,
                         'nombre', p.nombre,
                         'cantidad', d.cantidad,
@@ -403,10 +407,10 @@ export class OrderModel {
             FROM ordenes o
             JOIN detalle_ordenes d ON d.orden_id = o.id
             JOIN productos p ON p.id = d.producto_id
-            WHERE o.id = $1`;
+            WHERE o.id = ?`;
         const params: string[] = [orderId];
         if (userId) {
-            query += ` AND o.usuario_id = $2`;
+            query += ` AND o.usuario_id = ?`;
             params.push(userId);
         }
         const groupBy = ['o.id'];
@@ -446,11 +450,9 @@ export class OrderModel {
                 o.codigo_transaccion,
                 o.creado_en
                 ${extraSelect ? `, ${extraSelect}` : ''},
-                u.nombre || ' ' || u.apellido AS cliente_nombre,
-                u.email AS cliente_email,
-                u.telefono AS cliente_telefono,
-                JSON_AGG(
-                    JSON_BUILD_OBJECT(
+                u.nombre, u.apellido, u.email, u.telefono,
+                JSON_ARRAYAGG(
+                    JSON_OBJECT(
                         'producto_id', d.producto_id,
                         'nombre', p.nombre,
                         'cantidad', d.cantidad,
@@ -458,13 +460,12 @@ export class OrderModel {
                         'subtotal', d.subtotal,
                         'imagen_url', p.imagen_url
                     )
-                    ORDER BY p.nombre
                 ) as items
             FROM ordenes o
             JOIN usuarios u ON u.id = o.usuario_id
             JOIN detalle_ordenes d ON d.orden_id = o.id
             JOIN productos p ON p.id = d.producto_id
-            WHERE o.id = $1
+            WHERE o.id = ?
             GROUP BY ${groupBy.join(', ')}`,
             [orderId]
         );

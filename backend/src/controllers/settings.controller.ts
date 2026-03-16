@@ -128,12 +128,13 @@ const MAX_ADDON_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB
 const detectColumns = async (columns: string[]): Promise<Record<string, boolean>> => {
     try {
         console.log('[DEBUG] detectColumns query starting...');
+        // MySQL uses IN (?) for arrays, and we need to provide each value
         const [rows] = await pool.query<any[]>(
             `SELECT column_name
              FROM information_schema.columns
-             WHERE table_name = 'configuracionglobal'
-               AND column_name = ANY($1::text[])`,
-            [columns]
+             WHERE lower(table_name) = 'configuracionglobal'
+               AND column_name IN (${columns.map(() => '?').join(', ')})`,
+            columns
         );
         console.log(`[DEBUG] detectColumns query finished, found ${rows?.length || 0} rows`);
 
@@ -141,7 +142,8 @@ const detectColumns = async (columns: string[]): Promise<Record<string, boolean>
         const result: Record<string, boolean> = {};
         for (const c of columns) result[c] = found.has(c);
         return result;
-    } catch {
+    } catch (error) {
+        console.error('[ERROR] detectColumns failed:', error);
         const result: Record<string, boolean> = {};
         for (const c of columns) result[c] = false;
         return result;

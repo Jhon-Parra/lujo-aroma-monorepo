@@ -18,7 +18,7 @@ export const OrderEmailLogsService = {
             `SELECT id, order_id, status, to_email, from_email, subject, success, error_message, created_at
              FROM OrderEmailLogs
              ORDER BY created_at DESC
-             LIMIT $1`,
+             LIMIT ?`,
             [max]
         );
         return rows || [];
@@ -28,7 +28,7 @@ export const OrderEmailLogsService = {
         try {
             await pool.query(
                 `INSERT INTO OrderEmailLogs (order_id, status, to_email, from_email, subject, success, error_message)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
                     input.orderId,
                     input.status,

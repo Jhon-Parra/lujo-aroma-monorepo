@@ -77,10 +77,10 @@ export class ProductCardComponent {
   getCategoryClass(): { [klass: string]: boolean } {
     const slug = this.getCategorySlug();
     return {
-      'bg-pink-50 text-pink-600 border-pink-100': slug === 'mujer',
-      'bg-blue-50 text-blue-600 border-blue-100': slug === 'hombre',
-      'bg-gray-100 text-gray-500 border-gray-200': slug === 'unisex',
-      'bg-[#f9f9f6] text-soft-charcoal border-[#e7e7df]': slug !== 'mujer' && slug !== 'hombre' && slug !== 'unisex'
+      'bg-rose-100 text-rose-700 border-rose-200': slug === 'mujer',
+      'bg-blue-100 text-blue-700 border-blue-200': slug === 'hombre',
+      'bg-emerald-100 text-emerald-700 border-emerald-200': slug === 'unisex',
+      'bg-amber-100 text-amber-700 border-amber-200': slug !== 'mujer' && slug !== 'hombre' && slug !== 'unisex'
     };
   }
 

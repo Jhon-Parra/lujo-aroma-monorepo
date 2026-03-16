@@ -547,9 +547,12 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
              WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
              GROUP BY d.producto_id, p.nombre
-             HAVING current_units >= ?
-             ORDER BY (current_units - prev_units) DESC
-             LIMIT 5`,
+              HAVING SUM(CASE WHEN o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN d.cantidad ELSE 0 END) >= ?
+              ORDER BY (
+                SUM(CASE WHEN o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN d.cantidad ELSE 0 END) -
+                SUM(CASE WHEN o.creado_en < DATE_SUB(NOW(), INTERVAL 7 DAY) THEN d.cantidad ELSE 0 END)
+              ) DESC
+              LIMIT 5`,
             [...okStates, config.trend_min_units]
         );
 

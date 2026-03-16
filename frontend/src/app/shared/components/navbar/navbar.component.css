@@ -29,9 +29,8 @@ nav {
 .navbar-logo {
   position: static;
   transform: none;
-  height: var(--logo-h-mobile, 100px);
-  /* Más grande en móvil */
-  max-height: 100%;
+  height: var(--logo-h-mobile, 110px);
+  /* Un poco más grande por defecto */
   width: auto;
   max-width: 100%;
   z-index: 20;

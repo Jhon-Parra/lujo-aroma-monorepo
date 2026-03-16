@@ -79,11 +79,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   getLogoCssVars(): Record<string, string> {
-    const mobile = Number(this.settings?.logo_height_mobile ?? 96);
-    const desktop = Number(this.settings?.logo_height_desktop ?? 112);
+    const mobile = Number(this.settings?.logo_height_mobile ?? 100);
+    const desktop = Number(this.settings?.logo_height_desktop ?? 100);
 
-    const safeMobile = Number.isFinite(mobile) ? Math.min(Math.max(mobile, 24), 220) : 96;
-    const safeDesktop = Number.isFinite(desktop) ? Math.min(Math.max(desktop, 24), 260) : 112;
+    const safeMobile = Number.isFinite(mobile) ? Math.min(Math.max(mobile, 24), 260) : 120;
+    const safeDesktop = Number.isFinite(desktop) ? Math.min(Math.max(desktop, 24), 300) : 160;
 
     return {
       '--logo-h-mobile': `${safeMobile}px`,

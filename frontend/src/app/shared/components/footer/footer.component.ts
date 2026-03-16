@@ -21,22 +21,34 @@ export class FooterComponent {
   constructor(private settingsService: SettingsService) { }
 
   ngOnInit() {
+    this.settingsService.settings$.subscribe((s) => {
+      if (s) this.updateSettingsData(s);
+    });
+
     this.settingsService.getSettings().subscribe({
       next: (s) => {
-        this.settings = s;
-        this.whatsappUrl = this.buildWhatsappUrl(s?.whatsapp_number || '', s?.whatsapp_message || '');
-        this.instagramUrl = this.normalizeExternalUrl(s?.instagram_url || '', 'instagram.com');
-        this.facebookUrl = this.normalizeExternalUrl(s?.facebook_url || '', 'facebook.com');
-        this.tiktokUrl = this.normalizeExternalUrl(s?.tiktok_url || '', 'tiktok.com');
+        this.updateSettingsData(s);
       },
       error: () => {
-        this.settings = null;
-        this.whatsappUrl = '';
-        this.instagramUrl = '';
-        this.facebookUrl = '';
-        this.tiktokUrl = '';
+        this.resetSettingsData();
       }
     });
+  }
+
+  private updateSettingsData(s: Settings): void {
+    this.settings = s;
+    this.whatsappUrl = this.buildWhatsappUrl(s?.whatsapp_number || '', s?.whatsapp_message || '');
+    this.instagramUrl = this.normalizeExternalUrl(s?.instagram_url || '', 'instagram.com');
+    this.facebookUrl = this.normalizeExternalUrl(s?.facebook_url || '', 'facebook.com');
+    this.tiktokUrl = this.normalizeExternalUrl(s?.tiktok_url || '', 'tiktok.com');
+  }
+
+  private resetSettingsData(): void {
+    this.settings = null;
+    this.whatsappUrl = '';
+    this.instagramUrl = '';
+    this.facebookUrl = '';
+    this.tiktokUrl = '';
   }
 
   private normalizeExternalUrl(raw: string, expectedHost: string): string {

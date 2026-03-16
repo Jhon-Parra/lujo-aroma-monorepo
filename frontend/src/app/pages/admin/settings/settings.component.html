@@ -5,7 +5,7 @@
         <div class="h-28 flex items-center justify-center border-b border-gray-700 bg-white/5 py-4">
             <a routerLink="/"
                 class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300">
-                <img src="assets/images/logo.png" alt="Perfumissimo Admin"
+                <img [src]="getLogoUrl()" alt="Perfumissimo Admin"
                     class="h-16 w-auto object-contain mx-auto mix-blend-screen" />
                 <span class="text-[9px] text-gold/80 font-sans tracking-widest mt-2 uppercase font-bold">Panel
                     Admin</span>

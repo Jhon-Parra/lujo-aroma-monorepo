@@ -9,6 +9,7 @@ export interface Product {
   categoria_nombre?: string | null;
   categoria_slug?: string | null;
   descripcion: string;
+  notas_olfativas?: string | null;
   precio: number | string;
   precio_con_descuento?: number | string | null;
   precio_original?: number | string;

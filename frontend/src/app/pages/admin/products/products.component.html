@@ -381,7 +381,7 @@
                             <span class="font-bold text-charcoal">{{ product.nombre }}</span>
                         </td>
                         <td class="p-4 uppercase text-[10px] tracking-widest font-bold text-gold">{{ product.categoria_nombre || (product.genero || 'UNISEX') }}</td>
-                        <td class="p-4 truncate max-w-xs">{{ product.descripcion }}</td>
+                        <td class="p-4 truncate max-w-xs">{{ product.notas_olfativas || product.descripcion }}</td>
                         <td class="p-4 text-right font-bold text-charcoal">{{ product.precio | currency }}</td>
                         <td class="p-4 text-center cursor-pointer" (click)="!editingStockId && startEditStock(product)"
                             title="Clic para editar stock">

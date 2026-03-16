@@ -354,7 +354,7 @@ export class ProductsComponent implements OnInit {
     this.newProduct = {
       nombre: product.nombre,
       genero: (product as any).categoria_slug || product.genero || 'unisex',
-      notas: '', // Solo para la IA, no guardamos esto directamente
+      notas: (product as any).notas_olfativas || '',
       precio: typeof product.precio === 'string' ? parseFloat(product.precio) : (product.precio || 0),
       stock: product.stock,
       descripcion: product.descripcion || '',

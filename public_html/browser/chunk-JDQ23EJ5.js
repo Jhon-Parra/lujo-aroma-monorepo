@@ -1,1 +1,0 @@
-var e={serverUrl:"https://api.perfumissimocol.com",baseUrl:"https://api.perfumissimocol.com/api",googleClientId:"129037757547-mvt7e9b254t59dc4s7mu8vnth62lf7lr.apps.googleusercontent.com"};function s(o,t){e.serverUrl=o,e.baseUrl=`${o}/api`,e.googleClientId=t}export{e as a,s as b};

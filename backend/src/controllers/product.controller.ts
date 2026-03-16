@@ -6,6 +6,27 @@ import * as XLSX from 'xlsx';
 import { supabase } from '../config/supabase';
 import { sanitizeFilename } from '../middleware/upload.middleware';
 
+/**
+ * Helper to upload a file to Supabase perfumissimo_bucket/products/
+ */
+async function uploadToSupabase(file: Express.Multer.File): Promise<string> {
+    const uniqueFilename = sanitizeFilename(file.originalname);
+    const { data, error } = await supabase.storage
+        .from('perfumissimo_bucket')
+        .upload(`products/${uniqueFilename}`, file.buffer, {
+            contentType: file.mimetype,
+            upsert: true
+        });
+
+    if (error) throw new Error('Error subiendo imagen de producto a Supabase: ' + error.message);
+
+    const { data: publicData } = supabase.storage
+        .from('perfumissimo_bucket')
+        .getPublicUrl(`products/${uniqueFilename}`);
+
+    return publicData.publicUrl;
+}
+
 let promotionAssignmentReady: boolean | null = null;
 let promotionGenderReady: boolean | null = null;
 let promotionAdvancedReady: boolean | null = null;
@@ -187,30 +208,25 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
         let imagen_url = null;
+        let imagen_url_2 = null;
+        let imagen_url_3 = null;
 
-        if (req.file) {
-            const uniqueFilename = sanitizeFilename(req.file.originalname);
-            const { data, error } = await supabase.storage
-                .from('perfumissimo_bucket')
-                .upload(`products/${uniqueFilename}`, req.file.buffer, {
-                    contentType: req.file.mimetype,
-                    upsert: true
-                });
-
-            if (error) throw new Error('Error subiendo imagen de producto a Supabase: ' + error.message);
-
-            const { data: publicData } = supabase.storage
-                .from('perfumissimo_bucket')
-                .getPublicUrl(`products/${uniqueFilename}`);
-
-            imagen_url = publicData.publicUrl;
+        if (files?.['imagen']?.[0]) {
+            imagen_url = await uploadToSupabase(files['imagen'][0]);
+        }
+        if (files?.['imagen2']?.[0]) {
+            imagen_url_2 = await uploadToSupabase(files['imagen2'][0]);
+        }
+        if (files?.['imagen3']?.[0]) {
+            imagen_url_3 = await uploadToSupabase(files['imagen3'][0]);
         }
 
         const id = uuidv4();
 
         // Convert UUID to BINARY(16) in MySQL logic
-        const cols: string[] = ['id', 'nombre', 'genero', 'descripcion', 'notas_olfativas', 'precio', 'stock', 'unidades_vendidas', 'imagen_url', 'es_nuevo'];
+        const cols: string[] = ['id', 'nombre', 'genero', 'descripcion', 'notas_olfativas', 'precio', 'stock', 'unidades_vendidas', 'imagen_url', 'imagen_url_2', 'imagen_url_3', 'es_nuevo'];
         const vals: any[] = [
             id,
             nombre,
@@ -221,6 +237,8 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
             stock || 0,
             unidades_vendidas || 0,
             imagen_url,
+            imagen_url_2,
+            imagen_url_3,
             !!es_nuevo
         ];
 
@@ -264,6 +282,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
             `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
+                    p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
                     ${esNuevoExpr}${extraSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
@@ -586,8 +605,9 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
         const [pRows] = await pool.query<any[]>(
             `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
-                    ${esNuevoExpr}, p.creado_en
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
+                    p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
+                    p.promocion_id, ${esNuevoExpr}, p.creado_en
              FROM productos p
              ${categoryJoin}
              WHERE p.id = ?`,
@@ -896,6 +916,28 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
 
         if (updates.length === 0) {
             res.status(400).json({ error: 'No hay campos para actualizar' });
+            return;
+        }
+
+        const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+        if (files?.['imagen']?.[0]) {
+            const url = await uploadToSupabase(files['imagen'][0]);
+            updates.push('imagen_url = ?');
+            params.push(url);
+        }
+        if (files?.['imagen2']?.[0]) {
+            const url = await uploadToSupabase(files['imagen2'][0]);
+            updates.push('imagen_url_2 = ?');
+            params.push(url);
+        }
+        if (files?.['imagen3']?.[0]) {
+            const url = await uploadToSupabase(files['imagen3'][0]);
+            updates.push('imagen_url_3 = ?');
+            params.push(url);
+        }
+        
+        if (updates.length === 0) {
+            res.status(200).json({ message: 'Sin cambios aplicados' });
             return;
         }
 

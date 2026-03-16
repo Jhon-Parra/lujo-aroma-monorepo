@@ -27,6 +27,10 @@ export interface Product {
   stock: number;
   imagen_url?: string;
   imageUrl?: string; // Alias
+  imagen_url_2?: string;
+  imageUrl2?: string; // Alias
+  imagen_url_3?: string;
+  imageUrl3?: string; // Alias
   unidades_vendidas?: number;
   soldCount?: number; // Alias
 }

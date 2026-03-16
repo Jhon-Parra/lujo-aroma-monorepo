@@ -257,11 +257,22 @@
                     </div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Imagen del
-                        Fragancia</label>
-                    <input type="file" (change)="onFileSelected($event)" accept="image/*"
-                        class="w-full text-sm text-soft-charcoal file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-[#ecece5] file:text-charcoal hover:file:bg-[#dcdcd4]">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Imagen Principal</label>
+                        <input type="file" (change)="onFileSelected($event, 1)" accept="image/*"
+                            class="w-full text-sm text-soft-charcoal file:mr-2 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#ecece5] file:text-charcoal hover:file:bg-[#dcdcd4]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Imagen 2</label>
+                        <input type="file" (change)="onFileSelected($event, 2)" accept="image/*"
+                            class="w-full text-sm text-soft-charcoal file:mr-2 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#ecece5] file:text-charcoal hover:file:bg-[#dcdcd4]">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Imagen 3</label>
+                        <input type="file" (change)="onFileSelected($event, 3)" accept="image/*"
+                            class="w-full text-sm text-soft-charcoal file:mr-2 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#ecece5] file:text-charcoal hover:file:bg-[#dcdcd4]">
+                    </div>
                 </div>
 
                 <div>

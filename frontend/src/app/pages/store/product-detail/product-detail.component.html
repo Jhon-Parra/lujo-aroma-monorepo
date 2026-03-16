@@ -13,34 +13,44 @@
   </div>
 
   <div *ngIf="!loading && product" class="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-6">
-    <!-- Image -->
-    <div
-      class="bg-[#ecece5] border border-[#e5e5e0] rounded-xl p-8 flex items-center justify-center relative overflow-hidden">
-      <div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
-        <span *ngIf="product.es_nuevo"
-          class="bg-gold text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
-          Nuevo
-        </span>
-        <span *ngIf="hasPromotion()"
-          class="bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
-          Oferta
-          <ng-container *ngIf="isAmountPromotion(); else pctOff">
-            {{ getPromotionAmount() | currency:'COP':'symbol-narrow':'1.0-0' }} OFF
-          </ng-container>
-          <ng-template #pctOff>
-            {{ getPromotionPercent() }}% OFF
-          </ng-template>
-        </span>
-        <span *ngIf="product.stock <= 5"
-          class="bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
-          Ultimas unidades
-        </span>
+    <!-- Image Gallery -->
+    <div class="flex flex-col gap-4">
+      <div class="bg-[#ecece5] border border-[#e5e5e0] rounded-xl p-8 flex items-center justify-center relative overflow-hidden h-[400px] sm:h-[520px]">
+        <div class="absolute top-4 left-4 flex flex-col gap-2 z-10">
+          <span *ngIf="product.es_nuevo"
+            class="bg-gold text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+            Nuevo
+          </span>
+          <span *ngIf="hasPromotion()"
+            class="bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+            Oferta
+            <ng-container *ngIf="isAmountPromotion(); else pctOff">
+              {{ getPromotionAmount() | currency:'COP':'symbol-narrow':'1.0-0' }} OFF
+            </ng-container>
+            <ng-template #pctOff>
+              {{ getPromotionPercent() }}% OFF
+            </ng-template>
+          </span>
+          <span *ngIf="product.stock <= 5"
+            class="bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+            Ultimas unidades
+          </span>
+        </div>
+
+        <img
+          [src]="selectedImage || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop'"
+          [alt]="product.nombre" loading="eager" decoding="async" fetchpriority="high"
+          class="max-h-full w-auto object-contain drop-shadow-xl transition-all duration-300" />
       </div>
 
-      <img
-        [src]="product.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop'"
-        [alt]="product.nombre" loading="eager" decoding="async" fetchpriority="high"
-        class="max-h-[520px] w-auto object-contain drop-shadow-xl" />
+      <!-- Thumbnails -->
+      <div *ngIf="galleryImages.length > 1" class="flex gap-3 overflow-x-auto pb-2 scroll-premium">
+        <button *ngFor="let img of galleryImages" (click)="setMainImage(img)"
+                class="w-20 h-20 rounded-lg border-2 bg-cream overflow-hidden flex-shrink-0 transition-all duration-200"
+                [ngClass]="selectedImage === img ? 'border-gold scale-105 shadow-md' : 'border-transparent opacity-70 hover:opacity-100'">
+          <img [src]="img" class="w-full h-full object-cover">
+        </button>
+      </div>
     </div>
 
     <!-- Info -->

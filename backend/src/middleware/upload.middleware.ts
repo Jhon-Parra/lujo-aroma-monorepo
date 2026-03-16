@@ -150,6 +150,33 @@ export const uploadSingleImage = (req: any, res: any, next: any) => {
     });
 };
 
+export const uploadProductImages = (req: any, res: any, next: any) => {
+    const productUpload = multer({
+        storage,
+        limits: {
+            fileSize: MAX_FILE_SIZE,
+            files: 3
+        },
+        fileFilter
+    }).fields([
+        { name: 'imagen', maxCount: 1 },
+        { name: 'imagen2', maxCount: 1 },
+        { name: 'imagen3', maxCount: 1 }
+    ]);
+
+    productUpload(req, res, (err: any) => {
+        if (err instanceof multer.MulterError) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ error: 'Al menos una de las imágenes es demasiado grande. El límite es de 10MB por archivo.' });
+            }
+            return res.status(400).json({ error: `Error en la subida de imágenes: ${err.message}` });
+        } else if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+        next();
+    });
+};
+
 export const uploadSingleSpreadsheet = (req: any, res: any, next: any) => {
     uploadSpreadsheet.single('archivo')(req, res, (err: any) => {
         if (err instanceof multer.MulterError) {

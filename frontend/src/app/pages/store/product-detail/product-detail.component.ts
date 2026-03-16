@@ -34,6 +34,8 @@ export class ProductDetailComponent implements OnDestroy {
   related: CardProduct[] = [];
 
   quantity = 1;
+  galleryImages: string[] = [];
+  selectedImage: string = '';
   addedToCartNotice = '';
   private noticeTimer?: any;
 
@@ -78,10 +80,17 @@ export class ProductDetailComponent implements OnDestroy {
         this.product = p;
         this.loading = false;
 
+        this.galleryImages = [
+          p.imageUrl || p.imagen_url || '',
+          p.imageUrl2 || p.imagen_url_2 || '',
+          p.imageUrl3 || p.imagen_url_3 || ''
+        ].filter(url => !!url);
+        this.selectedImage = this.galleryImages[0] || '';
+
         const anyP: any = p as any;
         const title = `${String(anyP?.nombre || 'Producto')} | Perfumissimo`;
         const description = String(anyP?.descripcion || 'Perfume disponible en Perfumissimo.').trim();
-        const image = String(anyP?.imagen_url || '').trim();
+        const image = this.selectedImage || String(anyP?.imagen_url || '').trim();
         this.seo.set({ title, description, image, type: 'product' });
 
         const price = Number(anyP?.precio_con_descuento ?? anyP?.precio ?? 0);
@@ -377,5 +386,9 @@ export class ProductDetailComponent implements OnDestroy {
       imagen_url: this.product.imagen_url,
       unidades_vendidas: this.product.unidades_vendidas
     };
+  }
+
+  setMainImage(url: string): void {
+    this.selectedImage = url;
   }
 }

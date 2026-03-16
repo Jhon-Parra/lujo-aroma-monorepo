@@ -42,6 +42,8 @@ export class ProductsComponent implements OnInit {
   };
   editingProductId: string | null = null;
   selectedFile: File | null = null;
+  selectedFile2: File | null = null;
+  selectedFile3: File | null = null;
   isGeneratingAI = false;
   editingStockId: string | null = null;
   isSaving = false;
@@ -172,10 +174,12 @@ export class ProductsComponent implements OnInit {
     if (!this.showForm) this.resetForm();
   }
 
-  onFileSelected(event: any) {
+  onFileSelected(event: any, index: number = 1) {
     const file = event.target.files[0];
     if (file) {
-      this.selectedFile = file;
+      if (index === 1) this.selectedFile = file;
+      else if (index === 2) this.selectedFile2 = file;
+      else if (index === 3) this.selectedFile3 = file;
     }
   }
 
@@ -315,6 +319,12 @@ export class ProductsComponent implements OnInit {
     if (this.selectedFile) {
       formData.append('imagen', this.selectedFile);
     }
+    if (this.selectedFile2) {
+      formData.append('imagen2', this.selectedFile2);
+    }
+    if (this.selectedFile3) {
+      formData.append('imagen3', this.selectedFile3);
+    }
 
     if (this.editingProductId) {
       this.productService.updateProduct(this.editingProductId, formData).subscribe({
@@ -362,6 +372,8 @@ export class ProductsComponent implements OnInit {
       nuevoHasta: product.nuevo_hasta ? this.toDateTimeLocal(product.nuevo_hasta) : ''
     };
     this.selectedFile = null;
+    this.selectedFile2 = null;
+    this.selectedFile3 = null;
     this.showForm = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -445,6 +457,8 @@ export class ProductsComponent implements OnInit {
   resetForm() {
     this.newProduct = { nombre: '', genero: 'unisex', notas: '', precio: 0, stock: 0, descripcion: '', esNuevo: false, nuevoHasta: '' };
     this.selectedFile = null;
+    this.selectedFile2 = null;
+    this.selectedFile3 = null;
     this.editingProductId = null;
   }
 

@@ -12,7 +12,7 @@ import {
     getLowStockProducts,
     getRelatedProducts
 } from '../controllers/product.controller';
-import { uploadSingleImage, uploadSingleSpreadsheet } from '../middleware/upload.middleware';
+import { uploadProductImages, uploadSingleSpreadsheet } from '../middleware/upload.middleware';
 import { verifyToken, requirePermission, optionalVerifyToken } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
 import { createProductSchema, updateProductSchema } from '../schemas/product.schema';
@@ -30,9 +30,9 @@ router.get('/import/template', verifyToken, requirePermission('admin.products'),
 router.get('/:id/related', optionalVerifyToken, getRelatedProducts);
 router.get('/:id', optionalVerifyToken, getProductById);
 
-router.post('/', verifyToken, requirePermission('admin.products'), uploadSingleImage, validate(createProductSchema), createProduct);
+router.post('/', verifyToken, requirePermission('admin.products'), uploadProductImages, validate(createProductSchema), createProduct);
 router.post('/import', verifyToken, requirePermission('admin.products'), uploadSingleSpreadsheet, importProductsFromSpreadsheet);
-router.put('/:id', verifyToken, requirePermission('admin.products'), uploadSingleImage, validate(updateProductSchema), updateProduct);
+router.put('/:id', verifyToken, requirePermission('admin.products'), uploadProductImages, validate(updateProductSchema), updateProduct);
 router.delete('/:id', verifyToken, requirePermission('admin.products'), deleteProduct);
 
 export default router;

@@ -5,12 +5,16 @@ import { Observable } from 'rxjs';
 export interface Product {
   id?: string;
   nombre: string;
+  name?: string; // Alias
   genero?: string;
   categoria_nombre?: string | null;
   categoria_slug?: string | null;
   descripcion: string;
+  description?: string; // Alias
   notas_olfativas?: string | null;
+  notes?: string | null; // Alias
   precio: number | string;
+  price?: number | string; // Alias
   precio_con_descuento?: number | string | null;
   precio_original?: number | string;
   promo_id?: string | null;
@@ -18,10 +22,13 @@ export interface Product {
   porcentaje_descuento?: number | null;
   tiene_promocion?: boolean;
   es_nuevo?: boolean;
+  isNew?: boolean; // Alias
   nuevo_hasta?: string | null;
   stock: number;
   imagen_url?: string;
+  imageUrl?: string; // Alias
   unidades_vendidas?: number;
+  soldCount?: number; // Alias
 }
 
 export interface LowStockProduct {

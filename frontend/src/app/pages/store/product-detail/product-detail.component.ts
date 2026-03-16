@@ -132,16 +132,16 @@ export class ProductDetailComponent implements OnDestroy {
         this.related = list.map((ap: any) => {
           const original = ap?.precio_original ?? ap?.precio;
           const originalN = typeof original === 'string' ? parseFloat(original) : Number(original);
-          const final = ap?.precio_con_descuento ? Number(ap.precio_con_descuento) : (typeof ap?.precio === 'string' ? parseFloat(ap.precio) : Number(ap?.precio || 0));
+          const final = ap?.price ? Number(ap.price) : (ap?.precio_con_descuento ? Number(ap.precio_con_descuento) : (typeof ap?.precio === 'string' ? parseFloat(ap.precio) : Number(ap?.precio || 0)));
           return {
             id: ap.id || '',
             promo_id: ap.promo_id || null,
-            name: ap.nombre,
-            notes: ap.descripcion,
+            name: ap.name || ap.nombre,
+            notes: ap.notes || ap.notas_olfativas || ap.descripcion,
             price: Number.isFinite(final) ? final : 0,
-            imageUrl: ap.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
-            soldCount: String(ap.unidades_vendidas || 0),
-            isNew: !!ap.es_nuevo,
+            imageUrl: ap.imageUrl || ap.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
+            soldCount: String(ap.soldCount || ap.unidades_vendidas || 0),
+            isNew: !!(ap.isNew ?? ap.es_nuevo),
             genero: ap.genero,
             categoria_nombre: ap.categoria_nombre ?? null,
             categoria_slug: ap.categoria_slug ?? null,
@@ -199,7 +199,7 @@ export class ProductDetailComponent implements OnDestroy {
 
   getNotes(): string {
     const anyP: any = this.product as any;
-    const notes = String(anyP?.notas_olfativas || '').trim();
+    const notes = String(anyP?.notes || anyP?.notas_olfativas || '').trim();
     return notes || '—';
   }
 

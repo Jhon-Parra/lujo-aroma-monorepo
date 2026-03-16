@@ -97,12 +97,12 @@ export class HomeComponent implements OnInit {
       next: (apiProducts) => {
         this.products = apiProducts.map(ap => ({
           id: ap.id || '',
-          name: ap.nombre,
-          notes: ap.descripcion,
-          price: ap.precio_con_descuento ? Number(ap.precio_con_descuento) : (typeof ap.precio === 'string' ? parseFloat(ap.precio) : ap.precio),
-          imageUrl: ap.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
-          soldCount: (ap.unidades_vendidas || 0).toString(),
-          isNew: !!ap.es_nuevo,
+          name: ap.name || ap.nombre,
+          notes: ap.notes || ap.notas_olfativas || ap.descripcion,
+          price: ap.price ? Number(ap.price) : (ap.precio_con_descuento ? Number(ap.precio_con_descuento) : (typeof ap.precio === 'string' ? parseFloat(ap.precio) : ap.precio)),
+          imageUrl: ap.imageUrl || ap.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
+          soldCount: (ap.soldCount || ap.unidades_vendidas || 0).toString(),
+          isNew: !!(ap.isNew ?? ap.es_nuevo),
           genero: ap.genero,
           categoria_nombre: (ap as any).categoria_nombre ?? null,
           categoria_slug: (ap as any).categoria_slug ?? null,

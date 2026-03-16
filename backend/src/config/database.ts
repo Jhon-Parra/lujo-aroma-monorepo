@@ -25,7 +25,7 @@ export const pool = {
     query: async <T = any>(sql: string, params?: any[]): Promise<[T, any]> => {
         try {
             // mysql2 ya usa '?' de forma nativa
-            const [rows, fields] = await mysqlPool.execute(sql, params);
+            const [rows, fields] = await mysqlPool.query(sql, params);
             return [rows as any, fields];
         } catch (error) {
             console.error('Error in DB Query:', error, '\nSQL:', sql);

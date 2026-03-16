@@ -144,8 +144,10 @@ const selectCandidates = async (opts: { preferGenero?: string | null }): Promise
     const whereParts: string[] = ['p.stock > 0'];
     const params: any[] = [];
     if (opts.preferGenero && String(opts.preferGenero).trim().toLowerCase() !== 'unisex') {
-        whereParts.push('p.genero = ?');
-        params.push(String(opts.preferGenero).trim().toLowerCase());
+        const gen = String(opts.preferGenero).trim().toLowerCase();
+        // Incluir el género preferido + unisex + nulos para asegurar candidatos
+        whereParts.push('(p.genero = ? OR p.genero = "unisex" OR p.genero IS NULL)');
+        params.push(gen);
     }
     const whereSql = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '';
 
@@ -193,14 +195,14 @@ const runAiRanking = async (payload: {
         'No inventes productos; solo puedes recomendar IDs presentes en candidates. ' +
         'Maximo 6 recomendaciones. reasons deben ser cortas y concretas.';
 
-    const candidatesLite = payload.candidates.slice(0, 20).map((p) => ({
+    const candidatesLite = payload.candidates.slice(0, 25).map((p) => ({
         id: p.id,
         nombre: p.nombre,
         genero: p.genero,
         categoria_nombre: (p as any).categoria_nombre || null,
         precio: Number(p.precio || 0),
-        notas_olfativas: (p.notas_olfativas || '').slice(0, 150),
-        descripcion: (p.descripcion || '').slice(0, 120)
+        notas_olfativas: (p.notas_olfativas || '').slice(0, 140),
+        descripcion: (p.descripcion || '').slice(0, 100)
     }));
 
     const user = {
@@ -233,9 +235,22 @@ const runAiRanking = async (payload: {
     });
 
     const content = resp.choices?.[0]?.message?.content || '';
+    if (!content) {
+        console.warn('[AI] Respuesta vacía de Groq');
+        return null;
+    }
+
     const parsed = safeParseJsonObject(content);
+    if (!parsed) {
+        console.warn('[AI] Error parseando JSON de Groq:', content.slice(0, 100));
+        return null;
+    }
+
     const list = parsed?.recommendations;
-    if (!Array.isArray(list)) return null;
+    if (!Array.isArray(list)) {
+        console.warn('[AI] El campo recommendations no es un array');
+        return null;
+    }
 
     const seen = new Set<string>();
     const items: RecoItem[] = [];

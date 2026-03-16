@@ -111,39 +111,38 @@ const getAlertConfig = async (): Promise<AlertConfig> => {
 };
 
 const getSearchTrends = async (productId: string): Promise<number[]> => {
-    // MySQL 7-day series hack using UNION ALL
-    const [rows] = await pool.query<any[]>(
-        `WITH days AS (
-            SELECT CURDATE() - INTERVAL 0 DAY AS day UNION ALL
-            SELECT CURDATE() - INTERVAL 1 DAY UNION ALL
-            SELECT CURDATE() - INTERVAL 2 DAY UNION ALL
-            SELECT CURDATE() - INTERVAL 3 DAY UNION ALL
-            SELECT CURDATE() - INTERVAL 4 DAY UNION ALL
-            SELECT CURDATE() - INTERVAL 5 DAY UNION ALL
-            SELECT CURDATE() - INTERVAL 6 DAY
-        ),
-        hits AS (
-            SELECT
-                DATE(created_at) AS day,
-                product_id
-            FROM (
-                SELECT created_at, p_id as product_id
-                FROM SearchEvents,
-                JSON_TABLE(product_ids, "$[*]" COLUMNS (p_id VARCHAR(255) PATH "$")) as jt
-                WHERE created_at >= CURDATE() - INTERVAL 6 DAY
-                  AND product_ids IS NOT NULL
-            ) sub
-        )
-        SELECT d.day,
-               CAST(COALESCE(COUNT(h.product_id), 0) AS SIGNED) AS count
-        FROM days d
-        LEFT JOIN hits h ON h.day = d.day AND h.product_id = ?
-        GROUP BY d.day
-        ORDER BY d.day ASC`,
-        [productId]
-    );
+    try {
+        // Fetch searches from last 7 days
+        const [rows] = await pool.query<any[]>(
+            `SELECT created_at, product_ids
+             FROM SearchEvents
+             WHERE created_at >= CURDATE() - INTERVAL 6 DAY
+               AND product_ids IS NOT NULL`
+        );
 
-    return (rows || []).map((r) => toNumber(r.count));
+        const counts: Record<string, number> = {};
+        // Initialize last 7 days
+        for (let i = 0; i < 7; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            counts[d.toISOString().split('T')[0]] = 0;
+        }
+
+        (rows || []).forEach(row => {
+            try {
+                const ids = typeof row.product_ids === 'string' ? JSON.parse(row.product_ids) : row.product_ids;
+                if (Array.isArray(ids) && ids.includes(productId)) {
+                    const day = new Date(row.created_at).toISOString().split('T')[0];
+                    if (counts[day] !== undefined) counts[day]++;
+                }
+            } catch {}
+        });
+
+        return Object.keys(counts).sort().map(k => counts[k]);
+    } catch (e) {
+        console.error('Error in getSearchTrends:', e);
+        return [0, 0, 0, 0, 0, 0, 0];
+    }
 };
 
 export const trackSearchEvent = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -262,121 +261,142 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const productFilter = String((req.query as any)?.product_id || '').trim();
         const normalizedStateExpr = normalizeOrderStateExpr('o.estado');
 
-        // 1. Top Searches
-        const [topSearchRows] = await pool.query<any[]>(
-            `WITH events AS (
-                SELECT product_ids
-                FROM SearchEvents
-                WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
-                  AND product_ids IS NOT NULL
-            ),
-            ids AS (
-                SELECT p_id AS product_id
-                FROM events,
-                JSON_TABLE(product_ids, "$[*]" COLUMNS (p_id VARCHAR(255) PATH "$")) as jt
-            )
-            SELECT p.id, p.nombre, CAST(COUNT(*) AS SIGNED) AS searches
-            FROM ids i
-            JOIN Productos p ON p.id = i.product_id
-            GROUP BY p.id, p.nombre
-            ORDER BY searches DESC
-            LIMIT 10`,
+        // 1. Top Searches (Refactored to avoid JSON_TABLE)
+        const [searchEvents] = await pool.query<any[]>(
+            `SELECT product_ids
+             FROM SearchEvents
+             WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+               AND product_ids IS NOT NULL`,
             [days]
         );
 
-        const topSearches = [] as any[];
-        for (const row of topSearchRows || []) {
-            const trend = await getSearchTrends(String(row.id));
-            topSearches.push({
-                product_id: String(row.id),
-                nombre: String(row.nombre || ''),
-                searches: toNumber(row.searches),
-                trend
-            });
+        const searchCounts: Record<string, number> = {};
+        searchEvents.forEach(e => {
+            try {
+                const ids = typeof e.product_ids === 'string' ? JSON.parse(e.product_ids) : e.product_ids;
+                if (Array.isArray(ids)) {
+                    ids.forEach((id: string) => {
+                        searchCounts[id] = (searchCounts[id] || 0) + 1;
+                    });
+                }
+            } catch {}
+        });
+
+        const sortedSearchIds = Object.keys(searchCounts)
+            .sort((a, b) => searchCounts[b] - searchCounts[a])
+            .slice(0, 10);
+
+        const topSearches: any[] = [];
+        if (sortedSearchIds.length > 0) {
+            const [pRows] = await pool.query<any[]>(
+                `SELECT id, nombre FROM Productos WHERE id IN (${sortedSearchIds.map(() => '?').join(', ')})`,
+                sortedSearchIds
+            );
+            
+            for (const id of sortedSearchIds) {
+                const p = pRows.find(r => String(r.id) === id);
+                if (p) {
+                    const trend = await getSearchTrends(id);
+                    topSearches.push({
+                        product_id: id,
+                        nombre: String(p.nombre || ''),
+                        searches: searchCounts[id],
+                        trend
+                    });
+                }
+            }
         }
 
         // 2. Abandoned Total
         const [abandonedRows] = await pool.query<any[]>(
-            `WITH abandoned AS (
-                SELECT *
-                FROM CartSessions
-                WHERE status = 'OPEN'
-                  AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
-            )
-            SELECT CAST(COUNT(*) AS SIGNED) AS total, COALESCE(SUM(total), 0) AS lost_value
-            FROM abandoned`,
+            `SELECT CAST(COUNT(*) AS SIGNED) AS total, COALESCE(SUM(total), 0) AS lost_value
+             FROM CartSessions
+             WHERE status = 'OPEN'
+               AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)`,
             [abandonedHours]
         );
 
-        // 3. Abandoned Trend (7 days)
-        const [abandonedTrendRows] = await pool.query<any[]>(
-            `WITH days AS (
-                SELECT CURDATE() - INTERVAL 0 DAY AS day UNION ALL
-                SELECT CURDATE() - INTERVAL 1 DAY UNION ALL
-                SELECT CURDATE() - INTERVAL 2 DAY UNION ALL
-                SELECT CURDATE() - INTERVAL 3 DAY UNION ALL
-                SELECT CURDATE() - INTERVAL 4 DAY UNION ALL
-                SELECT CURDATE() - INTERVAL 5 DAY UNION ALL
-                SELECT CURDATE() - INTERVAL 6 DAY
-            ),
-            abandoned AS (
-                SELECT DATE(updated_at) AS day
-                FROM CartSessions
-                WHERE status = 'OPEN'
-                  AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
-                  AND updated_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-            )
-            SELECT d.day, CAST(COALESCE(COUNT(a.day), 0) AS SIGNED) AS count
-            FROM days d
-            LEFT JOIN abandoned a ON a.day = d.day
-            GROUP BY d.day
-            ORDER BY d.day ASC`,
+        // 3. Abandoned Trend (7 days) (Refactored to avoid WITH days)
+        const [abandonedTrendData] = await pool.query<any[]>(
+            `SELECT DATE(updated_at) AS day, COUNT(*) AS count
+             FROM CartSessions
+             WHERE status = 'OPEN'
+               AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
+               AND updated_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+             GROUP BY day`,
             [abandonedHours]
         );
 
-        // 4. Abandoned Top Products
-        const [abandonedTopRows] = await pool.query<any[]>(
-            `WITH abandoned AS (
-                SELECT *
-                FROM CartSessions
-                WHERE status = 'OPEN'
-                  AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
-            ),
-            items AS (
-                SELECT item
-                FROM abandoned,
-                JSON_TABLE(items, "$[*]" COLUMNS (item JSON PATH "$")) as jt
-            ),
-            flat AS (
-                SELECT
-                    JSON_UNQUOTE(JSON_EXTRACT(item, '$.product_id')) AS product_id,
-                    CAST(COALESCE(JSON_EXTRACT(item, '$.quantity'), 1) AS SIGNED) AS qty
-                FROM items
-                WHERE JSON_EXTRACT(item, '$.product_id') IS NOT NULL
-            )
-            SELECT p.id, p.nombre, CAST(COALESCE(SUM(f.qty), 0) AS SIGNED) AS count
-            FROM flat f
-            JOIN Productos p ON p.id = f.product_id
-            GROUP BY p.id, p.nombre
-            ORDER BY count DESC
-            LIMIT 5`,
+        const abTrendDays = [];
+        const abTrendCounts = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            abTrendDays.push(dateStr);
+            const found = abandonedTrendData.find(r => {
+                const rDate = new Date(r.day).toISOString().split('T')[0];
+                return rDate === dateStr;
+            });
+            abTrendCounts.push(found ? toNumber(found.count) : 0);
+        }
+
+        // 4. Abandoned Top Products (Refactored to avoid JSON_TABLE)
+        const [abandonedSessions] = await pool.query<any[]>(
+            `SELECT items
+             FROM CartSessions
+             WHERE status = 'OPEN'
+               AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)`,
             [abandonedHours]
         );
+
+        const abProductCounts: Record<string, number> = {};
+        abandonedSessions.forEach(s => {
+            try {
+                const items = typeof s.items === 'string' ? JSON.parse(s.items) : s.items;
+                if (Array.isArray(items)) {
+                    items.forEach((it: any) => {
+                        const pid = String(it.product_id || '');
+                        if (pid) {
+                            abProductCounts[pid] = (abProductCounts[pid] || 0) + toNumber(it.quantity || 1);
+                        }
+                    });
+                }
+            } catch {}
+        });
+
+        const sortedAbIds = Object.keys(abProductCounts)
+            .sort((a, b) => abProductCounts[b] - abProductCounts[a])
+            .slice(0, 5);
+
+        const abandonedTopProducts: any[] = [];
+        if (sortedAbIds.length > 0) {
+            const [pRows] = await pool.query<any[]>(
+                `SELECT id, nombre FROM Productos WHERE id IN (${sortedAbIds.map(() => '?').join(', ')})`,
+                sortedAbIds
+            );
+            sortedAbIds.forEach(id => {
+                const p = pRows.find(r => String(r.id) === id);
+                if (p) {
+                    abandonedTopProducts.push({
+                        product_id: id,
+                        nombre: String(p.nombre || ''),
+                        count: abProductCounts[id]
+                    });
+                }
+            });
+        }
 
         // 5. Abandoned Recent
         const [abandonedRecentRows] = await pool.query<any[]>(
-            `WITH abandoned AS (
-                SELECT *
-                FROM CartSessions
-                WHERE status = 'OPEN'
-                  AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
-            )
-            SELECT a.session_id, a.user_id, a.total, a.updated_at, a.items,
-                   u.email AS user_email
-            FROM abandoned a
-            LEFT JOIN Usuarios u ON u.id = a.user_id
-            ORDER BY a.updated_at DESC
-            LIMIT 10`,
+            `SELECT a.session_id, a.user_id, a.total, a.updated_at, a.items,
+                    u.email AS user_email
+             FROM CartSessions a
+             LEFT JOIN Usuarios u ON u.id = a.user_id
+             WHERE a.status = 'OPEN'
+               AND a.updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
+             ORDER BY a.updated_at DESC
+             LIMIT 10`,
             [abandonedHours]
         );
 
@@ -395,7 +415,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             [...okStates, days]
         );
 
-        // 7. Sales by Category
+        // 7. Sales by Category (Refactored to avoid ROW_NUMBER)
         const salesParams: any[] = [...okStates, days];
         let salesWhere = `${normalizedStateExpr} IN (?, ?, ?, ?) AND o.creado_en >= DATE_SUB(NOW(), INTERVAL ? DAY)`;
         if (categoryFilter) {
@@ -407,54 +427,50 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             salesParams.push(productFilter);
         }
 
-        const [salesRows] = await pool.query<any[]>(
-            `WITH sales AS (
-                SELECT
-                    p.genero AS category_slug,
-                    COALESCE(c.nombre, p.genero, 'Sin categoria') AS category_name,
-                    p.id AS product_id,
-                    p.nombre AS product_name,
-                    CAST(COALESCE(SUM(d.cantidad), 0) AS SIGNED) AS units,
-                    COALESCE(SUM(revenue), 0) AS revenue
-                FROM (
-                    SELECT 
-                        producto_id, 
-                        SUM(cantidad) as cantidad, 
-                        SUM(subtotal) as subtotal,
-                        orden_id
-                    FROM DetalleOrdenes
-                    GROUP BY producto_id, orden_id
-                ) d
-                JOIN Ordenes o ON o.id = d.orden_id
-                JOIN Productos p ON p.id = d.producto_id
-                LEFT JOIN Categorias c ON c.slug = p.genero
-                WHERE ${salesWhere}
-                GROUP BY p.genero, c.nombre, p.id, p.nombre
-            ),
-            category_totals AS (
-                SELECT category_slug, category_name,
-                       CAST(COALESCE(SUM(units), 0) AS SIGNED) AS units,
-                       COALESCE(SUM(revenue), 0) AS revenue
-                FROM sales
-                GROUP BY category_slug, category_name
-            ),
-            top_products AS (
-                /* MySQL 8.0 rank simulate or subquery for top product per category */
-                SELECT category_slug, product_name, units
-                FROM (
-                    SELECT category_slug, product_name, units,
-                           ROW_NUMBER() OVER(PARTITION BY category_slug ORDER BY units DESC) as rn
-                    FROM sales
-                ) tmp
-                WHERE rn = 1
-            )
-            SELECT t.category_name, t.units, t.revenue,
-                   COALESCE(tp.product_name, '') AS top_product
-            FROM category_totals t
-            LEFT JOIN top_products tp ON tp.category_slug = t.category_slug
-            ORDER BY t.revenue DESC`,
+        const [salesData] = await pool.query<any[]>(
+            `SELECT 
+                p.genero AS category_slug,
+                COALESCE(c.nombre, p.genero, 'Sin categoria') AS category_name,
+                p.nombre AS product_name,
+                SUM(d.cantidad) as units,
+                SUM(d.subtotal) as revenue
+             FROM DetalleOrdenes d
+             JOIN Ordenes o ON o.id = d.orden_id
+             JOIN Productos p ON p.id = d.producto_id
+             LEFT JOIN Categorias c ON c.slug = p.genero
+             WHERE ${salesWhere}
+             GROUP BY p.genero, c.nombre, p.nombre`,
             salesParams
         );
+
+        const categorySummary: Record<string, any> = {};
+        salesData.forEach(r => {
+            const cat = r.category_slug || 'sin-categoria';
+            if (!categorySummary[cat]) {
+                categorySummary[cat] = {
+                    category: r.category_name,
+                    revenue: 0,
+                    units: 0,
+                    top_product: '',
+                    max_units: -1
+                };
+            }
+            categorySummary[cat].revenue += toNumber(r.revenue);
+            categorySummary[cat].units += toNumber(r.units);
+            if (toNumber(r.units) > categorySummary[cat].max_units) {
+                categorySummary[cat].max_units = toNumber(r.units);
+                categorySummary[cat].top_product = r.product_name;
+            }
+        });
+
+        const salesByCategory = Object.values(categorySummary)
+            .sort((a, b) => b.revenue - a.revenue)
+            .map(c => ({
+                category: c.category,
+                revenue: c.revenue,
+                units: c.units,
+                top_product: c.top_product
+            }));
 
         // 8. Sales Stats
         const [salesCurrentRows] = await pool.query<any[]>(
@@ -521,31 +537,19 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
 
         // 11. Trends
         const [trendRows] = await pool.query<any[]>(
-            `WITH current_sales AS (
-                SELECT d.producto_id, CAST(COALESCE(SUM(d.cantidad), 0) AS SIGNED) AS units
-                FROM DetalleOrdenes d
-                JOIN Ordenes o ON o.id = d.orden_id
-                WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
-                  AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-                GROUP BY d.producto_id
-            ),
-            prev_sales AS (
-                SELECT d.producto_id, CAST(COALESCE(SUM(d.cantidad), 0) AS SIGNED) AS units
-                FROM DetalleOrdenes d
-                JOIN Ordenes o ON o.id = d.orden_id
-                WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
-                  AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
-                  AND o.creado_en < DATE_SUB(NOW(), INTERVAL 7 DAY)
-                GROUP BY d.producto_id
-            )
-            SELECT p.id, p.nombre, c.units AS current_units, COALESCE(pv.units, 0) AS prev_units
-            FROM current_sales c
-            JOIN Productos p ON p.id = c.producto_id
-            LEFT JOIN prev_sales pv ON pv.producto_id = c.producto_id
-            WHERE c.units >= ?
-            ORDER BY (c.units - COALESCE(pv.units, 0)) DESC
-            LIMIT 5`,
-            [...okStates, ...okStates, config.trend_min_units]
+            `SELECT d.producto_id, p.nombre, 
+                    SUM(CASE WHEN o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN d.cantidad ELSE 0 END) AS current_units,
+                    SUM(CASE WHEN o.creado_en < DATE_SUB(NOW(), INTERVAL 7 DAY) THEN d.cantidad ELSE 0 END) AS prev_units
+             FROM DetalleOrdenes d
+             JOIN Ordenes o ON o.id = d.orden_id
+             JOIN Productos p ON p.id = d.producto_id
+             WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
+               AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+             GROUP BY d.producto_id, p.nombre
+             HAVING current_units >= ?
+             ORDER BY (current_units - prev_units) DESC
+             LIMIT 5`,
+            [...okStates, config.trend_min_units]
         );
 
         // 12. Security
@@ -625,13 +629,9 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             abandoned: {
                 total: toNumber(abandonedRows?.[0]?.total),
                 lost_value: toNumber(abandonedRows?.[0]?.lost_value),
-                trend_days: (abandonedTrendRows || []).map((r) => r.day),
-                trend_counts: (abandonedTrendRows || []).map((r) => toNumber(r.count)),
-                top_products: (abandonedTopRows || []).map((r) => ({
-                    product_id: String(r.id),
-                    nombre: String(r.nombre || ''),
-                    count: toNumber(r.count)
-                })),
+                trend_days: abTrendDays,
+                trend_counts: abTrendCounts,
+                top_products: abandonedTopProducts,
                 recent: (abandonedRecentRows || []).map((r) => ({
                     session_id: String(r.session_id),
                     user_email: r.user_email ? String(r.user_email) : null,
@@ -648,12 +648,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
                 orders_count: toNumber(r.orders_count),
                 total_spent: toNumber(r.total_spent)
             })),
-            sales_by_category: (salesRows || []).map((r) => ({
-                category: String(r.category_name || ''),
-                revenue: toNumber(r.revenue),
-                units: toNumber(r.units),
-                top_product: String(r.top_product || '')
-            })),
+            sales_by_category: salesByCategory,
             alerts
         });
     } catch (error) {

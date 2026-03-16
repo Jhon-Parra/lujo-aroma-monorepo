@@ -307,134 +307,97 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             : 'COALESCE(p.es_nuevo, false) AS es_nuevo';
 
         const { categorySelect, categoryJoin } = await getCategorySqlParts();
+        const { advancedReady } = await getPromotionAdvancedSqlParts();
 
-        const { advancedReady, discountAmountExpr, orderByPromo } = await getPromotionAdvancedSqlParts();
-        let rows: any[] = [];
-        if (assignmentReady) {
-            const genderCondition = genderReady
-                ? " OR (pr.product_scope = 'GENDER' AND pr.product_gender IS NOT NULL AND p.genero = pr.product_gender)"
-                : '';
-            const [newRows] = await pool.query<any[]>(
-                `SELECT
-                    p.id,
-                    p.nombre,
-                    p.genero${categorySelect},
-                    p.descripcion,
-                    p.notas_olfativas,
-                    p.precio,
-                    p.stock,
-                    p.unidades_vendidas,
-                    p.imagen_url,
-                    ${esNuevoExpr},
-                    best.promo_id,
-                    best.promo_nombre,
-                    best.porcentaje_descuento,
-                    best.discount_type,
-                    best.amount_discount,
-                    best.priority,
-                    best.monto_descuento,
-                    best.precio_con_descuento
-                FROM Productos p
-                ${categoryJoin}
-                LEFT JOIN LATERAL (
-                    SELECT
-                        pr.id AS promo_id,
-                        pr.nombre AS promo_nombre,
-                        pr.porcentaje_descuento,
-                        ${advancedReady ? 'pr.discount_type, pr.amount_discount, pr.priority,' : "'PERCENT' AS discount_type, NULL AS amount_discount, 0 AS priority,"}
-                        (${discountAmountExpr}) AS monto_descuento,
-                        ROUND((p.precio - (${discountAmountExpr})), 2) AS precio_con_descuento
-                FROM Promociones pr
-                LEFT JOIN PromocionProductos pp
-                    ON pp.promocion_id = pr.id AND pp.producto_id = p.id
-                LEFT JOIN PromocionUsuarios pu
-                    ON pu.promocion_id = pr.id AND pu.usuario_id = ?
-                WHERE pr.activo = true
-                    AND (
-                        ${advancedReady
-                            ? "(pr.discount_type = 'AMOUNT' AND COALESCE(pr.amount_discount, 0) > 0) OR (pr.discount_type <> 'AMOUNT' AND pr.porcentaje_descuento > 0)"
-                            : 'pr.porcentaje_descuento > 0'}
-                    )
-                    AND pr.fecha_inicio <= NOW()
-                    AND pr.fecha_fin >= NOW()
-                    AND (
-                        pr.product_scope = 'GLOBAL'
-                        OR (pr.product_scope = 'SPECIFIC' AND pp.producto_id IS NOT NULL)
-                        ${genderCondition}
-                        OR pr.id = p.promocion_id
-                    )
-                    AND (
-                        pr.audience_scope = 'ALL'
-                        OR (pr.audience_scope = 'SEGMENT' AND ? IS NOT NULL AND pr.audience_segment = ?)
-                        OR (pr.audience_scope = 'CUSTOMERS' AND ? IS NOT NULL AND pu.usuario_id IS NOT NULL)
-                    )
-                ORDER BY ${orderByPromo}
-                LIMIT 1
-            ) best ON true
-            WHERE p.stock > 0
-            ORDER BY best.priority DESC, best.monto_descuento DESC, best.porcentaje_descuento DESC, p.creado_en DESC`,
-                [userId, userSegment, userSegment, userId]
-            );
-            rows = newRows;
-        } else {
-            const [oldRows] = await pool.query<any[]>(
-                `SELECT
-                    p.id,
-                    p.nombre,
-                    p.genero${categorySelect},
-                    p.descripcion,
-                    p.notas_olfativas,
-                    p.precio,
-                    p.stock,
-                    p.unidades_vendidas,
-                    p.imagen_url,
-                    ${esNuevoExpr},
-                    pr.id AS promo_id,
-                    pr.nombre AS promo_nombre,
-                    pr.porcentaje_descuento,
-                    ${advancedReady ? 'pr.discount_type,' : "'PERCENT' AS discount_type,"}
-                    ${advancedReady ? 'pr.amount_discount,' : 'NULL AS amount_discount,'}
-                    ${advancedReady ? 'pr.priority,' : '0 AS priority,'}
-                    ${advancedReady
-                        ? "CASE WHEN pr.id IS NULL THEN 0 ELSE (CASE WHEN pr.discount_type = 'AMOUNT' THEN LEAST(COALESCE(pr.amount_discount, 0), p.precio) ELSE (p.precio * (pr.porcentaje_descuento / 100.0)) END) END"
-                        : "CASE WHEN pr.id IS NULL THEN 0 ELSE (p.precio * (pr.porcentaje_descuento / 100.0)) END"} AS monto_descuento,
-                    CASE
-                        WHEN pr.id IS NULL THEN NULL
-                        ELSE ROUND((p.precio - (${advancedReady
-                            ? "CASE WHEN pr.discount_type = 'AMOUNT' THEN LEAST(COALESCE(pr.amount_discount, 0), p.precio) ELSE (p.precio * (pr.porcentaje_descuento / 100.0)) END"
-                            : '(p.precio * (pr.porcentaje_descuento / 100.0))'})), 2)
-                    END AS precio_con_descuento
-                FROM Productos p
-                ${categoryJoin}
-                LEFT JOIN Promociones pr
-                    ON pr.id = p.promocion_id
-                    AND pr.activo = true
-                    AND (
-                        ${advancedReady
-                            ? "(pr.discount_type = 'AMOUNT' AND COALESCE(pr.amount_discount, 0) > 0) OR (pr.discount_type <> 'AMOUNT' AND pr.porcentaje_descuento > 0)"
-                            : 'pr.porcentaje_descuento > 0'}
-                    )
-                    AND pr.fecha_inicio <= NOW()
-                    AND pr.fecha_fin >= NOW()
-                WHERE p.stock > 0
-                ORDER BY ${advancedReady ? 'pr.priority DESC,' : ''} pr.porcentaje_descuento DESC, p.creado_en DESC`
-            );
-            rows = oldRows;
-        }
+        // 1. Fetch all products
+        const [pRows] = await pool.query<any[]>(
+            `SELECT p.id, p.nombre, p.genero${categorySelect}, p.descripcion, p.notas_olfativas, p.precio, p.stock, p.unidades_vendidas, p.imagen_url, p.promocion_id,
+                    ${esNuevoExpr}, p.creado_en
+             FROM Productos p
+             ${categoryJoin}
+             WHERE p.stock > 0
+             ORDER BY p.creado_en DESC`
+        );
 
-        const products = (rows as any[]).map((p) => {
-            const discount = Number(p.monto_descuento || 0);
-            const hasOffer = Number.isFinite(discount) && discount > 0;
+        // 2. Fetch all active promotions for the current date
+        const [promoRows] = await pool.query<any[]>(
+            `SELECT pr.id, pr.nombre, pr.porcentaje_descuento,
+                    ${advancedReady ? 'pr.discount_type, pr.amount_discount, pr.priority,' : "'PERCENT' AS discount_type, 0 AS amount_discount, 0 AS priority,"}
+                    pr.product_scope, pr.product_gender, pr.audience_scope, pr.audience_segment
+             FROM Promociones pr
+             WHERE pr.activo = true
+               AND pr.fecha_inicio <= NOW()
+               AND pr.fecha_fin >= NOW()
+               AND (
+                 ${advancedReady 
+                    ? "(pr.discount_type = 'AMOUNT' AND pr.amount_discount > 0) OR (pr.discount_type <> 'AMOUNT' AND pr.porcentaje_descuento > 0)"
+                    : 'pr.porcentaje_descuento > 0'}
+               )`
+        );
+
+        // 3. Fetch specific mappings if needed
+        const [ppRows] = await pool.query<any[]>('SELECT promocion_id, producto_id FROM PromocionProductos');
+        const [puRows] = userId ? await pool.query<any[]>('SELECT promocion_id FROM PromocionUsuarios WHERE usuario_id = ?', [userId]) : [[]];
+
+        const ppMap: Record<string, Set<string>> = {};
+        ppRows.forEach(r => {
+            if (!ppMap[r.promocion_id]) ppMap[r.promocion_id] = new Set();
+            ppMap[r.promocion_id].add(r.producto_id);
+        });
+        const userPromos = new Set(puRows.map(r => r.promocion_id));
+
+        // 4. Match and apply logic in JS (Robust across MySQL versions)
+        const products = pRows.map(p => {
+            let bestPromo: any = null;
+            let maxMontoDescuento = 0;
+
+            promoRows.forEach(pr => {
+                // Product Scope check
+                let productMatch = false;
+                if (pr.product_scope === 'GLOBAL') productMatch = true;
+                else if (pr.product_scope === 'SPECIFIC' && ppMap[pr.id]?.has(p.id)) productMatch = true;
+                else if (pr.product_scope === 'GENDER' && pr.product_gender && p.genero === pr.product_gender) productMatch = true;
+                else if (pr.id === p.promocion_id) productMatch = true;
+
+                if (!productMatch) return;
+
+                // Audience Scope check
+                let audienceMatch = false;
+                if (pr.audience_scope === 'ALL') audienceMatch = true;
+                else if (pr.audience_scope === 'SEGMENT' && userSegment && pr.audience_segment === userSegment) audienceMatch = true;
+                else if (pr.audience_scope === 'CUSTOMERS' && userPromos.has(pr.id)) audienceMatch = true;
+
+                if (!audienceMatch) return;
+
+                // Calculate discount
+                let monto = 0;
+                if (pr.discount_type === 'AMOUNT') {
+                    monto = Math.min(Number(pr.amount_discount || 0), p.precio);
+                } else {
+                    monto = p.precio * (Number(pr.porcentaje_descuento || 0) / 100);
+                }
+
+                // Pick best (Priority > Amount > Percentage)
+                if (!bestPromo || 
+                    pr.priority > bestPromo.priority || 
+                    (pr.priority === bestPromo.priority && monto > maxMontoDescuento) ||
+                    (pr.priority === bestPromo.priority && monto === maxMontoDescuento && pr.porcentaje_descuento > bestPromo.porcentaje_descuento)) {
+                    bestPromo = pr;
+                    maxMontoDescuento = monto;
+                }
+            });
+
+            const hasOffer = bestPromo !== null && maxMontoDescuento > 0;
             return {
                 ...p,
-                promo_id: hasOffer ? p.promo_id : null,
-                promo_nombre: hasOffer ? p.promo_nombre : null,
-                porcentaje_descuento: hasOffer ? p.porcentaje_descuento : null,
-                discount_type: hasOffer ? p.discount_type : null,
-                amount_discount: hasOffer ? p.amount_discount : null,
-                priority: hasOffer ? p.priority : null,
-                monto_descuento: hasOffer ? p.monto_descuento : 0,
-                precio_con_descuento: hasOffer ? p.precio_con_descuento : null,
+                promo_id: hasOffer ? bestPromo.id : null,
+                promo_nombre: hasOffer ? bestPromo.nombre : null,
+                porcentaje_descuento: hasOffer ? bestPromo.porcentaje_descuento : null,
+                discount_type: hasOffer ? bestPromo.discount_type : null,
+                amount_discount: hasOffer ? bestPromo.amount_discount : null,
+                priority: hasOffer ? bestPromo.priority : null,
+                monto_descuento: hasOffer ? maxMontoDescuento : 0,
+                precio_con_descuento: hasOffer ? Math.round((p.precio - maxMontoDescuento) * 100) / 100 : null,
                 precio_original: p.precio,
                 tiene_promocion: hasOffer
             };
@@ -469,9 +432,7 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
         const limitRaw = req.query['limit'];
         const limit = Math.min(Math.max(Number(limitRaw || 8) || 8, 1), 50);
 
-        const assignmentReady = await detectPromotionAssignmentSchema();
-        const genderReady = await detectPromotionGenderSchema();
-        const { advancedReady, discountAmountExpr, orderByPromo } = await getPromotionAdvancedSqlParts();
+        const { advancedReady } = await getPromotionAdvancedSqlParts();
         const newUntilOk = await detectProductNewUntilSchema();
 
         const esNuevoExpr = newUntilOk
@@ -486,140 +447,93 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
         const { categorySelect, categoryJoin } = await getCategorySqlParts();
 
         let rows: any[] = [];
-        if (assignmentReady) {
-            const genderCondition = genderReady
-                ? " OR (pr.product_scope = 'GENDER' AND pr.product_gender IS NOT NULL AND p.genero = pr.product_gender)"
-                : '';
-            const [newRows] = await pool.query<any[]>(
-                `SELECT
-                    p.id,
-                    p.nombre,
-                    p.genero${categorySelect},
-                    p.descripcion,
-                    p.notas_olfativas,
-                    p.precio,
-                    p.stock,
-                    p.unidades_vendidas,
-                    p.imagen_url,
-                    ${esNuevoExpr},
-                    best.promo_id,
-                    best.promo_nombre,
-                    best.porcentaje_descuento,
-                    best.discount_type,
-                    best.amount_discount,
-                    best.priority,
-                    best.monto_descuento,
-                    best.precio_con_descuento
-                FROM Productos p
-                ${categoryJoin}
-                LEFT JOIN LATERAL (
-                    SELECT
-                        pr.id AS promo_id,
-                        pr.nombre AS promo_nombre,
-                        pr.porcentaje_descuento,
-                        ${advancedReady ? 'pr.discount_type, pr.amount_discount, pr.priority,' : "'PERCENT' AS discount_type, NULL AS amount_discount, 0 AS priority,"}
-                        (${discountAmountExpr}) AS monto_descuento,
-                        ROUND((p.precio - (${discountAmountExpr})), 2) AS precio_con_descuento
-                    FROM Promociones pr
-                    LEFT JOIN PromocionProductos pp
-                        ON pp.promocion_id = pr.id AND pp.producto_id = p.id
-                    LEFT JOIN PromocionUsuarios pu
-                        ON pu.promocion_id = pr.id AND pu.usuario_id = ?
-                    WHERE pr.activo = true
-                        AND (
-                            ${advancedReady
-                                ? "(pr.discount_type = 'AMOUNT' AND COALESCE(pr.amount_discount, 0) > 0) OR (pr.discount_type <> 'AMOUNT' AND pr.porcentaje_descuento > 0)"
-                                : 'pr.porcentaje_descuento > 0'}
-                        )
-                        AND pr.fecha_inicio <= NOW()
-                        AND pr.fecha_fin >= NOW()
-                        AND (
-                            pr.product_scope = 'GLOBAL'
-                            OR (pr.product_scope = 'SPECIFIC' AND pp.producto_id IS NOT NULL)
-                            ${genderCondition}
-                            OR pr.id = p.promocion_id
-                        )
-                        AND (
-                            pr.audience_scope = 'ALL'
-                            OR (pr.audience_scope = 'SEGMENT' AND ? IS NOT NULL AND pr.audience_segment = ?)
-                            OR (pr.audience_scope = 'CUSTOMERS' AND ? IS NOT NULL AND pu.usuario_id IS NOT NULL)
-                        )
-                    ORDER BY ${orderByPromo}
-                    LIMIT 1
-                ) best ON true
-                WHERE p.stock > 0
-                ORDER BY p.creado_en DESC
-                LIMIT ?`,
-                [userId, userSegment, userSegment, userId, limit]
-            );
-            rows = newRows;
-        } else {
-            const [oldRows] = await pool.query<any[]>(
-                `SELECT
-                    p.id,
-                    p.nombre,
-                    p.genero${categorySelect},
-                    p.descripcion,
-                    p.notas_olfativas,
-                    p.precio,
-                    p.stock,
-                    p.unidades_vendidas,
-                    p.imagen_url,
-                    ${esNuevoExpr},
-                    pr.id AS promo_id,
-                    pr.nombre AS promo_nombre,
-                    pr.porcentaje_descuento,
-                    ${advancedReady ? 'pr.discount_type,' : "'PERCENT' AS discount_type,"}
-                    ${advancedReady ? 'pr.amount_discount,' : 'NULL AS amount_discount,'}
-                    ${advancedReady ? 'pr.priority,' : '0 AS priority,'}
-                    ${advancedReady
-                        ? "CASE WHEN pr.id IS NULL THEN 0 ELSE (CASE WHEN pr.discount_type = 'AMOUNT' THEN LEAST(COALESCE(pr.amount_discount, 0), p.precio) ELSE (p.precio * (pr.porcentaje_descuento / 100.0)) END) END"
-                        : "CASE WHEN pr.id IS NULL THEN 0 ELSE (p.precio * (pr.porcentaje_descuento / 100.0)) END"} AS monto_descuento,
-                    CASE
-                        WHEN pr.id IS NULL THEN NULL
-                        ELSE ROUND((p.precio - (${advancedReady
-                            ? "CASE WHEN pr.discount_type = 'AMOUNT' THEN LEAST(COALESCE(pr.amount_discount, 0), p.precio) ELSE (p.precio * (pr.porcentaje_descuento / 100.0)) END"
-                            : '(p.precio * (pr.porcentaje_descuento / 100.0))'})), 2)
-                    END AS precio_con_descuento
-                FROM Productos p
-                ${categoryJoin}
-                LEFT JOIN Promociones pr
-                    ON pr.id = p.promocion_id
-                    AND pr.activo = true
-                    AND (
-                        ${advancedReady
-                            ? "(pr.discount_type = 'AMOUNT' AND COALESCE(pr.amount_discount, 0) > 0) OR (pr.discount_type <> 'AMOUNT' AND pr.porcentaje_descuento > 0)"
-                            : 'pr.porcentaje_descuento > 0'}
-                    )
-                    AND pr.fecha_inicio <= NOW()
-                    AND pr.fecha_fin >= NOW()
-                WHERE p.stock > 0
-                ORDER BY p.creado_en DESC
-                LIMIT ?`,
-                [limit]
-            );
-            rows = oldRows;
-        }
 
-        const products = (rows as any[]).map((p) => {
-            const discount = Number(p.monto_descuento || 0);
-            const hasOffer = Number.isFinite(discount) && discount > 0;
+        // 1. Fetch newest products
+        const [pRows] = await pool.query<any[]>(
+            `SELECT p.id, p.nombre, p.genero${categorySelect}, p.precio, p.stock, p.imagen_url, p.promocion_id,
+                    ${esNuevoExpr}, p.creado_en
+             FROM Productos p
+             ${categoryJoin}
+             WHERE p.stock > 0
+             ORDER BY p.creado_en DESC
+             LIMIT ?`,
+            [limit * 2]
+        );
+
+        // 2. Fetch all active promotions
+        const [promoRows] = await pool.query<any[]>(
+            `SELECT pr.id, pr.nombre, pr.porcentaje_descuento,
+                    ${advancedReady ? 'pr.discount_type, pr.amount_discount, pr.priority,' : "'PERCENT' AS discount_type, 0 AS amount_discount, 0 AS priority,"}
+                    pr.product_scope, pr.product_gender, pr.audience_scope, pr.audience_segment
+             FROM Promociones pr
+             WHERE pr.activo = true
+               AND pr.fecha_inicio <= NOW()
+               AND pr.fecha_fin >= NOW()`
+        );
+
+        const [ppRows] = await pool.query<any[]>('SELECT promocion_id, producto_id FROM PromocionProductos');
+        const [puRows] = userId ? await pool.query<any[]>('SELECT promocion_id FROM PromocionUsuarios WHERE usuario_id = ?', [userId]) : [[]];
+
+        const ppMap: Record<string, Set<string>> = {};
+        ppRows.forEach(r => {
+            if (!ppMap[r.promocion_id]) ppMap[r.promocion_id] = new Set();
+            ppMap[r.promocion_id].add(r.producto_id);
+        });
+        const userPromos = new Set(puRows.map((r: any) => r.promocion_id));
+
+        // 3. Match logic in JS
+        rows = pRows.map(p => {
+            let bestPromo: any = null;
+            let maxMontoDescuento = 0;
+
+            promoRows.forEach(pr => {
+                let productMatch = false;
+                if (pr.product_scope === 'GLOBAL') productMatch = true;
+                else if (pr.product_scope === 'SPECIFIC' && ppMap[pr.id]?.has(p.id)) productMatch = true;
+                else if (pr.product_scope === 'GENDER' && pr.product_gender && p.genero === pr.product_gender) productMatch = true;
+                else if (pr.id === p.promocion_id) productMatch = true;
+
+                if (!productMatch) return;
+
+                let audienceMatch = false;
+                if (pr.audience_scope === 'ALL') audienceMatch = true;
+                else if (pr.audience_scope === 'SEGMENT' && userSegment && pr.audience_segment === userSegment) audienceMatch = true;
+                else if (pr.audience_scope === 'CUSTOMERS' && userPromos.has(pr.id)) audienceMatch = true;
+
+                if (!audienceMatch) return;
+
+                let monto = 0;
+                if (pr.discount_type === 'AMOUNT') {
+                    monto = Math.min(Number(pr.amount_discount || 0), p.precio);
+                } else {
+                    monto = p.precio * (Number(pr.porcentaje_descuento || 0) / 100);
+                }
+
+                if (!bestPromo || 
+                    pr.priority > bestPromo.priority || 
+                    (pr.priority === bestPromo.priority && monto > maxMontoDescuento)) {
+                    bestPromo = pr;
+                    maxMontoDescuento = monto;
+                }
+            });
+
+            const hasOffer = bestPromo !== null && maxMontoDescuento > 0;
             return {
                 ...p,
-                promo_id: hasOffer ? p.promo_id : null,
-                promo_nombre: hasOffer ? p.promo_nombre : null,
-                porcentaje_descuento: hasOffer ? p.porcentaje_descuento : null,
-                discount_type: hasOffer ? p.discount_type : null,
-                amount_discount: hasOffer ? p.amount_discount : null,
-                priority: hasOffer ? p.priority : null,
-                monto_descuento: hasOffer ? p.monto_descuento : 0,
-                precio_con_descuento: hasOffer ? p.precio_con_descuento : null,
+                promo_id: hasOffer ? bestPromo.id : null,
+                promo_nombre: hasOffer ? bestPromo.nombre : null,
+                porcentaje_descuento: hasOffer ? bestPromo.porcentaje_descuento : null,
+                discount_type: hasOffer ? bestPromo.discount_type : null,
+                amount_discount: hasOffer ? bestPromo.amount_discount : null,
+                priority: hasOffer ? bestPromo.priority : null,
+                monto_descuento: hasOffer ? maxMontoDescuento : 0,
+                precio_con_descuento: hasOffer ? Math.round((p.precio - maxMontoDescuento) * 100) / 100 : null,
                 precio_original: p.precio,
                 tiene_promocion: hasOffer
             };
-        });
+        }).slice(0, limit);
 
-        res.status(200).json(products);
+        res.status(200).json(rows);
     } catch (error) {
         console.error('Error fetching newest products:', error);
         res.status(500).json({ error: 'Error al cargar productos nuevos' });

@@ -294,7 +294,7 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
             `SELECT ${selectParts.join(', ')} FROM ConfiguracionGlobal WHERE id = 1`
         );
 
-        if (rows.length === 0) {
+        if (!rows || rows.length === 0) {
             res.status(404).json({ error: 'Configuración no encontrada' });
             return;
         }

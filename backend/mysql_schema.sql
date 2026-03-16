@@ -293,6 +293,19 @@ CREATE TABLE AuthSecurityEvents (
     FOREIGN KEY (user_id) REFERENCES Usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+DROP TABLE IF EXISTS admin_audit_logs;
+CREATE TABLE admin_audit_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    actor_user_id VARCHAR(36) NOT NULL,
+    action VARCHAR(255) NOT NULL,
+    target VARCHAR(255),
+    metadata JSON,
+    ip VARCHAR(50),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (actor_user_id) REFERENCES Usuarios(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Seed initial data

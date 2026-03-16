@@ -4,6 +4,7 @@ import { supabasePublic } from '../config/supabase';
 import { pool } from '../config/database';
 
 const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET || '';
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_please_change';
 
 export interface AuthRequest extends Request {
     user?: any;
@@ -77,6 +78,23 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
         return;
     }
 
+    // 1. Intentar verificación Local (JWT Propio)
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        if (decoded && decoded.isLocal) {
+            req.user = { 
+                id: decoded.id, 
+                email: decoded.email, 
+                rol: decoded.rol, 
+                supabase_user_id: decoded.sub 
+            };
+            return next();
+        }
+    } catch (err) {
+        // Ignorar y seguir a Supabase
+    }
+
+    // 2. Fallback a Supabase
     verifySupabaseToken(token)
         .then(async (verified) => {
             const local = await resolveLocalUser(verified.id, verified.email);
@@ -102,6 +120,23 @@ export const optionalVerifyToken = (req: AuthRequest, _res: Response, next: Next
         return;
     }
 
+    // 1. Intentar verificación Local
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        if (decoded && decoded.isLocal) {
+            req.user = { 
+                id: decoded.id, 
+                email: decoded.email, 
+                rol: decoded.rol, 
+                supabase_user_id: decoded.sub 
+            };
+            return next();
+        }
+    } catch (err) {
+        // Ignorar
+    }
+
+    // 2. Fallback a Supabase
     verifySupabaseToken(token)
         .then(async (verified) => {
             const local = await resolveLocalUser(verified.id, verified.email);

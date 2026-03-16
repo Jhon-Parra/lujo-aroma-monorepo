@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { pool } from '../config/database';
 import { supabaseAdmin, supabasePublic } from '../config/supabase';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const allowCrossSiteCookies = process.env.COOKIE_CROSS_SITE === 'true';
 const cookieSameSite: 'lax' | 'none' = isProduction && allowCrossSiteCookies ? 'none' : 'lax';
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_please_change';
 
 const cookieBaseOptions = {
     httpOnly: true,
@@ -71,7 +73,7 @@ const getUserBySupabaseId = async (supabaseUserId: string) => {
 
 const getUserByEmail = async (email: string) => {
     const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE email = ?',
+        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol, password_hash FROM usuarios WHERE email = ?',
         [email]
     );
     return (rows as any[])?.[0] || null;
@@ -158,6 +160,48 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         });
 
         if (error || !data?.session || !data?.user) {
+            // FALLBACK: Intentar autenticación local (MySQL)
+            const localUser = await getUserByEmail(email);
+            if (localUser && localUser.password_hash) {
+                const isMatch = await bcrypt.compare(password, localUser.password_hash);
+                if (isMatch) {
+                    // Generar token local compatible
+                    const localAccessToken = jwt.sign(
+                        { 
+                            sub: localUser.supabase_user_id || localUser.id, 
+                            email: localUser.email,
+                            id: localUser.id,
+                            rol: localUser.rol,
+                            isLocal: true 
+                        },
+                        JWT_SECRET,
+                        { expiresIn: '1h' }
+                    );
+
+                    const localRefreshToken = jwt.sign(
+                        { id: localUser.id, type: 'refresh' },
+                        JWT_SECRET,
+                        { expiresIn: '7d' }
+                    );
+
+                    setSessionCookies(res, {
+                        access_token: localAccessToken,
+                        refresh_token: localRefreshToken,
+                        expires_in: 3600
+                    });
+
+                    // Limpiar password_hash del payload
+                    const { password_hash, ...userPayload } = localUser;
+
+                    res.status(200).json({
+                        message: 'Autenticación local exitosa',
+                        user: userPayload,
+                        isLocal: true
+                    });
+                    return;
+                }
+            }
+
             await logSecurityEvent(req, email, 'login_failed');
             res.status(401).json({ error: 'Credenciales inválidas' });
             return;

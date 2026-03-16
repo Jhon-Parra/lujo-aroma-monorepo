@@ -15,7 +15,12 @@ const dbConfig = {
 };
 
 // Si se prefiere usar una URL de conexión completa:
-const connectionString = process.env.DATABASE_URL;
+let connectionString = process.env.DATABASE_URL;
+
+// Forzar 127.0.0.1 si la URL contiene localhost para evitar error ::1
+if (connectionString && connectionString.includes('localhost')) {
+    connectionString = connectionString.replace('localhost', '127.0.0.1');
+}
 
 export const mysqlPool = connectionString 
     ? mysql.createPool(connectionString)

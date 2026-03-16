@@ -3,8 +3,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const rawHost = process.env.DB_HOST || '127.0.0.1';
+const host = rawHost === 'localhost' ? '127.0.0.1' : rawHost;
+
 const dbConfig = {
-    host: process.env.DB_HOST || '127.0.0.1',
+    host: host,
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'perfumissimo',
@@ -17,9 +20,8 @@ const dbConfig = {
 // Si se prefiere usar una URL de conexión completa:
 let connectionString = process.env.DATABASE_URL;
 
-// Forzar 127.0.0.1 si la URL contiene localhost para evitar error ::1
 if (connectionString && connectionString.includes('localhost')) {
-    connectionString = connectionString.replace('localhost', '127.0.0.1');
+    connectionString = connectionString.replace(/localhost/g, '127.0.0.1');
 }
 
 export const mysqlPool = connectionString 

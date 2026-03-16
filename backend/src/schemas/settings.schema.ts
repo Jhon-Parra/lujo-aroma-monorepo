@@ -21,9 +21,39 @@ const intOptional = (min: number, max: number) =>
 const moneyOptional = () =>
     z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(99999999)).optional();
 
+const toHex = (value: number) => {
+    const safe = Math.min(255, Math.max(0, Math.round(value)));
+    return safe.toString(16).padStart(2, '0');
+};
+
+const normalizeColor = (val: any) => {
+    if (val === undefined || val === null) return val;
+    if (typeof val !== 'string') return val;
+
+    const raw = val.trim();
+    if (!raw) return raw;
+
+    if (raw.startsWith('#')) return raw;
+
+    const rgbMatch = raw.match(/^rgba?\(([^)]+)\)$/i);
+    if (!rgbMatch) return raw;
+
+    const parts = rgbMatch[1]
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
+    if (parts.length < 3) return raw;
+
+    const nums = parts.slice(0, 3).map((p) => Number(p));
+    if (nums.some((n) => Number.isNaN(n))) return raw;
+
+    return `#${toHex(nums[0])}${toHex(nums[1])}${toHex(nums[2])}`;
+};
+
 const hexColorOptional = () =>
     z.preprocess(
-        emptyToUndefined,
+        (val) => normalizeColor(emptyToUndefined(val)),
         z.string().regex(/^#[0-9A-Fa-f]{3,6}$/, 'Color debe ser formato hex (#FFF o #FF0000)')
     ).optional();
 

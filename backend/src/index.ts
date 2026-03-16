@@ -28,6 +28,9 @@ import path from 'path';
 dotenv.config();
 
 const app = express();
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
 const PORT = process.env.PORT || 3000;
 // Nota: en macOS/Angular, el browser suele resolver localhost como ::1 (IPv6).
 // Usar :: permite atender localhost en IPv6 y (cuando aplica) tambien IPv4.

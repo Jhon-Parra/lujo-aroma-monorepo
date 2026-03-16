@@ -372,6 +372,52 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
             return;
         }
 
+        // Intentar refresh local (JWT propio)
+        try {
+            const decoded = jwt.verify(refreshToken, JWT_SECRET) as any;
+            if (decoded?.type === 'refresh' && decoded?.id) {
+                const localUser = await getUserById(String(decoded.id));
+                if (!localUser) {
+                    clearTokenCookies(res);
+                    res.status(401).json({ error: 'Refresh token inválido o expirado' });
+                    return;
+                }
+
+                const localAccessToken = jwt.sign(
+                    {
+                        sub: localUser.supabase_user_id || localUser.id,
+                        email: localUser.email,
+                        id: localUser.id,
+                        rol: localUser.rol,
+                        isLocal: true
+                    },
+                    JWT_SECRET,
+                    { expiresIn: '1h' }
+                );
+
+                const localRefreshToken = jwt.sign(
+                    { id: localUser.id, type: 'refresh' },
+                    JWT_SECRET,
+                    { expiresIn: '7d' }
+                );
+
+                setSessionCookies(res, {
+                    access_token: localAccessToken,
+                    refresh_token: localRefreshToken,
+                    expires_in: 3600
+                });
+
+                res.status(200).json({
+                    message: 'Token refrescado exitosamente',
+                    user: localUser,
+                    isLocal: true
+                });
+                return;
+            }
+        } catch {
+            // No es token local, continuar con Supabase
+        }
+
         const { data, error } = await supabasePublic.auth.refreshSession({
             refresh_token: refreshToken
         });

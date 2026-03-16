@@ -193,14 +193,14 @@ const runAiRanking = async (payload: {
         'No inventes productos; solo puedes recomendar IDs presentes en candidates. ' +
         'Maximo 6 recomendaciones. reasons deben ser cortas y concretas.';
 
-    const candidatesLite = payload.candidates.map((p) => ({
+    const candidatesLite = payload.candidates.slice(0, 20).map((p) => ({
         id: p.id,
         nombre: p.nombre,
         genero: p.genero,
         categoria_nombre: (p as any).categoria_nombre || null,
         precio: Number(p.precio || 0),
-        notas_olfativas: p.notas_olfativas || '',
-        descripcion: (p.descripcion || '').slice(0, 180)
+        notas_olfativas: (p.notas_olfativas || '').slice(0, 150),
+        descripcion: (p.descripcion || '').slice(0, 120)
     }));
 
     const user = {
@@ -229,7 +229,7 @@ const runAiRanking = async (payload: {
             { role: 'user', content: prompt + '\nINPUT:\n' + JSON.stringify(user) }
         ],
         temperature: 0.3,
-        max_tokens: 900
+        max_tokens: 600
     });
 
     const content = resp.choices?.[0]?.message?.content || '';

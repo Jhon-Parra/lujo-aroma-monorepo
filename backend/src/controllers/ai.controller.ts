@@ -42,8 +42,8 @@ export const generateAIDescription = async (req: Request, res: Response): Promis
         const systemPrompt = `Asume el rol de una persona experta y apasionada que describe perfumes para "Perfumissimo", una tienda de e-commerce de perfumería de alta gama. Tu función es describir el perfume de manera muy breve pero chévere.`;
 
         const userPrompt = `Haz una descripción muy breve pero chévere, atractiva y orientada a la compra para el siguiente perfume:
-- Nombre Oficial: ${nombre}
-- Notas Olfativas Presentes: ${notas_olfativas}
+- Nombre Oficial: ${String(nombreFinal).slice(0, 100)}
+- Notas Olfativas Presentes: ${String(notasFinal).slice(0, 300)}
 
 IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total. Solo una o dos oraciones contundentes. No agregues saludos, código, ni frases genéricas vacías. Usa un tono sensorial puro y cautivador.`;
 

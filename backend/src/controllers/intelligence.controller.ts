@@ -45,11 +45,12 @@ const normalizeOrderStateExpr = (colExpr: string): string => {
 const detectColumns = async (columns: string[]): Promise<Record<string, boolean>> => {
     try {
         const [rows] = await pool.query<any[]>(
-            `SELECT column_name
-             FROM information_schema.columns
-             WHERE lower(table_name) = 'configuracionglobal'
-               AND column_name IN (${columns.map(() => '?').join(', ')})`,
-            columns
+             `SELECT column_name
+              FROM information_schema.columns
+              WHERE table_schema = DATABASE()
+                AND lower(table_name) = 'configuracionglobal'
+                AND column_name IN (${columns.map(() => '?').join(', ')})`,
+             columns
         );
 
         const found = new Set((rows || []).map((r: any) => String(r.column_name)));

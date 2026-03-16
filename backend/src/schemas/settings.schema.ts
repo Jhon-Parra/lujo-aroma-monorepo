@@ -21,14 +21,20 @@ const intOptional = (min: number, max: number) =>
 const moneyOptional = () =>
     z.preprocess(emptyToUndefined, z.coerce.number().min(0).max(99999999)).optional();
 
+const hexColorOptional = () =>
+    z.preprocess(
+        emptyToUndefined,
+        z.string().regex(/^#[0-9A-Fa-f]{3,6}$/, 'Color debe ser formato hex (#FFF o #FF0000)')
+    ).optional();
+
 export const updateSettingsSchema = z.object({
-    hero_title: z.string().min(1, 'Título requerido').max(255).optional(),
-    hero_subtitle: z.string().min(1, 'Subtítulo requerido').max(500).optional(),
+    hero_title: z.string().max(255).optional(),
+    hero_subtitle: z.string().max(500).optional(),
     hero_media_type: z.enum(['image', 'gif', 'video']).optional(),
-    accent_color: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/, 'Color debe ser formato hex (#FFF o #FF0000)').optional(),
+    accent_color: hexColorOptional(),
     show_banner: booleanCoerce().optional(),
     banner_text: z.string().max(255).optional(),
-    banner_accent_color: z.string().regex(/^#[0-9A-Fa-f]{3,6}$/, 'Color debe ser formato hex (#FFF o #FF0000)').optional(),
+    banner_accent_color: hexColorOptional(),
 
     logo_height_mobile: intOptional(24, 220),
     logo_height_desktop: intOptional(24, 260),

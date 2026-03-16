@@ -345,7 +345,14 @@ export class SettingsComponent implements OnInit {
       error: (err) => {
         this.saving = false;
         console.error('Error:', err);
-        const msg = err?.error?.error || err?.error?.message || err?.message || 'Hubo un error al guardar';
+        const details = err?.error?.details;
+        let msg = err?.error?.error || err?.error?.message || err?.message || 'Hubo un error al guardar';
+        if (Array.isArray(details) && details.length) {
+          msg = details
+            .map((d: any) => `${String(d?.field || 'campo')}: ${String(d?.message || '').trim()}`)
+            .filter((line: string) => line.trim().length > 0)
+            .join('\n');
+        }
         alert(msg);
       }
     });

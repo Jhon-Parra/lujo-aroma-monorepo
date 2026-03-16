@@ -34,8 +34,12 @@ export const pool = {
             // mysql2 ya usa '?' de forma nativa
             const [rows, fields] = await mysqlPool.query(sql, params);
             return [rows as any, fields];
-        } catch (error) {
-            console.error('Error in DB Query:', error, '\nSQL:', sql);
+        } catch (error: any) {
+            console.error(`[DB ERROR] Query execution failed:`, {
+                message: error?.message,
+                code: error?.code,
+                sql: sql.substring(0, 200) + (sql.length > 200 ? '...' : '')
+            });
             throw error;
         }
     },
@@ -53,5 +57,11 @@ mysqlPool.getConnection()
         conn.release();
     })
     .catch((err) => {
-        console.error('❌ Error conectando a la base de datos MySQL:', err.message);
+        console.error('❌ Error conectando a la base de datos MySQL:', {
+            message: err.message,
+            code: err.code,
+            host: dbConfig.host,
+            user: dbConfig.user,
+            database: dbConfig.database
+        });
     });

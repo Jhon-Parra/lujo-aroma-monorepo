@@ -144,13 +144,19 @@ export const getFavorites = async (req: AuthRequest, res: Response): Promise<voi
             `SELECT
                 p.id,
                 p.nombre AS name,
+                p.nombre,
                 p.genero,
                 p.descripcion AS description,
+                p.descripcion,
                 p.notas_olfativas AS notes,
+                p.notas_olfativas,
                 p.precio AS price,
+                p.precio,
                 p.stock,
                 p.imagen_url AS imageUrl,
+                p.imagen_url,
                 p.unidades_vendidas AS soldCount,
+                p.unidades_vendidas,
                 p.creado_en,
                 ${esNuevoExpr}
             FROM favoritos f

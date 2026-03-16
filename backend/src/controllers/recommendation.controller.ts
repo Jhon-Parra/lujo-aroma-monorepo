@@ -150,9 +150,9 @@ const selectCandidates = async (opts: { preferGenero?: string | null }): Promise
     const whereSql = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '';
 
     const [rows] = await pool.query<ProductRow[]>(
-        `SELECT p.id, p.nombre AS name, p.genero, p.descripcion AS description, 
-                p.notas_olfativas AS notes, p.precio AS price, p.stock, 
-                p.unidades_vendidas AS soldCount, p.imagen_url AS imageUrl${categorySelect}
+        `SELECT p.id, p.nombre AS name, p.nombre, p.genero, p.descripcion AS description, p.descripcion,
+                p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
+                p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url${categorySelect}
          FROM productos p
          ${join}
          ${whereSql}
@@ -279,9 +279,13 @@ const buildResponse = (candidatesById: Map<string, ProductRow>, reco: RecoItem[]
             product: {
                 id: p.id,
                 name: (p as any).name || p.nombre,
+                nombre: p.nombre || (p as any).name,
                 price: Number((p as any).price || p.precio || 0),
+                precio: Number(p.precio || (p as any).price || 0),
                 imageUrl: (p as any).imageUrl || p.imagen_url,
+                imagen_url: p.imagen_url || (p as any).imageUrl,
                 notes: (p as any).notes || p.notas_olfativas,
+                notas_olfativas: p.notas_olfativas || (p as any).notes,
                 genero: p.genero,
                 categoria_nombre: (p as any).categoria_nombre || null,
                 categoria_slug: (p as any).categoria_slug || null
@@ -389,9 +393,9 @@ export const recommendSimilar = async (req: Request, res: Response): Promise<voi
         const join = hasCategories ? 'LEFT JOIN categorias c ON c.slug = p.genero' : '';
         const categorySelect = hasCategories ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
         const [rows] = await pool.query<ProductRow[]>(
-            `SELECT p.id, p.nombre AS name, p.genero, p.descripcion AS description, 
-                    p.notas_olfativas AS notes, p.precio AS price, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.imagen_url AS imageUrl${categorySelect}
+            `SELECT p.id, p.nombre AS name, p.nombre, p.genero, p.descripcion AS description, p.descripcion,
+                    p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url${categorySelect}
              FROM productos p
              ${join}
              WHERE p.id = ?

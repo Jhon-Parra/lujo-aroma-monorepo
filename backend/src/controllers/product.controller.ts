@@ -261,9 +261,9 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
         const extraSelect = newUntilOk ? ', p.nuevo_hasta' : '';
 
         const [rows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.genero${categorySelect}, p.descripcion AS description, 
-                    p.notas_olfativas AS notes, p.precio AS price, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.imagen_url AS imageUrl,
+            `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
+                    p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
                     ${esNuevoExpr}${extraSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
@@ -313,9 +313,9 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
 
         // 1. Fetch all products
         const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.genero${categorySelect}, p.descripcion AS description, 
-                    p.notas_olfativas AS notes, p.precio AS price, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.imagen_url AS imageUrl, p.promocion_id,
+            `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
+                    p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en
              FROM productos p
              ${categoryJoin}
@@ -454,8 +454,8 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
 
         // 1. Fetch newest products
         const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.genero${categorySelect}, p.precio AS price, p.stock, 
-                    p.imagen_url AS imageUrl, p.promocion_id,
+            `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.precio AS price, p.precio, p.stock, 
+                    p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en
              FROM productos p
              ${categoryJoin}
@@ -583,9 +583,9 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
 
         // 1. Fetch product
         const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.genero${categorySelect}, p.descripcion AS description, 
-                    p.notas_olfativas AS notes, p.precio AS price, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.imagen_url AS imageUrl, p.promocion_id,
+            `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
+                    p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en
              FROM productos p
              ${categoryJoin}
@@ -723,9 +723,9 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
 
         // 2. Fetch related products
         const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.genero${categorySelect}, p.precio AS price, p.stock, 
-                    p.imagen_url AS imageUrl, p.promocion_id,
-                    ${esNuevoExpr}, p.creado_en, p.unidades_vendidas AS soldCount
+            `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.precio AS price, p.precio, p.stock, 
+                    p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
+                    ${esNuevoExpr}, p.creado_en, p.unidades_vendidas AS soldCount, p.unidades_vendidas
              FROM productos p
              ${categoryJoin}
              WHERE p.id <> ?

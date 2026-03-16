@@ -16,10 +16,12 @@ const openai = new OpenAI({
  */
 export const generateAIDescription = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { nombre = '', notas_olfativas = '' } = req.body;
+        const { nombre = '', name = '', notas_olfativas = '', notes = '' } = req.body;
+        const nombreFinal = name || nombre;
+        const notasFinal = notes || notas_olfativas;
 
         // Validar entradas básicas
-        if (!nombre || !notas_olfativas) {
+        if (!nombreFinal || !notasFinal) {
             res.status(400).json({
                 error: 'Para la Generación AI, se requiere proporcionar el Nombre del producto y sus notas olfativas.'
             });

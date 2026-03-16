@@ -143,14 +143,14 @@ export const getFavorites = async (req: AuthRequest, res: Response): Promise<voi
         const [rows] = await pool.query(
             `SELECT
                 p.id,
-                p.nombre,
+                p.nombre AS name,
                 p.genero,
-                p.descripcion,
-                p.notas_olfativas,
-                p.precio,
+                p.descripcion AS description,
+                p.notas_olfativas AS notes,
+                p.precio AS price,
                 p.stock,
-                p.imagen_url,
-                p.unidades_vendidas,
+                p.imagen_url AS imageUrl,
+                p.unidades_vendidas AS soldCount,
                 p.creado_en,
                 ${esNuevoExpr}
             FROM favoritos f

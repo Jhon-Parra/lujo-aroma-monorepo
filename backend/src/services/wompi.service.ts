@@ -80,10 +80,10 @@ const resolveConfig = async (): Promise<WompiRuntimeConfig> => {
         return cachedCfg;
     }
 
-    // Fallback: leer desde ConfiguracionGlobal (si existe)
+    // Fallback: leer desde configuracionglobal (si existe)
     try {
         const result = await pool.query<any[]>(
-            'SELECT wompi_env, wompi_public_key, wompi_private_key_enc, wompi_private_key_iv, wompi_private_key_tag FROM ConfiguracionGlobal WHERE id = 1'
+            'SELECT wompi_env, wompi_public_key, wompi_private_key_enc, wompi_private_key_iv, wompi_private_key_tag FROM configuracionglobal WHERE id = 1'
         );
         const rows = (result as any)?.[0] || (result as any)?.rows || result;
         const row = Array.isArray(rows) ? rows[0] : undefined;

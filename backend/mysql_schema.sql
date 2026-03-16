@@ -3,9 +3,9 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 1. Table: Usuarios
-DROP TABLE IF EXISTS Usuarios;
-CREATE TABLE Usuarios (
+-- 1. Table: usuarios
+DROP TABLE IF EXISTS usuarios;
+CREATE TABLE usuarios (
     id VARCHAR(36) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     apellido VARCHAR(255) NOT NULL,
@@ -22,9 +22,9 @@ CREATE TABLE Usuarios (
     UNIQUE KEY (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2. Table: Categorias
-DROP TABLE IF EXISTS Categorias;
-CREATE TABLE Categorias (
+-- 2. Table: categorias
+DROP TABLE IF EXISTS categorias;
+CREATE TABLE categorias (
     id VARCHAR(36) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL,
@@ -35,9 +35,9 @@ CREATE TABLE Categorias (
     UNIQUE KEY (slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 3. Table: Promociones
-DROP TABLE IF EXISTS Promociones;
-CREATE TABLE Promociones (
+-- 3. Table: promociones
+DROP TABLE IF EXISTS promociones;
+CREATE TABLE promociones (
     id VARCHAR(36) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     descripcion TEXT,
@@ -57,9 +57,9 @@ CREATE TABLE Promociones (
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 4. Table: Productos
-DROP TABLE IF EXISTS Productos;
-CREATE TABLE Productos (
+-- 4. Table: productos
+DROP TABLE IF EXISTS productos;
+CREATE TABLE productos (
     id VARCHAR(36) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     genero VARCHAR(100) DEFAULT 'unisex',
@@ -75,12 +75,12 @@ CREATE TABLE Productos (
     es_nuevo BOOLEAN DEFAULT FALSE,
     nuevo_hasta DATETIME,
     PRIMARY KEY (id),
-    FOREIGN KEY (promocion_id) REFERENCES Promociones(id) ON DELETE SET NULL
+    FOREIGN KEY (promocion_id) REFERENCES promociones(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 5. Table: Ordenes
-DROP TABLE IF EXISTS Ordenes;
-CREATE TABLE Ordenes (
+-- 5. Table: ordenes
+DROP TABLE IF EXISTS ordenes;
+CREATE TABLE ordenes (
     id VARCHAR(36) NOT NULL,
     usuario_id VARCHAR(36) NOT NULL,
     total DECIMAL(15,2) NOT NULL,
@@ -98,12 +98,12 @@ CREATE TABLE Ordenes (
     cart_recovery_discount_pct INTEGER DEFAULT 0,
     cart_recovery_discount_amount DECIMAL(15,2) DEFAULT 0.00,
     PRIMARY KEY (id),
-    FOREIGN KEY (usuario_id) REFERENCES Usuarios(id)
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 6. Table: DetalleOrdenes
-DROP TABLE IF EXISTS DetalleOrdenes;
-CREATE TABLE DetalleOrdenes (
+-- 6. Table: detalleordenes
+DROP TABLE IF EXISTS detalleordenes;
+CREATE TABLE detalleordenes (
     id VARCHAR(36) NOT NULL,
     orden_id VARCHAR(36) NOT NULL,
     producto_id VARCHAR(36) NOT NULL,
@@ -111,26 +111,26 @@ CREATE TABLE DetalleOrdenes (
     precio_unitario DECIMAL(15,2) NOT NULL,
     subtotal DECIMAL(15,2) AS (cantidad * precio_unitario) STORED,
     PRIMARY KEY (id),
-    FOREIGN KEY (orden_id) REFERENCES Ordenes(id) ON DELETE CASCADE,
-    FOREIGN KEY (producto_id) REFERENCES Productos(id)
+    FOREIGN KEY (orden_id) REFERENCES ordenes(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 7. Table: Favoritos
-DROP TABLE IF EXISTS Favoritos;
-CREATE TABLE Favoritos (
+-- 7. Table: favoritos
+DROP TABLE IF EXISTS favoritos;
+CREATE TABLE favoritos (
     id VARCHAR(36) NOT NULL,
     usuario_id VARCHAR(36) NOT NULL,
     producto_id VARCHAR(36) NOT NULL,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY (usuario_id, producto_id),
-    FOREIGN KEY (usuario_id) REFERENCES Usuarios(id) ON DELETE CASCADE,
-    FOREIGN KEY (producto_id) REFERENCES Productos(id) ON DELETE CASCADE
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. Table: Resenas
-DROP TABLE IF EXISTS Resenas;
-CREATE TABLE Resenas (
+-- 8. Table: resenas
+DROP TABLE IF EXISTS resenas;
+CREATE TABLE resenas (
     id VARCHAR(36) NOT NULL,
     usuario_id VARCHAR(36) NOT NULL,
     producto_id VARCHAR(36) NOT NULL,
@@ -141,14 +141,14 @@ CREATE TABLE Resenas (
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    FOREIGN KEY (usuario_id) REFERENCES Usuarios(id) ON DELETE CASCADE,
-    FOREIGN KEY (producto_id) REFERENCES Productos(id) ON DELETE CASCADE,
-    FOREIGN KEY (orden_id) REFERENCES Ordenes(id) ON DELETE SET NULL
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE,
+    FOREIGN KEY (orden_id) REFERENCES ordenes(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 9. Table: ConfiguracionGlobal
-DROP TABLE IF EXISTS ConfiguracionGlobal;
-CREATE TABLE ConfiguracionGlobal (
+-- 9. Table: configuracionglobal
+DROP TABLE IF EXISTS configuracionglobal;
+CREATE TABLE configuracionglobal (
     id INTEGER NOT NULL DEFAULT 1,
     hero_title VARCHAR(255),
     hero_subtitle TEXT,
@@ -220,9 +220,9 @@ CREATE TABLE ConfiguracionGlobal (
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 10. Table: CartSessions
-DROP TABLE IF EXISTS CartSessions;
-CREATE TABLE CartSessions (
+-- 10. Table: cartsessions
+DROP TABLE IF EXISTS cartsessions;
+CREATE TABLE cartsessions (
     session_id VARCHAR(255) NOT NULL,
     user_id VARCHAR(36),
     items JSON NOT NULL,
@@ -232,33 +232,33 @@ CREATE TABLE CartSessions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (session_id),
-    FOREIGN KEY (user_id) REFERENCES Usuarios(id) ON DELETE SET NULL,
-    FOREIGN KEY (order_id) REFERENCES Ordenes(id) ON DELETE SET NULL
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+    FOREIGN KEY (order_id) REFERENCES ordenes(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 11. Table: PromocionProductos
-DROP TABLE IF EXISTS PromocionProductos;
-CREATE TABLE PromocionProductos (
+-- 11. Table: promocionproductos
+DROP TABLE IF EXISTS promocionproductos;
+CREATE TABLE promocionproductos (
     promocion_id VARCHAR(36) NOT NULL,
     producto_id VARCHAR(36) NOT NULL,
     PRIMARY KEY (promocion_id, producto_id),
-    FOREIGN KEY (promocion_id) REFERENCES Promociones(id) ON DELETE CASCADE,
-    FOREIGN KEY (producto_id) REFERENCES Productos(id) ON DELETE CASCADE
+    FOREIGN KEY (promocion_id) REFERENCES promociones(id) ON DELETE CASCADE,
+    FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 12. Table: PromocionUsuarios
-DROP TABLE IF EXISTS PromocionUsuarios;
-CREATE TABLE PromocionUsuarios (
+-- 12. Table: promocionusuarios
+DROP TABLE IF EXISTS promocionusuarios;
+CREATE TABLE promocionusuarios (
     promocion_id VARCHAR(36) NOT NULL,
     usuario_id VARCHAR(36) NOT NULL,
     PRIMARY KEY (promocion_id, usuario_id),
-    FOREIGN KEY (promocion_id) REFERENCES Promociones(id) ON DELETE CASCADE,
-    FOREIGN KEY (usuario_id) REFERENCES Usuarios(id) ON DELETE CASCADE
+    FOREIGN KEY (promocion_id) REFERENCES promociones(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 13. Event Tables (Intelligence)
-DROP TABLE IF EXISTS SearchEvents;
-CREATE TABLE SearchEvents (
+DROP TABLE IF EXISTS searchevents;
+CREATE TABLE searchevents (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(36),
     session_id VARCHAR(255),
@@ -266,22 +266,22 @@ CREATE TABLE SearchEvents (
     product_ids JSON,
     results_count INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES Usuarios(id) ON DELETE SET NULL
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-DROP TABLE IF EXISTS ProductViewEvents;
-CREATE TABLE ProductViewEvents (
+DROP TABLE IF EXISTS productviewevents;
+CREATE TABLE productviewevents (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id VARCHAR(36),
     session_id VARCHAR(255),
     product_id VARCHAR(36) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES Usuarios(id) ON DELETE SET NULL,
-    FOREIGN KEY (product_id) REFERENCES Productos(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+    FOREIGN KEY (product_id) REFERENCES productos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-DROP TABLE IF EXISTS AuthSecurityEvents;
-CREATE TABLE AuthSecurityEvents (
+DROP TABLE IF EXISTS authsecurityevents;
+CREATE TABLE authsecurityevents (
     id INT AUTO_INCREMENT PRIMARY KEY,
     event_type VARCHAR(50) NOT NULL,
     email VARCHAR(255),
@@ -290,7 +290,7 @@ CREATE TABLE AuthSecurityEvents (
     success BOOLEAN DEFAULT FALSE,
     user_id VARCHAR(36),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES Usuarios(id) ON DELETE SET NULL
+    FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS admin_audit_logs;
@@ -303,16 +303,16 @@ CREATE TABLE admin_audit_logs (
     ip VARCHAR(50),
     user_agent TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (actor_user_id) REFERENCES Usuarios(id) ON DELETE CASCADE
+    FOREIGN KEY (actor_user_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- Seed initial data
-INSERT IGNORE INTO ConfiguracionGlobal (id) VALUES (1);
+INSERT IGNORE INTO configuracionglobal (id) VALUES (1);
 
 -- Admin User Seed (Password: Admin123!)
-INSERT IGNORE INTO Usuarios (id, nombre, apellido, email, password_hash, rol)
+INSERT IGNORE INTO usuarios (id, nombre, apellido, email, password_hash, rol)
 VALUES (
     'f6f7e8a9-b0c1-4d2e-8f3a-4b5c6d7e8f9a', 
     'Admin', 

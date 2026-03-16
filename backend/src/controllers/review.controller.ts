@@ -53,7 +53,7 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
         if (order_id) {
             const [rows] = await pool.query<any[]>(
                 `SELECT 1
-                 FROM Ordenes o
+                 FROM ordenes o
                  JOIN detalle_ordenes d ON d.orden_id = o.id
                  WHERE o.id = ?
                    AND o.usuario_id = ?
@@ -69,7 +69,7 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
         } else {
             const [rows] = await pool.query<any[]>(
                 `SELECT 1
-                 FROM Ordenes o
+                 FROM ordenes o
                  JOIN detalle_ordenes d ON d.orden_id = o.id
                  WHERE o.usuario_id = ?
                    AND o.estado = 'ENTREGADO'
@@ -87,7 +87,7 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
 
         try {
             await pool.query(
-                `INSERT INTO Resenas (id, usuario_id, producto_id, orden_id, rating, comentario, verificada)
+                `INSERT INTO resenas (id, usuario_id, producto_id, orden_id, rating, comentario, verificada)
                  VALUES (?, ?, ?, ?, ?, ?, true)`,
                 [id, userId, product_id, order_id || null, rating, (comment || '').trim() || null]
             );
@@ -119,7 +119,7 @@ export const getMyReviews = async (req: AuthRequest, res: Response): Promise<voi
 
         const [rows] = await pool.query<any[]>(
             `SELECT producto_id, rating, comentario, creado_en
-             FROM Resenas
+             FROM resenas
              WHERE usuario_id = ?
              ORDER BY creado_en DESC`,
             [userId]
@@ -150,8 +150,8 @@ export const getProductReviews = async (req: AuthRequest, res: Response): Promis
                 r.creado_en,
                 u.nombre,
                 u.apellido
-             FROM Resenas r
-             JOIN Usuarios u ON u.id = r.usuario_id
+             FROM resenas r
+             JOIN usuarios u ON u.id = r.usuario_id
              WHERE r.producto_id = ?
              ORDER BY r.creado_en DESC
              LIMIT 50`,
@@ -179,7 +179,7 @@ export const getProductReviewSummary = async (req: AuthRequest, res: Response): 
             `SELECT
                 AVG(rating) AS average,
                 CAST(COUNT(*) AS SIGNED) AS count
-             FROM Resenas
+             FROM resenas
              WHERE producto_id = ?`,
             [id]
         );

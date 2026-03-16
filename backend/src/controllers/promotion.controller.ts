@@ -49,7 +49,7 @@ const parseBoolean = (value: any, fallback?: boolean): boolean | undefined => {
 
 const ensureCategoryExists = async (slug: string): Promise<boolean> => {
     try {
-        const [rows] = await pool.query<any[]>('SELECT 1 AS ok FROM Categorias WHERE slug = ? LIMIT 1', [slug]);
+        const [rows] = await pool.query<any[]>('SELECT 1 AS ok FROM categorias WHERE slug = ? LIMIT 1', [slug]);
         return !!rows?.[0]?.ok;
     } catch {
         return false;
@@ -260,7 +260,7 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
                 }
 
                 await connection.query(
-                    `INSERT INTO Promociones (
+                    `INSERT INTO promociones (
                         id, nombre, descripcion, imagen_url, porcentaje_descuento${advancedReady ? ', discount_type, amount_discount, priority' : ''}, fecha_inicio, fecha_fin,
                         product_scope, product_gender, audience_scope, audience_segment, activo
                     )
@@ -283,7 +283,7 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
                 );
             } else {
                 await connection.query(
-                    `INSERT INTO Promociones (
+                    `INSERT INTO promociones (
                         id, nombre, descripcion, porcentaje_descuento${advancedReady ? ', discount_type, amount_discount, priority' : ''}, fecha_inicio, fecha_fin,
                         product_scope, audience_scope, audience_segment, activo
                     )
@@ -307,7 +307,7 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
             if ((product_scope || 'GLOBAL') === 'SPECIFIC') {
                 for (const pid of (product_ids || [])) {
                     await connection.query(
-                        'INSERT IGNORE INTO PromocionProductos (promocion_id, producto_id) VALUES (?, ?)',
+                        'INSERT IGNORE INTO promocionproductos (promocion_id, producto_id) VALUES (?, ?)',
                         [id, pid]
                     );
                 }
@@ -316,7 +316,7 @@ export const createPromotion = async (req: Request, res: Response): Promise<void
             if ((audience_scope || 'ALL') === 'CUSTOMERS') {
                 for (const uid of (audience_user_ids || [])) {
                     await connection.query(
-                        'INSERT IGNORE INTO PromocionUsuarios (promocion_id, usuario_id) VALUES (?, ?)',
+                        'INSERT IGNORE INTO promocionusuarios (promocion_id, usuario_id) VALUES (?, ?)',
                         [id, uid]
                     );
                 }
@@ -352,7 +352,7 @@ export const getPromotions = async (_req: Request, res: Response): Promise<void>
                       AND pr.product_gender IS NOT NULL
                       AND EXISTS (
                         SELECT 1
-                        FROM Productos p
+                        FROM productos p
                         WHERE p.genero = pr.product_gender
                           AND p.stock > 0
                       )
@@ -361,7 +361,7 @@ export const getPromotions = async (_req: Request, res: Response): Promise<void>
 
             const [rows] = await pool.query<any[]>(`
                 SELECT id, nombre, descripcion${mediaReady ? ', imagen_url' : ''}, porcentaje_descuento${advancedReady ? ', discount_type, amount_discount, priority' : ''}, fecha_inicio, fecha_fin, activo
-                FROM Promociones pr
+                FROM promociones pr
                 WHERE pr.activo = true
                   AND (
                     ${advancedReady
@@ -373,9 +373,9 @@ export const getPromotions = async (_req: Request, res: Response): Promise<void>
                   AND COALESCE(pr.audience_scope, 'ALL') = 'ALL'
                   AND (
                     COALESCE(pr.product_scope, 'GLOBAL') = 'GLOBAL'
-                    OR EXISTS (SELECT 1 FROM PromocionProductos pp WHERE pp.promocion_id = pr.id)
+                    OR EXISTS (SELECT 1 FROM promocionproductos pp WHERE pp.promocion_id = pr.id)
                     ${genderOr}
-                    OR EXISTS (SELECT 1 FROM Productos p WHERE p.promocion_id = pr.id)
+                    OR EXISTS (SELECT 1 FROM productos p WHERE p.promocion_id = pr.id)
                   )
                 ORDER BY ${advancedReady ? 'pr.priority DESC, COALESCE(pr.amount_discount, 0) DESC, pr.porcentaje_descuento DESC,' : 'pr.porcentaje_descuento DESC,'} pr.creado_en DESC
             `);
@@ -385,7 +385,7 @@ export const getPromotions = async (_req: Request, res: Response): Promise<void>
 
         const [rows] = await pool.query<any[]>(`
             SELECT pr.id, pr.nombre, pr.descripcion, pr.porcentaje_descuento${advancedReady ? ', pr.discount_type, pr.amount_discount, pr.priority' : ''}, pr.fecha_inicio, pr.fecha_fin, pr.activo
-            FROM Promociones pr
+            FROM promociones pr
             WHERE pr.activo = true
               AND (
                 ${advancedReady
@@ -396,7 +396,7 @@ export const getPromotions = async (_req: Request, res: Response): Promise<void>
               AND pr.fecha_fin >= NOW()
               AND EXISTS (
                 SELECT 1
-                FROM Productos p
+                FROM productos p
                 WHERE p.promocion_id = pr.id
                   AND p.stock > 0
               )
@@ -431,9 +431,9 @@ export const getPromotionsAdmin = async (_req: Request, res: Response): Promise<
                     ${mediaReady ? 'pr.product_gender,' : ''}
                     pr.audience_scope,
                     pr.audience_segment,
-                    COALESCE((SELECT JSON_ARRAYAGG(pp.producto_id) FROM PromocionProductos pp WHERE pp.promocion_id = pr.id), '[]') AS product_ids,
-                    COALESCE((SELECT JSON_ARRAYAGG(pu.usuario_id) FROM PromocionUsuarios pu WHERE pu.promocion_id = pr.id), '[]') AS audience_user_ids
-                FROM Promociones pr
+                    COALESCE((SELECT JSON_ARRAYAGG(pp.producto_id) FROM promocionproductos pp WHERE pp.promocion_id = pr.id), '[]') AS product_ids,
+                    COALESCE((SELECT JSON_ARRAYAGG(pu.usuario_id) FROM promocionusuarios pu WHERE pu.promocion_id = pr.id), '[]') AS audience_user_ids
+                FROM promociones pr
                 ORDER BY ${advancedReady ? 'pr.priority DESC,' : ''} pr.creado_en DESC
             `);
             res.status(200).json(rows);
@@ -442,7 +442,7 @@ export const getPromotionsAdmin = async (_req: Request, res: Response): Promise<
 
         const [rows] = await pool.query<any[]>(`
             SELECT id, nombre, descripcion, porcentaje_descuento${advancedReady ? ', discount_type, amount_discount, priority' : ''}, fecha_inicio, fecha_fin, activo
-            FROM Promociones
+            FROM promociones
             ORDER BY ${advancedReady ? 'priority DESC,' : ''} creado_en DESC
         `);
         res.status(200).json(rows);
@@ -590,7 +590,7 @@ export const updatePromotion = async (req: Request, res: Response): Promise<void
 
             if (updates.length > 0) {
                 params.push(id);
-                const query = `UPDATE Promociones SET ${updates.join(', ')} WHERE id = ?`;
+                const query = `UPDATE promociones SET ${updates.join(', ')} WHERE id = ?`;
                 const [result] = await connection.query(query, params);
                 const affected = Number((result as any)?.affectedRows ?? 0);
                 if (affected === 0) {
@@ -603,7 +603,7 @@ export const updatePromotion = async (req: Request, res: Response): Promise<void
             // Reemplazar asignacion de productos si viene en el payload
             if (product_scope !== undefined) {
                 if (product_scope === 'GLOBAL') {
-                    await connection.query('DELETE FROM PromocionProductos WHERE promocion_id = ?', [id]);
+                    await connection.query('DELETE FROM promocionproductos WHERE promocion_id = ?', [id]);
                 }
                 if (product_scope === 'SPECIFIC') {
                     if (!Array.isArray(product_ids) || product_ids.length === 0) {
@@ -611,23 +611,23 @@ export const updatePromotion = async (req: Request, res: Response): Promise<void
                         res.status(400).json({ error: 'Debes seleccionar al menos un producto' });
                         return;
                     }
-                    await connection.query('DELETE FROM PromocionProductos WHERE promocion_id = ?', [id]);
+                    await connection.query('DELETE FROM promocionproductos WHERE promocion_id = ?', [id]);
                     for (const pid of product_ids) {
                         await connection.query(
-                            'INSERT IGNORE INTO PromocionProductos (promocion_id, producto_id) VALUES (?, ?)',
+                            'INSERT IGNORE INTO promocionproductos (promocion_id, producto_id) VALUES (?, ?)',
                             [id, pid]
                         );
                     }
                 }
                 if (product_scope === 'GENDER') {
-                    await connection.query('DELETE FROM PromocionProductos WHERE promocion_id = ?', [id]);
+                    await connection.query('DELETE FROM promocionproductos WHERE promocion_id = ?', [id]);
                 }
             }
 
             // Reemplazar asignacion de usuarios si viene en el payload
             if (audience_scope !== undefined) {
                 if (audience_scope === 'ALL' || audience_scope === 'SEGMENT') {
-                    await connection.query('DELETE FROM PromocionUsuarios WHERE promocion_id = ?', [id]);
+                    await connection.query('DELETE FROM promocionusuarios WHERE promocion_id = ?', [id]);
                 }
                 if (audience_scope === 'CUSTOMERS') {
                     if (!Array.isArray(audience_user_ids) || audience_user_ids.length === 0) {
@@ -635,10 +635,10 @@ export const updatePromotion = async (req: Request, res: Response): Promise<void
                         res.status(400).json({ error: 'Debes seleccionar al menos un cliente' });
                         return;
                     }
-                    await connection.query('DELETE FROM PromocionUsuarios WHERE promocion_id = ?', [id]);
+                    await connection.query('DELETE FROM promocionusuarios WHERE promocion_id = ?', [id]);
                     for (const uid of audience_user_ids) {
                         await connection.query(
-                            'INSERT IGNORE INTO PromocionUsuarios (promocion_id, usuario_id) VALUES (?, ?)',
+                            'INSERT IGNORE INTO promocionusuarios (promocion_id, usuario_id) VALUES (?, ?)',
                             [id, uid]
                         );
                     }
@@ -671,7 +671,7 @@ export const updatePromotionActive = async (req: Request, res: Response): Promis
         }
 
         const [result] = await pool.query<any>(
-            'UPDATE Promociones SET activo = ? WHERE id = ?',
+            'UPDATE promociones SET activo = ? WHERE id = ?',
             [activeParsed, id]
         );
 
@@ -693,7 +693,7 @@ export const deletePromotion = async (req: Request, res: Response): Promise<void
         const { id } = req.params;
 
         const [result] = await pool.query<any>(
-            `DELETE FROM Promociones WHERE id = ?`,
+            `DELETE FROM promociones WHERE id = ?`,
             [id]
         );
 

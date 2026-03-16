@@ -89,7 +89,7 @@ const getAlertConfig = async (): Promise<AlertConfig> => {
         if (!selectParts.length) return { ...DEFAULT_ALERT_CONFIG };
 
         const [rows] = await pool.query<any[]>(
-            `SELECT ${selectParts.join(', ')} FROM ConfiguracionGlobal WHERE id = 1`
+            `SELECT ${selectParts.join(', ')} FROM configuracionglobal WHERE id = 1`
         );
 
         const row = rows?.[0] || {};
@@ -115,7 +115,7 @@ const getSearchTrends = async (productId: string): Promise<number[]> => {
         // Fetch searches from last 7 days
         const [rows] = await pool.query<any[]>(
             `SELECT created_at, product_ids
-             FROM SearchEvents
+             FROM searchevents
              WHERE created_at >= CURDATE() - INTERVAL 6 DAY
                AND product_ids IS NOT NULL`
         );
@@ -162,7 +162,7 @@ export const trackSearchEvent = async (req: AuthRequest, res: Response): Promise
         const userId = req.user?.id || null;
 
         await pool.query(
-            `INSERT INTO SearchEvents (user_id, session_id, \`query\`, product_ids, results_count)
+            `INSERT INTO searchevents (user_id, session_id, \`query\`, product_ids, results_count)
              VALUES (?, ?, ?, ?, ?)`,
             [userId, sessionId, query, productIds.length ? JSON.stringify(productIds) : null, Number.isFinite(resultsCount) ? resultsCount : 0]
         );
@@ -186,7 +186,7 @@ export const trackProductView = async (req: AuthRequest, res: Response): Promise
         const userId = req.user?.id || null;
 
         await pool.query(
-            `INSERT INTO ProductViewEvents (user_id, session_id, product_id)
+            `INSERT INTO productviewevents (user_id, session_id, product_id)
              VALUES (?, ?, ?)`,
             [userId, sessionId, productId]
         );
@@ -210,7 +210,7 @@ export const trackCartSession = async (req: AuthRequest, res: Response): Promise
         }
 
         await pool.query(
-            `INSERT INTO CartSessions (session_id, user_id, items, total, status, created_at, updated_at)
+            `INSERT INTO cartsessions (session_id, user_id, items, total, status, created_at, updated_at)
              VALUES (?, ?, ?, ?, 'OPEN', NOW(), NOW())
              ON DUPLICATE KEY UPDATE
                 user_id = COALESCE(?, user_id),
@@ -239,7 +239,7 @@ export const convertCartSession = async (req: AuthRequest, res: Response): Promi
         }
 
         await pool.query(
-            `UPDATE CartSessions
+            `UPDATE cartsessions
              SET status = 'CONVERTED', order_id = COALESCE(?, order_id), updated_at = NOW()
              WHERE session_id = ?`,
             [orderId, sessionId]
@@ -264,7 +264,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         // 1. Top Searches (Refactored to avoid JSON_TABLE)
         const [searchEvents] = await pool.query<any[]>(
             `SELECT product_ids
-             FROM SearchEvents
+             FROM searchevents
              WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
                AND product_ids IS NOT NULL`,
             [days]
@@ -289,7 +289,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const topSearches: any[] = [];
         if (sortedSearchIds.length > 0) {
             const [pRows] = await pool.query<any[]>(
-                `SELECT id, nombre FROM Productos WHERE id IN (${sortedSearchIds.map(() => '?').join(', ')})`,
+                `SELECT id, nombre FROM productos WHERE id IN (${sortedSearchIds.map(() => '?').join(', ')})`,
                 sortedSearchIds
             );
             
@@ -310,7 +310,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         // 2. Abandoned Total
         const [abandonedRows] = await pool.query<any[]>(
             `SELECT CAST(COUNT(*) AS SIGNED) AS total, COALESCE(SUM(total), 0) AS lost_value
-             FROM CartSessions
+             FROM cartsessions
              WHERE status = 'OPEN'
                AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)`,
             [abandonedHours]
@@ -319,7 +319,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         // 3. Abandoned Trend (7 days) (Refactored to avoid WITH days)
         const [abandonedTrendData] = await pool.query<any[]>(
             `SELECT DATE(updated_at) AS day, COUNT(*) AS count
-             FROM CartSessions
+             FROM cartsessions
              WHERE status = 'OPEN'
                AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
                AND updated_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
@@ -344,7 +344,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         // 4. Abandoned Top Products (Refactored to avoid JSON_TABLE)
         const [abandonedSessions] = await pool.query<any[]>(
             `SELECT items
-             FROM CartSessions
+             FROM cartsessions
              WHERE status = 'OPEN'
                AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)`,
             [abandonedHours]
@@ -372,7 +372,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const abandonedTopProducts: any[] = [];
         if (sortedAbIds.length > 0) {
             const [pRows] = await pool.query<any[]>(
-                `SELECT id, nombre FROM Productos WHERE id IN (${sortedAbIds.map(() => '?').join(', ')})`,
+                `SELECT id, nombre FROM productos WHERE id IN (${sortedAbIds.map(() => '?').join(', ')})`,
                 sortedAbIds
             );
             sortedAbIds.forEach(id => {
@@ -391,8 +391,8 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const [abandonedRecentRows] = await pool.query<any[]>(
             `SELECT a.session_id, a.user_id, a.total, a.updated_at, a.items,
                     u.email AS user_email
-             FROM CartSessions a
-             LEFT JOIN Usuarios u ON u.id = a.user_id
+             FROM cartsessions a
+             LEFT JOIN usuarios u ON u.id = a.user_id
              WHERE a.status = 'OPEN'
                AND a.updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
              ORDER BY a.updated_at DESC
@@ -405,8 +405,8 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             `SELECT u.id, u.nombre, u.apellido, u.email,
                     CAST(COUNT(*) AS SIGNED) AS orders_count,
                     COALESCE(SUM(o.total), 0) AS total_spent
-             FROM Ordenes o
-             JOIN Usuarios u ON u.id = o.usuario_id
+             FROM ordenes o
+             JOIN usuarios u ON u.id = o.usuario_id
              WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL ? DAY)
              GROUP BY u.id, u.nombre, u.apellido, u.email
@@ -434,10 +434,10 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
                 p.nombre AS product_name,
                 SUM(d.cantidad) as units,
                 SUM(d.subtotal) as revenue
-             FROM DetalleOrdenes d
-             JOIN Ordenes o ON o.id = d.orden_id
-             JOIN Productos p ON p.id = d.producto_id
-             LEFT JOIN Categorias c ON c.slug = p.genero
+             FROM detalleordenes d
+             JOIN ordenes o ON o.id = d.orden_id
+             JOIN productos p ON p.id = d.producto_id
+             LEFT JOIN categorias c ON c.slug = p.genero
              WHERE ${salesWhere}
              GROUP BY p.genero, c.nombre, p.nombre`,
             salesParams
@@ -475,7 +475,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         // 8. Sales Stats
         const [salesCurrentRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
-             FROM Ordenes o
+             FROM ordenes o
              WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY)`,
             [...okStates]
@@ -483,7 +483,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
 
         const [salesPrevRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
-             FROM Ordenes o
+             FROM ordenes o
              WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
                AND o.creado_en < DATE_SUB(NOW(), INTERVAL 7 DAY)`,
@@ -497,7 +497,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         // 9. Abandoned Deltas
         const [abandonedRecentCount] = await pool.query<any[]>(
             `SELECT CAST(COUNT(*) AS SIGNED) AS count, COALESCE(SUM(total), 0) AS lost
-             FROM CartSessions
+             FROM cartsessions
              WHERE status = 'OPEN'
                AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
                AND updated_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)`,
@@ -506,7 +506,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
 
         const [abandonedPrevCount] = await pool.query<any[]>(
             `SELECT CAST(COUNT(*) AS SIGNED) AS count
-             FROM CartSessions
+             FROM cartsessions
              WHERE status = 'OPEN'
                AND updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
                AND updated_at >= DATE_SUB(NOW(), INTERVAL 6 DAY)
@@ -523,8 +523,8 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const [negativeRows] = await pool.query<any[]>(
             `SELECT p.id, p.nombre, CAST(COUNT(*) AS SIGNED) AS negative_count,
                     GROUP_CONCAT(r.comentario SEPARATOR ' · ') AS comentarios
-             FROM Resenas r
-             JOIN Productos p ON p.id = r.producto_id
+             FROM resenas r
+             JOIN productos p ON p.id = r.producto_id
              WHERE r.rating <= 2
                AND r.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY)
                AND r.comentario IS NOT NULL
@@ -540,9 +540,9 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             `SELECT d.producto_id, p.nombre, 
                     SUM(CASE WHEN o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN d.cantidad ELSE 0 END) AS current_units,
                     SUM(CASE WHEN o.creado_en < DATE_SUB(NOW(), INTERVAL 7 DAY) THEN d.cantidad ELSE 0 END) AS prev_units
-             FROM DetalleOrdenes d
-             JOIN Ordenes o ON o.id = d.orden_id
-             JOIN Productos p ON p.id = d.producto_id
+             FROM detalleordenes d
+             JOIN ordenes o ON o.id = d.orden_id
+             JOIN productos p ON p.id = d.producto_id
              WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
              GROUP BY d.producto_id, p.nombre
@@ -555,7 +555,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         // 12. Security
         const [suspiciousRows] = await pool.query<any[]>(
             `SELECT COALESCE(email, ip) AS subject, CAST(COUNT(*) AS SIGNED) AS attempts
-             FROM AuthSecurityEvents
+             FROM authsecurityevents
              WHERE event_type = 'login_failed'
                AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
              GROUP BY subject

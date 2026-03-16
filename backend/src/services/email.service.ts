@@ -46,7 +46,7 @@ const detectSenderColumns = async (): Promise<boolean> => {
     if (senderColsReady !== null) return senderColsReady;
     try {
         const [rows] = await pool.query<any[]>(
-            `SELECT COUNT(*)::int AS cnt
+            `SELECT COUNT(*) AS cnt
              FROM information_schema.columns
              WHERE table_name = 'configuracionglobal'
                AND column_name IN ('email_from_name','email_from_address','email_reply_to','email_bcc_orders')`
@@ -96,7 +96,7 @@ const resolveSenderConfig = async (fallbackFrom?: string): Promise<SenderConfig>
     try {
         const [rows] = await pool.query<any[]>(
             `SELECT email_from_name, email_from_address, email_reply_to, email_bcc_orders
-             FROM ConfiguracionGlobal WHERE id = 1`
+             FROM configuracionglobal WHERE id = 1`
         );
 
         const r = rows?.[0] || {};
@@ -117,7 +117,7 @@ const detectSmtpColumns = async (): Promise<boolean> => {
     if (smtpColsReady !== null) return smtpColsReady;
     try {
         const [rows] = await pool.query<any[]>(
-            `SELECT COUNT(*)::int AS cnt
+            `SELECT COUNT(*) AS cnt
              FROM information_schema.columns
              WHERE table_name = 'configuracionglobal'
                AND column_name IN (
@@ -160,7 +160,7 @@ const resolveSmtpConfig = async (): Promise<SmtpConfig | null> => {
         const [rows] = await pool.query<any[]>(
             `SELECT smtp_host, smtp_port, smtp_secure, smtp_user, smtp_from,
                     smtp_pass_enc, smtp_pass_iv, smtp_pass_tag
-             FROM ConfiguracionGlobal WHERE id = 1`
+             FROM configuracionglobal WHERE id = 1`
         );
         const r = rows?.[0] || {};
         const host = String(r.smtp_host || '').trim();

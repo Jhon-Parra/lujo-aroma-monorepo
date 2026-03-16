@@ -62,7 +62,7 @@ const loadInstagramConfig = async (): Promise<{ token: string; handle: string | 
 
         if (hasTokenCol) {
             const [rows] = await pool.query<any[]>(
-                'SELECT instagram_access_token, instagram_url FROM ConfiguracionGlobal WHERE id = 1'
+                'SELECT instagram_access_token, instagram_url FROM configuracionglobal WHERE id = 1'
             );
             const token = String(rows?.[0]?.instagram_access_token || '').trim();
             const handle = extractInstagramHandle(String(rows?.[0]?.instagram_url || ''));

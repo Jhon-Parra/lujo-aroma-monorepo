@@ -23,7 +23,7 @@ const extractAccessToken = (req: Request): string | null => {
 const resolveLocalUser = async (supabaseUserId: string, email?: string) => {
     try {
         const [rows] = await pool.query<any[]>(
-            'SELECT id, rol, email, supabase_user_id FROM Usuarios WHERE supabase_user_id = ?',
+            'SELECT id, rol, email, supabase_user_id FROM usuarios WHERE supabase_user_id = ?',
             [supabaseUserId]
         );
         const user = (rows as any[])?.[0];
@@ -32,7 +32,7 @@ const resolveLocalUser = async (supabaseUserId: string, email?: string) => {
         if (!email) return null;
 
         const [emailRows] = await pool.query<any[]>(
-            'SELECT id, rol, email, supabase_user_id FROM Usuarios WHERE email = ?',
+            'SELECT id, rol, email, supabase_user_id FROM usuarios WHERE email = ?',
             [email]
         );
         const byEmail = (emailRows as any[])?.[0];
@@ -43,7 +43,7 @@ const resolveLocalUser = async (supabaseUserId: string, email?: string) => {
         }
 
         await pool.query(
-            'UPDATE Usuarios SET supabase_user_id = ? WHERE id = ?',
+            'UPDATE usuarios SET supabase_user_id = ? WHERE id = ?',
             [supabaseUserId, byEmail.id]
         );
 

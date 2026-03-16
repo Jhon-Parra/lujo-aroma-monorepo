@@ -39,7 +39,7 @@ const detectCategoriesSchema = async (): Promise<boolean> => {
             `SELECT COUNT(*) AS ok 
              FROM information_schema.tables 
              WHERE table_schema = DATABASE() 
-               AND table_name = 'Categorias'`
+               AND table_name = 'categorias'`
         );
         categoriesReady = Number(rows?.[0]?.ok || 0) > 0;
         return categoriesReady;
@@ -57,7 +57,7 @@ const detectRecoEventsSchema = async (): Promise<boolean> => {
             `SELECT COUNT(*) AS ok 
              FROM information_schema.tables 
              WHERE table_schema = DATABASE() 
-               AND table_name = 'RecomendacionEventos'`
+               AND table_name = 'recomendacioneventos'`
         );
         recoEventsReady = Number(rows?.[0]?.ok || 0) > 0;
         return recoEventsReady;
@@ -138,7 +138,7 @@ const computeHeuristicScore = (p: ProductRow, tokens: string[], preferGenero?: s
 
 const selectCandidates = async (opts: { preferGenero?: string | null }): Promise<ProductRow[]> => {
     const hasCategories = await detectCategoriesSchema();
-    const join = hasCategories ? 'LEFT JOIN Categorias c ON c.slug = p.genero' : '';
+    const join = hasCategories ? 'LEFT JOIN categorias c ON c.slug = p.genero' : '';
     const categorySelect = hasCategories ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
 
     const whereParts: string[] = ['p.stock > 0'];
@@ -151,7 +151,7 @@ const selectCandidates = async (opts: { preferGenero?: string | null }): Promise
 
     const [rows] = await pool.query<ProductRow[]>(
         `SELECT p.id, p.nombre, p.genero, p.descripcion, p.notas_olfativas, p.precio, p.stock, p.unidades_vendidas, p.imagen_url${categorySelect}
-         FROM Productos p
+         FROM productos p
          ${join}
          ${whereSql}
          ORDER BY COALESCE(p.unidades_vendidas, 0) DESC, p.creado_en DESC
@@ -256,7 +256,7 @@ const recordEvent = async (req: Request, event_type: string, payload: any, sessi
         if (!ok) return;
         const ua = String(req.headers['user-agent'] || '').slice(0, 800);
         await pool.query(
-            'INSERT INTO RecomendacionEventos (usuario_id, session_id, event_type, payload, user_agent) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO recomendacioneventos (usuario_id, session_id, event_type, payload, user_agent) VALUES (?, ?, ?, ?, ?)',
             [null, session_id || null, event_type, payload ? JSON.stringify(payload) : null, ua || null]
         );
     } catch {
@@ -383,11 +383,11 @@ export const recommendSimilar = async (req: Request, res: Response): Promise<voi
         }
 
         const hasCategories = await detectCategoriesSchema();
-        const join = hasCategories ? 'LEFT JOIN Categorias c ON c.slug = p.genero' : '';
+        const join = hasCategories ? 'LEFT JOIN categorias c ON c.slug = p.genero' : '';
         const categorySelect = hasCategories ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
         const [rows] = await pool.query<ProductRow[]>(
             `SELECT p.id, p.nombre, p.genero, p.descripcion, p.notas_olfativas, p.precio, p.stock, p.unidades_vendidas, p.imagen_url${categorySelect}
-             FROM Productos p
+             FROM productos p
              ${join}
              WHERE p.id = ?
              LIMIT 1`,

@@ -16,7 +16,7 @@ export const OrderEmailLogsService = {
         const max = Math.max(1, Math.min(200, Math.trunc(Number(limit || 50))));
         const [rows] = await pool.query<any[]>(
             `SELECT id, order_id, status, to_email, from_email, subject, success, error_message, created_at
-             FROM OrderEmailLogs
+             FROM orderemaillogs
              ORDER BY created_at DESC
              LIMIT ?`,
             [max]
@@ -27,7 +27,7 @@ export const OrderEmailLogsService = {
     async logSend(input: OrderEmailLogInput): Promise<void> {
         try {
             await pool.query(
-                `INSERT INTO OrderEmailLogs (order_id, status, to_email, from_email, subject, success, error_message)
+                `INSERT INTO orderemaillogs (order_id, status, to_email, from_email, subject, success, error_message)
                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
                     input.orderId,

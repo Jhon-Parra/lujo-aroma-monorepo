@@ -68,7 +68,7 @@ export const PermissionsService = {
 
         try {
             const [rows] = await pool.query<any[]>(
-                'SELECT role_permissions FROM ConfiguracionGlobal WHERE id = 1'
+                'SELECT role_permissions FROM configuracionglobal WHERE id = 1'
             );
             const raw = (rows as any[])?.[0]?.role_permissions;
             const value = sanitize(raw);
@@ -84,7 +84,7 @@ export const PermissionsService = {
     async setRolePermissions(input: any): Promise<RolePermissions> {
         const value = sanitize(input);
         try {
-            await pool.query('UPDATE ConfiguracionGlobal SET role_permissions = ? WHERE id = 1', [JSON.stringify(value)]);
+            await pool.query('UPDATE configuracionglobal SET role_permissions = ? WHERE id = 1', [JSON.stringify(value)]);
         } catch (e: any) {
             const msg = String(e?.message || '');
             if (/role_permissions/i.test(msg) && (/column/i.test(msg) || /no existe/i.test(msg))) {

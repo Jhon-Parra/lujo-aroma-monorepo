@@ -11,7 +11,8 @@ const cookieBaseOptions = {
     httpOnly: true,
     secure: isProduction,
     sameSite: cookieSameSite,
-    path: '/'
+    path: '/',
+    domain: isProduction ? '.perfumissimocol.com' : undefined // Permite compartir cookies entre subdominios
 };
 
 const ACCESS_TOKEN_FALLBACK_MS = 60 * 60 * 1000;
@@ -43,7 +44,7 @@ const logSecurityEvent = async (req: Request, email: string | null, eventType: s
         const ip = req.ip ? String(req.ip) : null;
         const userAgent = req.headers?.['user-agent'] ? String(req.headers['user-agent']).slice(0, 300) : null;
         await pool.query(
-            `INSERT INTO AuthSecurityEvents (email, ip, user_agent, event_type)
+            `INSERT INTO authsecurityevents (email, ip, user_agent, event_type)
              VALUES (?, ?, ?, ?)`,
             [email, ip, userAgent, eventType]
         );
@@ -54,7 +55,7 @@ const logSecurityEvent = async (req: Request, email: string | null, eventType: s
 
 const getUserById = async (id: string) => {
     const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE id = ?',
+        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE id = ?',
         [id]
     );
     return (rows as any[])?.[0] || null;
@@ -62,7 +63,7 @@ const getUserById = async (id: string) => {
 
 const getUserBySupabaseId = async (supabaseUserId: string) => {
     const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE supabase_user_id = ?',
+        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE supabase_user_id = ?',
         [supabaseUserId]
     );
     return (rows as any[])?.[0] || null;
@@ -70,7 +71,7 @@ const getUserBySupabaseId = async (supabaseUserId: string) => {
 
 const getUserByEmail = async (email: string) => {
     const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE email = ?',
+        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE email = ?',
         [email]
     );
     return (rows as any[])?.[0] || null;
@@ -78,7 +79,7 @@ const getUserByEmail = async (email: string) => {
 
 const linkSupabaseUser = async (localUserId: string, supabaseUserId: string) => {
     await pool.query(
-        'UPDATE Usuarios SET supabase_user_id = ? WHERE id = ?',
+        'UPDATE usuarios SET supabase_user_id = ? WHERE id = ?',
         [supabaseUserId, localUserId]
     );
 };
@@ -110,7 +111,7 @@ const ensureLocalUser = async (input: {
 
     const passwordHash = input.passwordHash || await bcrypt.hash(Math.random().toString(36), 10);
     await pool.query(
-        `INSERT INTO Usuarios (supabase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
+        `INSERT INTO usuarios (supabase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
          VALUES (?, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
         [
             input.supabaseUserId,

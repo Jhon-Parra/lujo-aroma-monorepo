@@ -49,14 +49,14 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
 
         const [revRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
-             FROM Ordenes
+             FROM ordenes
              WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)`,
             okStates
         );
 
         const [byStatusRows] = await pool.query<any[]>(
             `SELECT ${normalizedStateExpr} AS estado, CAST(COUNT(*) AS SIGNED) AS count
-             FROM Ordenes
+             FROM ordenes
              GROUP BY estado`
         );
 
@@ -77,18 +77,18 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
 
         const [pendingRows] = await pool.query<any[]>(
             `SELECT CAST(COUNT(*) AS SIGNED) AS count
-             FROM Ordenes
+             FROM ordenes
              WHERE ${normalizedStateExpr} = 'PENDIENTE'`
         );
 
         const [prodRows] = await pool.query<any[]>(
             `SELECT CAST(COUNT(*) AS SIGNED) AS count
-             FROM Productos`
+             FROM productos`
         );
 
         const [userRows] = await pool.query<any[]>(
             `SELECT CAST(COUNT(*) AS SIGNED) AS count
-             FROM Usuarios`
+             FROM usuarios`
         );
 
         const [monthRows] = await pool.query<any[]>(
@@ -104,7 +104,7 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
                     DATE_FORMAT(o.creado_en, '%Y-%m-01') AS month_start,
                     COALESCE(SUM(o.total), 0) AS revenue,
                     CAST(COUNT(*) AS SIGNED) AS orders_count
-                FROM Ordenes o
+                FROM ordenes o
                 WHERE ${normalizeOrderStateExpr('o.estado')} IN (?, ?, ?, ?)
                   AND o.creado_en >= DATE_FORMAT(NOW() - INTERVAL (? - 1) MONTH, '%Y-%m-01')
                 GROUP BY 1
@@ -136,12 +136,12 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
                             'imagen_url', p2.imagen_url
                         )
                     )
-                    FROM DetalleOrdenes d2
-                    JOIN Productos p2 ON p2.id = d2.producto_id
+                    FROM detalleordenes d2
+                    JOIN productos p2 ON p2.id = d2.producto_id
                     WHERE d2.orden_id = o.id
                 ) AS items
-            FROM Ordenes o
-            JOIN Usuarios u ON u.id = o.usuario_id
+            FROM ordenes o
+            JOIN usuarios u ON u.id = o.usuario_id
             WHERE ${normalizeOrderStateExpr('o.estado')} = 'PENDIENTE'
             ORDER BY o.creado_en DESC
             LIMIT 10`
@@ -171,9 +171,9 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
                 p.imagen_url,
                 CAST(COALESCE(SUM(d.cantidad), 0) AS SIGNED) AS unidades,
                 COALESCE(SUM(d.subtotal), 0) AS ingresos
-             FROM DetalleOrdenes d
-             JOIN Ordenes o ON o.id = d.orden_id
-             JOIN Productos p ON p.id = d.producto_id
+             FROM detalleordenes d
+             JOIN ordenes o ON o.id = d.orden_id
+             JOIN productos p ON p.id = d.producto_id
              WHERE ${normalizeOrderStateExpr('o.estado')} IN (?, ?, ?, ?)
              GROUP BY p.id, p.nombre, p.imagen_url
              ORDER BY unidades DESC, ingresos DESC

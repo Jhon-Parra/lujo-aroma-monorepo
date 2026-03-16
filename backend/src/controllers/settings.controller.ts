@@ -132,7 +132,8 @@ const detectColumns = async (columns: string[]): Promise<Record<string, boolean>
         const [rows] = await pool.query<any[]>(
             `SELECT column_name
              FROM information_schema.columns
-             WHERE lower(table_name) = 'configuracionglobal'
+             WHERE table_schema = DATABASE()
+               AND lower(table_name) = 'configuracionglobal'
                AND column_name IN (${columns.map(() => '?').join(', ')})`,
             columns
         );
@@ -291,7 +292,7 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
         if (cols.cart_recovery_button_text) selectParts.push('cart_recovery_button_text');
 
         const [rows] = await pool.query<SettingsRow[]>(
-            `SELECT ${selectParts.join(', ')} FROM ConfiguracionGlobal WHERE id = 1`
+            `SELECT ${selectParts.join(', ')} FROM configuracionglobal WHERE id = 1`
         );
 
         if (!rows || rows.length === 0) {
@@ -309,7 +310,7 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
         if (cols.instagram_access_token) {
             try {
                 const [cfgRows] = await pool.query<any[]>(
-                    'SELECT (instagram_access_token IS NOT NULL AND LENGTH(TRIM(instagram_access_token)) > 0) AS configured FROM ConfiguracionGlobal WHERE id = 1'
+                    'SELECT (instagram_access_token IS NOT NULL AND LENGTH(TRIM(instagram_access_token)) > 0) AS configured FROM configuracionglobal WHERE id = 1'
                 );
                 settings.instagram_feed_configured = !!cfgRows?.[0]?.configured;
             } catch {
@@ -320,7 +321,7 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
         if (cols.smtp_host && cols.smtp_user && cols.smtp_from && cols.smtp_pass_enc) {
             try {
                 const [smtpRows] = await pool.query<any[]>(
-                    'SELECT smtp_pass_enc FROM ConfiguracionGlobal WHERE id = 1'
+                    'SELECT smtp_pass_enc FROM configuracionglobal WHERE id = 1'
                 );
                 settings.smtp_configured = !!(
                     String((rows[0] as any)?.smtp_host || '').trim() &&
@@ -343,7 +344,7 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
 export const updateSettings = async (req: Request, res: Response): Promise<void> => {
     try {
         const [currentRows] = await pool.query<SettingsRow[]>(
-            'SELECT hero_title, hero_subtitle, accent_color, show_banner, banner_text, logo_height_mobile, logo_height_desktop FROM ConfiguracionGlobal WHERE id = 1'
+            'SELECT hero_title, hero_subtitle, accent_color, show_banner, banner_text, logo_height_mobile, logo_height_desktop FROM configuracionglobal WHERE id = 1'
         );
 
         if (currentRows.length === 0) {
@@ -662,7 +663,7 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             return;
         }
 
-        let query = `UPDATE ConfiguracionGlobal SET hero_title = ?, hero_subtitle = ?, accent_color = ?, show_banner = ?, banner_text = ?`;
+        let query = `UPDATE configuracionglobal SET hero_title = ?, hero_subtitle = ?, accent_color = ?, show_banner = ?, banner_text = ?`;
         const params: any[] = [hero_title, hero_subtitle, accent_color, !!show_banner, banner_text];
 
         if (columns.banner_accent_color && banner_accent_color !== undefined) {
@@ -925,7 +926,7 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             await logAdminAction({
                 actorUserId,
                 action: 'settings.update',
-                target: 'ConfiguracionGlobal',
+                target: 'configuracionglobal',
                 metadata: { fields },
                 req
             });

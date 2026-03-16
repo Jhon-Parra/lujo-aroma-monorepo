@@ -58,7 +58,7 @@ const listSupabaseUsersByEmail = async (): Promise<Map<string, string>> => {
 const fetchLocalUsers = async (): Promise<LocalUser[]> => {
     const [rows] = await pool.query<any[]>(
         `SELECT id, email, nombre, apellido, telefono, foto_perfil, supabase_user_id
-         FROM Usuarios
+         FROM usuarios
          ORDER BY creado_en ASC`
     );
     return (rows as any[]) as LocalUser[];
@@ -66,7 +66,7 @@ const fetchLocalUsers = async (): Promise<LocalUser[]> => {
 
 const updateLocalSupabaseId = async (localId: string, supabaseUserId: string) => {
     await pool.query(
-        'UPDATE Usuarios SET supabase_user_id = $1 WHERE id = $2',
+        'UPDATE usuarios SET supabase_user_id = ? WHERE id = ?',
         [supabaseUserId, localId]
     );
 };
@@ -142,7 +142,7 @@ const run = async () => {
     console.log(`- Errores: ${errors}`);
 
     if (created > 0) {
-        console.log('ℹ️ Usuarios creados tienen password aleatorio. Deben restablecer contraseña.');
+        console.log('ℹ️ usuarios creados tienen password aleatorio. Deben restablecer contraseña.');
     }
 
     process.exit(0);

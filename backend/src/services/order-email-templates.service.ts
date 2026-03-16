@@ -105,7 +105,7 @@ export const OrderEmailTemplateService = {
     async listTemplates(): Promise<OrderEmailTemplate[]> {
         const [rows] = await pool.query<any[]>(
             `SELECT status, subject, body_html, body_text
-             FROM OrderEmailTemplates`
+             FROM orderemailtemplates`
         );
 
         const map = new Map<string, any>((rows || []).map((r: any) => [String(r.status || '').toUpperCase(), r]));
@@ -125,7 +125,7 @@ export const OrderEmailTemplateService = {
     async getTemplate(status: OrderEmailStatus): Promise<OrderEmailTemplate> {
         const [rows] = await pool.query<any[]>(
             `SELECT status, subject, body_html, body_text
-             FROM OrderEmailTemplates
+             FROM orderemailtemplates
              WHERE status = ?
              LIMIT 1`,
             [status]
@@ -149,7 +149,7 @@ export const OrderEmailTemplateService = {
         const body_text = input.body_text !== undefined && input.body_text !== null ? String(input.body_text).trim() : null;
 
         await pool.query(
-            `INSERT INTO OrderEmailTemplates (status, subject, body_html, body_text, updated_at)
+            `INSERT INTO orderemailtemplates (status, subject, body_html, body_text, updated_at)
              VALUES (?, ?, ?, ?, NOW())
              ON DUPLICATE KEY UPDATE subject = VALUES(subject), body_html = VALUES(body_html), body_text = VALUES(body_text), updated_at = NOW()`,
             [status, subject, body_html, body_text]

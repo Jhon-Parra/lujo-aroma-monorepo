@@ -256,7 +256,33 @@ CREATE TABLE promocionusuarios (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 13. Event Tables (Intelligence)
+-- 13. Table: orderemailtemplates
+DROP TABLE IF EXISTS orderemailtemplates;
+CREATE TABLE orderemailtemplates (
+    status VARCHAR(50) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    body_html MEDIUMTEXT,
+    body_text MEDIUMTEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 14. Table: orderemaillogs
+DROP TABLE IF EXISTS orderemaillogs;
+CREATE TABLE orderemaillogs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id VARCHAR(36) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    to_email VARCHAR(255) NOT NULL,
+    from_email VARCHAR(255),
+    subject VARCHAR(255),
+    success BOOLEAN DEFAULT FALSE,
+    error_message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES ordenes(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 15. Event Tables (Intelligence)
 DROP TABLE IF EXISTS searchevents;
 CREATE TABLE searchevents (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -278,6 +304,18 @@ CREATE TABLE productviewevents (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE SET NULL,
     FOREIGN KEY (product_id) REFERENCES productos(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS recomendacioneventos;
+CREATE TABLE recomendacioneventos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id VARCHAR(36),
+    session_id VARCHAR(255),
+    event_type VARCHAR(50) NOT NULL,
+    payload JSON,
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 DROP TABLE IF EXISTS authsecurityevents;

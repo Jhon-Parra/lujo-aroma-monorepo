@@ -335,13 +335,9 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
         }
 
         res.status(200).json(settings);
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error fetching settings:', error);
-        res.status(500).json({ 
-            error: 'Error al obtener la configuración',
-            details: error?.message || 'Unknown error',
-            code: error?.code
-        });
+        res.status(500).json({ error: 'Error al obtener la configuración' });
     }
 };
 
@@ -946,12 +942,8 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             perfume_lujo_image_url,
             banner_accent_color: banner_accent_color !== undefined ? banner_accent_color : undefined
         });
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error updating settings:', error);
-        res.status(500).json({ 
-            error: 'Error al actualizar la configuración',
-            details: error?.message || 'Unknown error',
-            code: error?.code
-        });
+        res.status(500).json({ error: 'Error al actualizar la configuración' });
     }
 };

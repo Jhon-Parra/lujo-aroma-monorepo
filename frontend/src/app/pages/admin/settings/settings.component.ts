@@ -73,6 +73,7 @@ export class SettingsComponent implements OnInit {
   selectedEnvioPrioritarioImageFile: File | null = null;
   selectedPerfumeLujoImageFile: File | null = null;
   saving = false;
+  logoError: string | null = null;
 
   instagramTokenInput = '';
 
@@ -191,6 +192,19 @@ export class SettingsComponent implements OnInit {
   onLogoSelected(event: any) {
     const file = event.target.files[0];
     if (file) {
+      // Validación de dimensiones
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        if (ratio > 5 || ratio < 0.2) {
+          this.logoError = 'El logo tiene dimensiones inusuales. Se recomienda un ratio de 1:1 o 2:1 para mejor visualización.';
+        } else {
+          this.logoError = null;
+        }
+        URL.revokeObjectURL(img.src);
+      };
+
       this.selectedLogoFile = file;
 
       const reader = new FileReader();
@@ -199,6 +213,20 @@ export class SettingsComponent implements OnInit {
       };
       reader.readAsDataURL(file);
     }
+  }
+
+  getAccentPreviewStyle() {
+    return {
+      'background-color': this.settings.accent_color || '#C2A878',
+      'color': 'white',
+      'padding': '8px 16px',
+      'border-radius': '6px',
+      'text-transform': 'uppercase',
+      'font-size': '12px',
+      'font-weight': 'bold',
+      'letter-spacing': '0.1em',
+      'display': 'inline-block'
+    };
   }
 
   getEnvioPrioritarioImageUrl(): string {

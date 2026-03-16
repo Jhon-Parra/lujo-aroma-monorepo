@@ -7,10 +7,11 @@ import { SeoService } from '../../../core/services/seo/seo.service';
 import { CategoryService, Category } from '../../../core/services/category/category.service';
 import { AnalyticsService } from '../../../core/services/analytics/analytics.service';
 
+import { SkeletonCardComponent } from '../../../shared/components/skeleton-card/skeleton-card.component';
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [CommonModule, ProductCardComponent],
+  imports: [CommonModule, ProductCardComponent, SkeletonCardComponent],
   templateUrl: './catalog.component.html'
 })
 export class CatalogComponent implements OnInit {

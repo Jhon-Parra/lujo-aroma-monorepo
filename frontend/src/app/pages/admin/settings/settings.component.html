@@ -233,6 +233,7 @@
                             <div>
                                 <input type="file" (change)="onLogoSelected($event)" accept="image/*"
                                     class="w-full border border-[#ecece5] rounded-md px-4 py-2 focus:ring-gold focus:border-gold outline-none">
+                                <p *ngIf="logoError" class="mt-2 text-xs text-red-500 font-bold uppercase tracking-tight">{{ logoError }}</p>
                                 <p class="text-xs text-gray-500 mt-2">Recomendado: PNG con fondo transparente.</p>
                             </div>
 
@@ -264,6 +265,7 @@
                                 class="h-10 w-10 p-0 border-0 rounded-md cursor-pointer">
                             <input type="text" [(ngModel)]="settings.accent_color"
                                 class="border border-[#ecece5] rounded-md px-4 py-2 w-32 focus:ring-gold focus:border-gold outline-none text-center uppercase">
+                            <div [ngStyle]="getAccentPreviewStyle()">Previsualización Botón</div>
                         </div>
                     </div>
                 </div>

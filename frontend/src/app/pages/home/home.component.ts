@@ -10,10 +10,11 @@ import { SettingsService, Settings } from '../../core/services/settings/settings
 import { InstagramService, InstagramMediaItem } from '../../core/services/social/instagram.service';
 import { SeoService } from '../../core/services/seo/seo.service';
 
+import { SkeletonCardComponent } from '../../shared/components/skeleton-card/skeleton-card.component';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ProductCardComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ProductCardComponent, SkeletonCardComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })

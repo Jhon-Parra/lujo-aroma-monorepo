@@ -96,8 +96,10 @@
     <!-- Collection / Products Section -->
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 pb-10">
         @if (loading) {
-        <div class="flex justify-center items-center py-20">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+            @for (i of [1,2,3,4]; track i) {
+                <app-skeleton-card></app-skeleton-card>
+            }
         </div>
         } @else if (error) {
         <div class="text-center py-20 text-red-500 font-bold bg-white rounded-xl shadow-sm border border-red-100">

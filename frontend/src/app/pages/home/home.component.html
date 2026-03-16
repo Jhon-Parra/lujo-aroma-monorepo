@@ -162,11 +162,11 @@
     </section>
 
     <!-- Redes Sociales -->
-    <section *ngIf="showInstagramSection" class="max-w-[1400px] mx-auto px-4 py-16 text-center">
+    <section class="max-w-[1400px] mx-auto px-4 py-16 text-center">
         <h2 class="font-serif text-3xl text-charcoal mb-2 tracking-wide uppercase">NUESTRAS REDES SOCIALES</h2>
         <p class="font-sans text-sm text-soft-charcoal mb-10 tracking-widest">{{ instagramLabel }}</p>
 
-        <ng-container>
+        <ng-container *ngIf="showInstagramSection">
             <div *ngIf="instagramLoading"
                 class="text-center text-sm text-soft-charcoal border border-[#ecece5] bg-[#f9f9f6] rounded-md py-10">
                 Cargando publicaciones...

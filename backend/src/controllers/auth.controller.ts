@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import { pool } from '../config/database';
 import { supabaseAdmin, supabasePublic } from '../config/supabase';
 
@@ -112,10 +113,13 @@ const ensureLocalUser = async (input: {
     }
 
     const passwordHash = input.passwordHash || await bcrypt.hash(Math.random().toString(36), 10);
+    const newId = randomUUID();
+
     await pool.query(
-        `INSERT INTO usuarios (supabase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
-         VALUES (?, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
+        `INSERT INTO usuarios (id, supabase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
         [
+            newId,
             input.supabaseUserId,
             input.nombre || 'Usuario',
             input.apellido || 'Supabase',

@@ -297,3 +297,14 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- Seed initial data
 INSERT IGNORE INTO ConfiguracionGlobal (id) VALUES (1);
+
+-- Admin User Seed (Password: Admin123!)
+INSERT IGNORE INTO Usuarios (id, nombre, apellido, email, password_hash, rol)
+VALUES (
+    'f6f7e8a9-b0c1-4d2e-8f3a-4b5c6d7e8f9a', 
+    'Admin', 
+    'Perfumissimo', 
+    'admin@perfumissimo.com', 
+    '$2b$10$mnX9cssrpnFN/xoiICcjLu2PTAO5EsqLRFmuSlKJOjU6BBy2IAdzO', 
+    'SUPERADMIN'
+);

@@ -67,6 +67,17 @@ export class ProductService {
     return this.http.get<Product[]>(`${this.publicUrl}/catalog`);
   }
 
+  /**
+   * Returns up to 'limit' products whose name matches the query.
+   * Used by the navbar autocomplete dropdown.
+   */
+  searchSuggestions(query: string, limit = 5): Observable<Product[]> {
+    const q = encodeURIComponent(query.trim());
+    return this.http.get<Product[]>(
+      `${this.publicUrl}/catalog?q=${q}&limit=${limit}`
+    );
+  }
+
   getNewestProducts(limit = 8): Observable<Product[]> {
     return this.http.get<Product[]>(`${this.publicUrl}/newest?limit=${encodeURIComponent(String(limit))}`);
   }

@@ -22,6 +22,7 @@ export class CatalogComponent implements OnInit {
   selectedCategory = 'todos';
   searchTerm = '';
   selectedPromotionId = '';
+  isMobileMenuOpen = false;
   private lastTrackedSearch = '';
 
 
@@ -116,7 +117,12 @@ export class CatalogComponent implements OnInit {
     });
   }
 
+  toggleMobileMenu() {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+  }
+
   filterCategory(category: string) {
+    this.isMobileMenuOpen = false; // Close menu on selection
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { category: category !== 'todos' ? category : null },

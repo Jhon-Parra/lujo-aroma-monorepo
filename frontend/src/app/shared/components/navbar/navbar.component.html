@@ -49,17 +49,68 @@
           </svg>
         </button>
 
-        <!-- Buscador (Desktop) -->
-        <div *ngIf="!isAdminRoute"
-          class="hidden md:flex relative items-center border-b border-white/20 hover:border-gold focus-within:border-gold transition-colors pb-1 group">
-          <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" placeholder="Buscar perfumes..."
-            class="w-0 opacity-0 group-hover:w-32 group-hover:opacity-100 focus:w-40 focus:opacity-100 transition-all duration-300 ease-in-out bg-transparent text-sm text-white placeholder-cream/40 focus:outline-none px-1">
-          <button (click)="onSearch()" class="text-cream hover:text-white transition-colors ml-1 z-10">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-              <path stroke-linecap="round" stroke-linejoin="round"
-                d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
-            </svg>
-          </button>
+        <!-- Buscador (Desktop) con Autocompletado -->
+        <div *ngIf="!isAdminRoute" class="hidden md:block relative">
+          <div class="flex items-center border-b border-white/20 hover:border-gold focus-within:border-gold transition-colors pb-1 group">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchInput()"
+              (keyup.enter)="onSearch()"
+              (focus)="onSearchInput()"
+              placeholder="Buscar perfumes..."
+              autocomplete="off"
+              id="navbar-search-desktop"
+              class="w-0 opacity-0 group-hover:w-36 group-hover:opacity-100 focus:w-44 focus:opacity-100 transition-all duration-300 ease-in-out bg-transparent text-sm text-white placeholder-cream/40 focus:outline-none px-1"
+            />
+            <button (click)="onSearch()" class="text-cream hover:text-white transition-colors ml-1 z-10" aria-label="Buscar">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Autocomplete Desktop Dropdown -->
+          <div *ngIf="showSuggestions"
+            class="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-2xl border border-[#ecece5] z-[200] overflow-hidden">
+            <!-- Loading -->
+            <div *ngIf="suggestionsLoading" class="px-4 py-3 flex items-center gap-2 text-xs text-gray-400">
+              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
+                <path fill="currentColor" d="M4 12a8 8 0 018-8" class="opacity-75"/>
+              </svg>
+              Buscando...
+            </div>
+            <!-- Results -->
+            <ul *ngIf="!suggestionsLoading && suggestions.length > 0">
+              <li *ngFor="let s of suggestions"
+                (click)="selectSuggestion(s)"
+                class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-[#f9f9f6] transition-colors border-b border-[#f0f0eb] last:border-0">
+                <img [src]="getSuggestionImage(s)" [alt]="s.name || s.nombre"
+                  class="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-[#ecece5]" />
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold text-charcoal truncate uppercase tracking-wide">{{ s.name || s.nombre }}</div>
+                  <div class="text-[11px] text-gold font-bold mt-0.5">{{ getSuggestionPrice(s) | currency:'COP':'symbol-narrow':'1.0-0' }}</div>
+                </div>
+                <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </li>
+            </ul>
+            <!-- No results -->
+            <div *ngIf="!suggestionsLoading && suggestions.length === 0 && searchTerm.length >= 2"
+              class="px-4 py-3 text-xs text-gray-500">
+              No se encontraron productos para "{{ searchTerm }}"
+            </div>
+            <!-- Ver todos -->
+            <div *ngIf="!suggestionsLoading && suggestions.length > 0"
+              class="px-3 py-2 border-t border-[#ecece5] bg-[#f9f9f6]">
+              <button (click)="onSearch()"
+                class="w-full text-[10px] font-bold uppercase tracking-widest text-primary-green hover:text-gold transition-colors text-center">
+                Ver todos los resultados →
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Mobile Hamburger (Store only) -->
@@ -201,18 +252,59 @@
       </div>
     </div>
 
-    <!-- Buscador Móvil Desplegable -->
-    <div *ngIf="!isAdminRoute && mobileSearchOpen" 
+    <!-- Buscador Móvil Desplegable con Autocompletado -->
+    <div *ngIf="!isAdminRoute && mobileSearchOpen"
       class="md:hidden py-3 border-t border-white/10 animate-fade-in-down">
       <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-lg px-3 py-2 border border-white/20">
-        <input type="text" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" placeholder="¿Qué perfume buscas?"
-          class="flex-1 bg-transparent text-sm text-white placeholder-cream/60 focus:outline-none" autofocus />
-        <button type="button" (click)="onSearch()" class="text-white hover:text-gold transition-colors">
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="onSearchInput()"
+          (keyup.enter)="onSearch()"
+          placeholder="¿Qué perfume buscas?"
+          autocomplete="off"
+          id="navbar-search-mobile"
+          class="flex-1 bg-transparent text-sm text-white placeholder-cream/60 focus:outline-none"
+          autofocus />
+        <button type="button" (click)="onSearch()" class="text-white hover:text-gold transition-colors" aria-label="Buscar">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
           </svg>
         </button>
+      </div>
+
+      <!-- Mobile Autocomplete Dropdown -->
+      <div *ngIf="showSuggestions"
+        class="mt-2 bg-white rounded-xl shadow-xl border border-[#ecece5] overflow-hidden">
+        <div *ngIf="suggestionsLoading" class="px-4 py-3 flex items-center gap-2 text-xs text-gray-400">
+          <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
+            <path fill="currentColor" d="M4 12a8 8 0 018-8" class="opacity-75"/>
+          </svg>
+          Buscando...
+        </div>
+        <ul *ngIf="!suggestionsLoading && suggestions.length > 0">
+          <li *ngFor="let s of suggestions"
+            (click)="selectSuggestion(s)"
+            class="flex items-center gap-3 px-3 py-3 cursor-pointer hover:bg-[#f9f9f6] transition-colors border-b border-[#f0f0eb] last:border-0">
+            <img [src]="getSuggestionImage(s)" [alt]="s.name || s.nombre"
+              class="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-[#ecece5]" />
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-bold text-charcoal truncate uppercase tracking-wide">{{ s.name || s.nombre }}</div>
+              <div class="text-[11px] text-gold font-bold mt-0.5">{{ getSuggestionPrice(s) | currency:'COP':'symbol-narrow':'1.0-0' }}</div>
+            </div>
+          </li>
+        </ul>
+        <div *ngIf="!suggestionsLoading && suggestions.length === 0 && searchTerm.length >= 2"
+          class="px-4 py-3 text-xs text-gray-500">
+          No se encontraron productos para "{{ searchTerm }}"
+        </div>
+        <div *ngIf="!suggestionsLoading && suggestions.length > 0" class="px-3 py-2 border-t border-[#ecece5] bg-[#f9f9f6]">
+          <button (click)="onSearch()"
+            class="w-full text-[10px] font-bold uppercase tracking-widest text-primary-green hover:text-gold transition-colors text-center">
+            Ver todos los resultados →
+          </button>
+        </div>
       </div>
     </div>
   </nav>

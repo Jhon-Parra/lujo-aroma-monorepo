@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 
 import { supabase } from '../config/supabase';
 import { sanitizeFilename } from '../middleware/upload.middleware';
+import { appCache, CACHE_KEYS } from '../utils/cache.util';
 
 /**
  * Helper to upload a file to Supabase perfumissimo_bucket/products/
@@ -291,6 +292,9 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
 
         await pool.query(query, vals);
 
+        // Bust catalog cache so the new product is visible immediately
+        appCache.invalidateByPrefix('catalog:');
+
         res.status(201).json({
             message: 'Producto creado exitosamente',
             product: { id, nombre, precio, imagen_url }
@@ -341,6 +345,21 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
     try {
         const authReq = req as any;
         const userId: string | null = authReq?.user?.id || null;
+
+        // ── Cache: serve anonymous requests from cache (TTL 5 min) ───────────
+        // Authenticated users may see personalised promotions → skip cache.
+        let anonCacheKey: string | null = null;
+        if (!userId) {
+            const q = String(req.query['q'] || '').trim().toLowerCase();
+            const limit = String(req.query['limit'] || '');
+            anonCacheKey = `${CACHE_KEYS.CATALOG_ANON}:q=${q}:limit=${limit}`;
+            const cached = appCache.get<any[]>(anonCacheKey);
+            if (cached) {
+                res.setHeader('X-Cache', 'HIT');
+                res.status(200).json(cached);
+                return;
+            }
+        }
 
         let userSegment: string | null = null;
         if (userId) {
@@ -469,12 +488,19 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             };
         });
 
+        // ── Cache: store result for anonymous requests ────────────────────────
+        if (anonCacheKey) {
+            appCache.set(anonCacheKey, products);
+            res.setHeader('X-Cache', 'MISS');
+        }
+
         res.status(200).json(products);
     } catch (error) {
         console.error('Error fetching public catalog:', error);
         res.status(500).json({ error: 'Error al cargar el catálogo de productos' });
     }
 };
+
 
 // 2.c Obtener productos mas nuevos (home)
 export const getNewestProducts = async (req: Request, res: Response): Promise<void> => {
@@ -1015,6 +1041,9 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
+        // Bust catalog cache so updated data is visible immediately
+        appCache.invalidateByPrefix('catalog:');
+
         res.status(200).json({ message: 'Producto actualizado exitosamente' });
     } catch (error) {
         console.error('Error updating product:', error);
@@ -1035,6 +1064,9 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
             res.status(404).json({ error: 'Producto no encontrado' });
             return;
         }
+
+        // Bust catalog cache so deleted product is gone immediately
+        appCache.invalidateByPrefix('catalog:');
 
         res.status(200).json({ message: 'Producto eliminado exitosamente' });
     } catch (error) {

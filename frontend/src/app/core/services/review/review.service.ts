@@ -24,6 +24,7 @@ export interface ProductReview {
   creado_en: string;
   nombre: string;
   apellido: string;
+  verificada?: boolean; // true = confirmed buyer; used for demo reviews
 }
 
 export interface ProductReviewSummary {

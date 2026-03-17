@@ -42,11 +42,18 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">Dirección de envío
-                            *</label>
-                        <textarea [(ngModel)]="shippingAddress" rows="3"
+                        <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">Dirección de envío *</label>
+                        <textarea [(ngModel)]="shippingAddress" rows="3" #addrField="ngModel"
                             placeholder="Ej: Calle 123 #45-67, Barrio, Ciudad"
+                            (blur)="touchedAddress = true"
+                            [ngClass]="{
+                              'border-red-400 bg-red-50': touchedAddress && !shippingAddress.trim(),
+                              'border-green-400': touchedAddress && shippingAddress.trim()
+                            }"
                             class="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-charcoal transition-colors resize-none rounded"></textarea>
+                        <p *ngIf="touchedAddress && !shippingAddress.trim()" class="text-[11px] text-red-500 mt-1">
+                            ⚠ La dirección de envío es obligatoria.
+                        </p>
                     </div>
                 </div>
 
@@ -201,14 +208,28 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">Numero de documento *</label>
-                                    <input type="text" [(ngModel)]="pseLegalId" class="w-full border border-gray-200 px-3 py-2 text-sm rounded" placeholder="Ej: 1020304050" />
+                                    <input type="text" [(ngModel)]="pseLegalId" #docField
+                                        (blur)="touchedPseDoc = true"
+                                        [ngClass]="{
+                                          'border-red-400 bg-red-50': touchedPseDoc && !pseLegalId.trim(),
+                                          'border-green-400': touchedPseDoc && pseLegalId.trim()
+                                        }"
+                                        class="w-full border border-gray-200 px-3 py-2 text-sm rounded" placeholder="Ej: 1020304050" />
+                                    <p *ngIf="touchedPseDoc && !pseLegalId.trim()" class="text-[11px] text-red-500 mt-1">⚠ Ingresa tu número de documento.</p>
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">Banco *</label>
-                                    <select [(ngModel)]="pseBankCode" class="w-full border border-gray-200 px-3 py-2 text-sm rounded bg-white">
+                                    <select [(ngModel)]="pseBankCode"
+                                        (blur)="touchedPseBank = true"
+                                        [ngClass]="{
+                                          'border-red-400 bg-red-50': touchedPseBank && !pseBankCode,
+                                          'border-green-400': touchedPseBank && pseBankCode
+                                        }"
+                                        class="w-full border border-gray-200 px-3 py-2 text-sm rounded bg-white">
                                         <option value="">Selecciona un banco</option>
                                         <option *ngFor="let b of wompiBanks" [value]="b.financial_institution_code">{{ b.financial_institution_name }}</option>
                                     </select>
+                                    <p *ngIf="touchedPseBank && !pseBankCode" class="text-[11px] text-red-500 mt-1">⚠ Selecciona tu banco.</p>
                                 </div>
                             </div>
 
@@ -228,8 +249,15 @@
                         <div *ngIf="!wompiLoading" class="space-y-4">
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">Telefono Nequi *</label>
-                                <input type="text" [(ngModel)]="nequiPhone" class="w-full border border-gray-200 px-3 py-2 text-sm rounded"
+                                <input type="text" [(ngModel)]="nequiPhone"
+                                    (blur)="touchedNequi = true"
+                                    [ngClass]="{
+                                      'border-red-400 bg-red-50': touchedNequi && !isValidNequiPhone(),
+                                      'border-green-400': touchedNequi && isValidNequiPhone()
+                                    }"
+                                    class="w-full border border-gray-200 px-3 py-2 text-sm rounded"
                                     placeholder="Ej: 3001234567" />
+                                <p *ngIf="touchedNequi && !isValidNequiPhone()" class="text-[11px] text-red-500 mt-1">⚠ Ingresa un número Nequi válido (10 dígitos).</p>
                                 <p class="text-[11px] text-gray-500 mt-2">Solo numeros. Debe coincidir con tu cuenta Nequi.</p>
                             </div>
 
@@ -249,12 +277,26 @@
                         <div *ngIf="!wompiLoading" class="space-y-4">
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">Titular *</label>
-                                <input type="text" [(ngModel)]="cardHolderName" class="w-full border border-gray-200 px-3 py-2 text-sm rounded" placeholder="Nombre como aparece en la tarjeta" />
+                                <input type="text" [(ngModel)]="cardHolderName"
+                                    (blur)="touchedCardHolder = true"
+                                    [ngClass]="{
+                                      'border-red-400 bg-red-50': touchedCardHolder && !cardHolderName.trim(),
+                                      'border-green-400': touchedCardHolder && cardHolderName.trim()
+                                    }"
+                                    class="w-full border border-gray-200 px-3 py-2 text-sm rounded" placeholder="Nombre como aparece en la tarjeta" />
+                                <p *ngIf="touchedCardHolder && !cardHolderName.trim()" class="text-[11px] text-red-500 mt-1">⚠ Ingresa el nombre del titular.</p>
                             </div>
 
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">Numero de tarjeta *</label>
-                                <input type="text" [(ngModel)]="cardNumber" class="w-full border border-gray-200 px-3 py-2 text-sm rounded" placeholder="1234 5678 9012 3456" />
+                                <input type="text" [(ngModel)]="cardNumber"
+                                    (blur)="touchedCardNumber = true"
+                                    [ngClass]="{
+                                      'border-red-400 bg-red-50': touchedCardNumber && !isValidCardNum(),
+                                      'border-green-400': touchedCardNumber && isValidCardNum()
+                                    }"
+                                    class="w-full border border-gray-200 px-3 py-2 text-sm rounded" placeholder="1234 5678 9012 3456" />
+                                <p *ngIf="touchedCardNumber && !isValidCardNum()" class="text-[11px] text-red-500 mt-1">⚠ Número de tarjeta inválido.</p>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

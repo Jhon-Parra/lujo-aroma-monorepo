@@ -86,6 +86,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     cardCvc = '';
     cardInstallments = 1;
 
+    // ── Real-time validation touch tracking ──────────────────────────────────
+    touchedAddress = false;
+    touchedPseDoc = false;
+    touchedPseBank = false;
+    touchedNequi = false;
+    touchedCardHolder = false;
+    touchedCardNumber = false;
+
     constructor(
         public cartService: CartService,
         private orderService: OrderService,
@@ -725,7 +733,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         return token;
     }
 
-    private isValidCardNumber(num: string): boolean {
+    isValidCardNumber(num: string): boolean {
         if (!/^[0-9]{12,19}$/.test(num)) return false;
         let sum = 0;
         let shouldDouble = false;
@@ -739,6 +747,16 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             shouldDouble = !shouldDouble;
         }
         return sum % 10 === 0;
+    }
+
+    /** Template-safe: checks nequi phone length without regex in template */
+    isValidNequiPhone(): boolean {
+        return this.nequiPhone.replace(/\D/g, '').length >= 10;
+    }
+
+    /** Template-safe: checks current card number validity without regex in template */
+    isValidCardNum(): boolean {
+        return this.isValidCardNumber(this.cardNumber.replace(/[\s-]/g, ''));
     }
 
     private submitWompiNequi(): void {

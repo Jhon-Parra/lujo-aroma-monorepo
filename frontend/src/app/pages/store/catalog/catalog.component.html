@@ -1,41 +1,68 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row min-h-[60vh]">
-    <!-- Mobile View Filter Bar (Sticky) -->
-    <div class="md:hidden sticky top-0 z-40 -mx-4 px-4 py-3 bg-cream/80 backdrop-blur-md border-b border-[#ecece5] mb-6 overflow-x-auto no-scrollbar">
-        <div class="flex space-x-2 min-w-max">
-            <button (click)="filterCategory('todos')"
-                [class]="selectedCategory === 'todos' ? 'bg-gold text-white shadow-md' : 'bg-white text-soft-charcoal border border-[#ecece5] shadow-sm'"
-                class="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300">
-                Todo
-            </button>
-            <ng-container *ngIf="categories.length; else fallbackMobile">
-                <button *ngFor="let c of categories" (click)="filterCategory(c.slug)"
-                    [class]="selectedCategory === c.slug ? 'bg-gold text-white shadow-md' : 'bg-white text-soft-charcoal border border-[#ecece5] shadow-sm'"
-                    class="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300">
-                    {{ c.nombre }}
+    <!-- Mobile Search & Filter Actions (Sticky) -->
+    <div class="md:hidden sticky top-0 z-40 -mx-4 px-4 py-4 bg-white/80 backdrop-blur-md border-b border-[#ecece5] mb-6 flex items-center justify-between">
+        <h3 class="font-serif text-lg text-charcoal">Nuestra Colección</h3>
+        
+        <button (click)="toggleMobileMenu()" class="flex items-center gap-2 px-4 py-2 bg-gold text-white rounded-full shadow-md active:scale-95 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-filter-left" viewBox="0 0 16 16">
+                <path d="M2 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+            </svg>
+            <span class="text-[10px] uppercase tracking-widest font-bold">Filtrar</span>
+        </button>
+    </div>
+
+    <!-- Mobile Drawer (Off-canvas) -->
+    <div *ngIf="isMobileMenuOpen" class="fixed inset-0 z-[60] md:hidden">
+        <!-- Backdrop -->
+        <div (click)="toggleMobileMenu()" class="absolute inset-0 bg-charcoal/40 backdrop-blur-sm transition-opacity duration-300"></div>
+        
+        <!-- Drawer -->
+        <div class="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col animate-slide-in-left">
+            <div class="p-6 border-b border-[#ecece5] flex items-center justify-between bg-cream/30">
+                <h3 class="font-serif text-xl text-charcoal">Colección</h3>
+                <button (click)="toggleMobileMenu()" class="p-2 text-soft-charcoal hover:text-charcoal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                    </svg>
                 </button>
-            </ng-container>
-            <ng-template #fallbackMobile>
-                <button (click)="filterCategory('mujer')"
-                    [class]="selectedCategory === 'mujer' ? 'bg-gold text-white shadow-md' : 'bg-white text-soft-charcoal border border-[#ecece5] shadow-sm'"
-                    class="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300">
-                    Mujer
-                </button>
-                <button (click)="filterCategory('hombre')"
-                    [class]="selectedCategory === 'hombre' ? 'bg-gold text-white shadow-md' : 'bg-white text-soft-charcoal border border-[#ecece5] shadow-sm'"
-                    class="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300">
-                    Hombre
-                </button>
-                <button (click)="filterCategory('unisex')"
-                    [class]="selectedCategory === 'unisex' ? 'bg-gold text-white shadow-md' : 'bg-white text-soft-charcoal border border-[#ecece5] shadow-sm'"
-                    class="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300">
-                    Unisex
-                </button>
-            </ng-template>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6">
+                <ul class="space-y-6 text-sm tracking-[0.15em] text-soft-charcoal uppercase font-medium">
+                    <li>
+                        <button (click)="filterCategory('todos')" 
+                            [class.text-gold]="selectedCategory === 'todos'"
+                            class="w-full text-left flex items-center justify-between group">
+                            <span>Todos los Perfumes</span>
+                            <span *ngIf="selectedCategory === 'todos'" class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+                        </button>
+                    </li>
+                    <ng-container *ngIf="categories.length; else fallbackMobileDrawer">
+                        <li *ngFor="let c of categories">
+                            <button (click)="filterCategory(c.slug)" 
+                                [class.text-gold]="selectedCategory === c.slug"
+                                class="w-full text-left flex items-center justify-between group">
+                                <span>{{ c.nombre }}</span>
+                                <span *ngIf="selectedCategory === c.slug" class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+                            </button>
+                        </li>
+                    </ng-container>
+                    <ng-template #fallbackMobileDrawer>
+                        <li><button (click)="filterCategory('mujer')" [class.text-gold]="selectedCategory === 'mujer'" class="w-full text-left flex items-center justify-between"><span>Para Mujer</span></button></li>
+                        <li><button (click)="filterCategory('hombre')" [class.text-gold]="selectedCategory === 'hombre'" class="w-full text-left flex items-center justify-between"><span>Para Hombre</span></button></li>
+                        <li><button (click)="filterCategory('unisex')" [class.text-gold]="selectedCategory === 'unisex'" class="w-full text-left flex items-center justify-between"><span>Unisex</span></button></li>
+                    </ng-template>
+                </ul>
+            </div>
+            
+            <div class="p-6 border-t border-[#ecece5] bg-cream/10 text-[10px] text-center text-sage tracking-widest uppercase font-bold">
+                Perfumissimo · Bogotá, CO
+            </div>
         </div>
     </div>
 
     <!-- Sidebar (Desktop) -->
-    <aside class="hidden md:block w-64 md:pr-8 mb-8 md:mb-0 border-r border-[#ecece5]">
+    <aside class="hidden md:block w-64 md:pr-8 mb-8 md:mb-0 border-r border-[#ecece5] h-fit md:sticky md:top-28 md:max-h-[85vh] overflow-y-auto no-scrollbar animate-fade-in-left">
         <h3 class="font-serif text-xl text-charcoal mb-4">Colección</h3>
         <ul class="space-y-4 text-sm tracking-widest text-soft-charcoal uppercase">
             <li>

@@ -21,6 +21,7 @@ import permissionsRoutes from './routes/permissions.routes';
 import categoryRoutes from './routes/category.routes';
 import emailTemplatesRoutes from './routes/email-templates.routes';
 import intelligenceRoutes from './routes/intelligence.routes';
+import seoRoutes from './routes/seo.routes';
 import { generalLimiter, authLimiter, refreshLimiter, logoutLimiter, aiLimiter, createOrderLimiter } from './middleware/security.middleware';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import path from 'path';
@@ -187,6 +188,7 @@ app.use('/api/permissions', permissionsRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/email-templates', emailTemplatesRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
+app.use('/api/seo', seoRoutes);
 
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', message: 'Perfumissimo API is running' });

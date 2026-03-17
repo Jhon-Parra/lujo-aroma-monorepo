@@ -56,6 +56,18 @@ const normalizeCategorySlug = (raw: any): string | null => {
     return v.length > 120 ? v.slice(0, 120) : v;
 };
 
+const generateSlug = (name: string): string => {
+    return name
+        .toLowerCase()
+        .trim()
+        .normalize('NFD') // Quitar acentos
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '') // Quitar caracteres especiales
+        .replace(/\s+/g, '-') // Espacios por guiones
+        .replace(/-+/g, '-') // Evitar guiones dobles
+        .replace(/^-+|-+$/g, ''); // Quitar guiones al inicio/final
+};
+
 type CategorySqlParts = { categorySelect: string; categoryJoin: string };
 const getCategorySqlParts = async (): Promise<CategorySqlParts> => {
     const ok = await detectCategoriesSchema();
@@ -74,6 +86,26 @@ const ensureCategoryExists = async (slug: string): Promise<boolean> => {
         );
         return !!rows?.[0]?.ok;
     } catch {
+        return false;
+    }
+};
+
+let productSlugReady: boolean | null = null;
+const detectSlugSchema = async (): Promise<boolean> => {
+    if (productSlugReady !== null) return productSlugReady;
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT COUNT(*) AS ok
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND lower(table_name) = 'productos'
+               AND column_name = 'slug'
+             LIMIT 1`
+        );
+        productSlugReady = !!rows?.[0]?.ok;
+        return productSlugReady;
+    } catch {
+        productSlugReady = false;
         return false;
     }
 };
@@ -224,6 +256,8 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         }
 
         const id = uuidv4();
+        const slug = generateSlug(nombre);
+        const slugOk = await detectSlugSchema();
 
         // Convert UUID to BINARY(16) in MySQL logic
         const cols: string[] = ['id', 'nombre', 'genero', 'descripcion', 'notas_olfativas', 'precio', 'stock', 'unidades_vendidas', 'imagen_url', 'imagen_url_2', 'imagen_url_3', 'es_nuevo'];
@@ -241,6 +275,11 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
             imagen_url_3,
             !!es_nuevo
         ];
+
+        if (slugOk) {
+            cols.push('slug');
+            vals.push(slug);
+        }
 
         if (newUntilOk) {
             cols.push('nuevo_hasta');
@@ -276,10 +315,12 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
                END AS es_nuevo`
             : 'COALESCE(p.es_nuevo, false) AS es_nuevo';
 
+        const slugOk = await detectSlugSchema();
+        const slugSelect = slugOk ? 'p.slug, ' : '';
         const extraSelect = newUntilOk ? ', p.nuevo_hasta' : '';
 
         const [rows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
+            `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
                     p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
@@ -329,10 +370,12 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
 
         const { categorySelect, categoryJoin } = await getCategorySqlParts();
         const { advancedReady } = await getPromotionAdvancedSqlParts();
+        const slugOk = await detectSlugSchema();
+        const slugSelect = slugOk ? 'p.slug, ' : '';
 
         // 1. Fetch all products
         const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
+            `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en
@@ -473,7 +516,7 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
 
         // 1. Fetch newest products
         const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
+            `SELECT p.id, p.nombre AS name, p.nombre, p.slug, p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
                     p.precio AS price, p.precio, p.stock, p.unidades_vendidas AS soldCount, p.unidades_vendidas,
                     p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en
@@ -598,20 +641,24 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
                 ELSE false
                END AS es_nuevo`
             : 'COALESCE(p.es_nuevo, false) AS es_nuevo';
-
         const { categorySelect, categoryJoin } = await getCategorySqlParts();
+
+        const slugOk = await detectSlugSchema();
+        const slugSelect = slugOk ? 'p.slug, ' : '';
+        const whereClause = slugOk ? 'WHERE p.id = ? OR p.slug = ?' : 'WHERE p.id = ?';
+        const queryParams = slugOk ? [id, id] : [id];
 
         // 1. Fetch product
         const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
+            `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
                     p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
                     p.promocion_id, ${esNuevoExpr}, p.creado_en
              FROM productos p
              ${categoryJoin}
-             WHERE p.id = ?`,
-            [id]
+             ${whereClause}`,
+            queryParams
         );
 
         if (!pRows || pRows.length === 0) {
@@ -744,7 +791,7 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
 
         // 2. Fetch related products
         const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.nombre, p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
+            `SELECT p.id, p.nombre AS name, p.nombre, p.slug, p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
                     p.precio AS price, p.precio, p.stock, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en, p.unidades_vendidas AS soldCount, p.unidades_vendidas
              FROM productos p
@@ -878,7 +925,12 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         const categoriesOk = await detectCategoriesSchema();
         const newUntilOk = await detectProductNewUntilSchema();
 
-        if (hasValue(nombre)) { updates.push('nombre = ?'); params.push(nombre); }
+        if (hasValue(nombre)) { 
+            updates.push('nombre = ?'); 
+            params.push(nombre); 
+            updates.push('slug = ?');
+            params.push(generateSlug(nombre));
+        }
         if (hasValue(genero)) {
             const generoNormalized = normalizeCategorySlug(genero);
             if (!generoNormalized) {

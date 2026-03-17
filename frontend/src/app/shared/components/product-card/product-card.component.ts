@@ -7,6 +7,7 @@ import { ToastService } from '../toast/toast.service';
 
 export interface Product {
   id: string;
+  slug?: string;
   promo_id?: string | null;
   name: string;
   notes: string;
@@ -123,7 +124,8 @@ export class ProductCardComponent {
   }
 
   openDetail(): void {
-    if (!this.product?.id) return;
-    this.router.navigate(['/product', this.product.id]);
+    const identifier = (this.product as any)?.slug || this.product?.id;
+    if (!identifier) return;
+    this.router.navigate(['/product', identifier]);
   }
 }

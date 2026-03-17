@@ -18,7 +18,7 @@ import { SkeletonCardComponent } from '../../../shared/components/skeleton-card/
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ProductCardComponent, SkeletonCardComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ProductCardComponent],
   templateUrl: './product-detail.component.html',
   styleUrls: ['./product-detail.component.css']
 })
@@ -102,11 +102,41 @@ export class ProductDetailComponent implements OnDestroy {
           name: String(anyP?.nombre || 'Producto'),
           description,
           image: image ? [image] : undefined,
+          sku: String(p.id || id),
+          brand: {
+            '@type': 'Brand',
+            name: 'Perfumissimo'
+          },
           offers: {
             '@type': 'Offer',
+            url: window.location.href,
             priceCurrency: 'COP',
             price: Number.isFinite(price) ? String(price) : '0',
-            availability: (anyP?.stock ?? 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+            availability: (anyP?.stock ?? 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            priceValidUntil: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+            shippingDetails: {
+              '@type': 'OfferShippingDetails',
+              shippingRate: {
+                '@type': 'MonetaryAmount',
+                value: '0',
+                currency: 'COP'
+              },
+              deliveryTime: {
+                '@type': 'ShippingDeliveryTime',
+                handlingTime: {
+                  '@type': 'QuantitativeValue',
+                  minValue: '1',
+                  maxValue: '2',
+                  unitCode: 'DAY'
+                },
+                transitTime: {
+                  '@type': 'ShippingDeliveryTime',
+                  minValue: '2',
+                  maxValue: '5',
+                  unitCode: 'DAY'
+                }
+              }
+            }
           }
         });
 

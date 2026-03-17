@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 export interface Product {
   id?: string;
+  slug?: string;
   nombre: string;
   name?: string; // Alias
   genero?: string;

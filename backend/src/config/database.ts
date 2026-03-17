@@ -20,6 +20,11 @@ const dbConfig = {
 // Si se prefiere usar una URL de conexión completa:
 let connectionString = process.env.DATABASE_URL;
 
+// IMPORTANTE: Si es una URL de PostgreSQL (común en Supabase), NO usarla para MySQL
+if (connectionString && connectionString.startsWith('postgresql')) {
+    connectionString = undefined;
+}
+
 if (connectionString && connectionString.includes('localhost')) {
     connectionString = connectionString.replace(/localhost/g, '127.0.0.1');
 }

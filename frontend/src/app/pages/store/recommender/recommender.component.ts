@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { RecommendationService, QuizAnswers, RecommendationItem } from '../../../core/services/recommendation/recommendation.service';
+import { SkeletonCardComponent } from '../../../shared/components/skeleton-card/skeleton-card.component';
 
 @Component({
   selector: 'app-recommender',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, SkeletonCardComponent],
   templateUrl: './recommender.component.html',
   styleUrls: ['./recommender.component.css']
 })

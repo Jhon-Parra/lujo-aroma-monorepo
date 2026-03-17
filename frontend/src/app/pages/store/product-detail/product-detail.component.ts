@@ -13,10 +13,12 @@ import { AnalyticsService } from '../../../core/services/analytics/analytics.ser
 import { Product as CardProduct } from '../../../shared/components/product-card/product-card.component';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 
+import { SkeletonCardComponent } from '../../../shared/components/skeleton-card/skeleton-card.component';
+
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ProductCardComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ProductCardComponent, SkeletonCardComponent],
   templateUrl: './product-detail.component.html',
   styleUrls: ['./product-detail.component.css']
 })

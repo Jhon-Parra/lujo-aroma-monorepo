@@ -4,8 +4,34 @@
     ← Volver al catálogo
   </a>
 
-  <div *ngIf="loading" class="py-16 text-center text-soft-charcoal">
-    Cargando producto...
+  <!-- Full Page Skeleton -->
+  <div *ngIf="loading" class="grid grid-cols-1 lg:grid-cols-2 gap-10 mt-6 animate-pulse">
+    <!-- Image Skeleton -->
+    <div class="flex flex-col gap-4">
+      <div class="bg-[#ecece5] rounded-xl h-[400px] sm:h-[520px] relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] animate-[shimmer_1.5s_infinite]"></div>
+      </div>
+      <div class="flex gap-3 overflow-hidden">
+        <div *ngFor="let i of [1,2,3]" class="w-20 h-20 rounded-lg bg-[#ecece5] flex-shrink-0"></div>
+      </div>
+    </div>
+
+    <!-- Info Skeleton -->
+    <div class="bg-white border border-[#ecece5] rounded-xl p-8 shadow-sm">
+      <div class="h-6 w-24 bg-[#ecece5] rounded-full mb-4"></div>
+      <div class="h-10 w-3/4 bg-[#ecece5] rounded-md mb-4"></div>
+      <div class="h-4 w-full bg-[#f9f9f6] rounded mb-2"></div>
+      <div class="h-4 w-5/6 bg-[#f9f9f6] rounded mb-8"></div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+        <div class="h-24 bg-cream border border-[#ecece5] rounded-md"></div>
+        <div class="h-24 bg-cream border border-[#ecece5] rounded-md"></div>
+      </div>
+
+      <div class="pt-8 border-t border-[#f0f0ed]">
+        <div class="h-12 w-full bg-[#ecece5] rounded-md"></div>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="!loading && error" class="py-10 text-center text-red-600 border border-red-100 bg-white rounded-xl">
@@ -207,11 +233,13 @@
       <a routerLink="/catalog" class="text-sm text-gold hover:text-charcoal transition-colors">Ver catálogo</a>
     </div>
 
-    <div *ngIf="relatedLoading" class="text-sm text-soft-charcoal">Cargando relacionados...</div>
+    <div *ngIf="relatedLoading" class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mt-6">
+      <app-skeleton-card *ngFor="let i of [1,2,3,4]"></app-skeleton-card>
+    </div>
     <div *ngIf="!relatedLoading && related.length === 0" class="text-sm text-soft-charcoal">No hay productos
       relacionados.</div>
 
-    <div *ngIf="!relatedLoading && related.length" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div *ngIf="!relatedLoading && related.length" class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
       <app-product-card *ngFor="let p of related" [product]="p"></app-product-card>
     </div>
   </section>

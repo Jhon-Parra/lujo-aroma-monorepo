@@ -9,6 +9,7 @@ import { SettingsService, Settings } from './core/services/settings/settings.ser
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { API_CONFIG } from './core/config/api-config';
+import { SeoService } from './core/services/seo/seo.service';
 
 @Component({
   selector: 'app-root',
@@ -26,10 +27,51 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private settingsService: SettingsService,
     private router: Router,
+    private seoService: SeoService,
     @Inject(DOCUMENT) private document: Document
   ) {}
 
   ngOnInit(): void {
+    this.seoService.setJsonLd({
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "Perfumissimo",
+      "image": "https://perfumissimocol.com/assets/images/logo.png",
+      "@id": "https://perfumissimocol.com",
+      "url": "https://perfumissimocol.com",
+      "telephone": "+573001234567",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Calle 12 #13-85",
+        "addressLocality": "Bogotá",
+        "addressRegion": "Cundinamarca",
+        "postalCode": "110111",
+        "addressCountry": "CO"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 4.6097,
+        "longitude": -74.0817
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday"
+        ],
+        "opens": "09:00",
+        "closes": "18:00"
+      },
+      "sameAs": [
+        "https://www.facebook.com/perfumissimo",
+        "https://www.instagram.com/perfumissimo.col"
+      ]
+    });
+
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {

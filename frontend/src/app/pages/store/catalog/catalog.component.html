@@ -1,6 +1,41 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row min-h-[60vh]">
-    <!-- Sidebar -->
-    <aside class="w-full md:w-64 md:pr-8 mb-8 md:mb-0 border-b md:border-b-0 md:border-r border-[#ecece5]">
+    <!-- Mobile View Filter Bar (Sticky) -->
+    <div class="md:hidden sticky top-0 z-40 -mx-4 px-4 py-3 bg-cream/80 backdrop-blur-md border-b border-[#ecece5] mb-6 overflow-x-auto no-scrollbar">
+        <div class="flex space-x-2 min-w-max">
+            <button (click)="filterCategory('todos')"
+                [class]="selectedCategory === 'todos' ? 'bg-gold text-white shadow-md' : 'bg-white text-soft-charcoal border border-[#ecece5] shadow-sm'"
+                class="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300">
+                Todo
+            </button>
+            <ng-container *ngIf="categories.length; else fallbackMobile">
+                <button *ngFor="let c of categories" (click)="filterCategory(c.slug)"
+                    [class]="selectedCategory === c.slug ? 'bg-gold text-white shadow-md' : 'bg-white text-soft-charcoal border border-[#ecece5] shadow-sm'"
+                    class="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300">
+                    {{ c.nombre }}
+                </button>
+            </ng-container>
+            <ng-template #fallbackMobile>
+                <button (click)="filterCategory('mujer')"
+                    [class]="selectedCategory === 'mujer' ? 'bg-gold text-white shadow-md' : 'bg-white text-soft-charcoal border border-[#ecece5] shadow-sm'"
+                    class="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300">
+                    Mujer
+                </button>
+                <button (click)="filterCategory('hombre')"
+                    [class]="selectedCategory === 'hombre' ? 'bg-gold text-white shadow-md' : 'bg-white text-soft-charcoal border border-[#ecece5] shadow-sm'"
+                    class="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300">
+                    Hombre
+                </button>
+                <button (click)="filterCategory('unisex')"
+                    [class]="selectedCategory === 'unisex' ? 'bg-gold text-white shadow-md' : 'bg-white text-soft-charcoal border border-[#ecece5] shadow-sm'"
+                    class="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all duration-300">
+                    Unisex
+                </button>
+            </ng-template>
+        </div>
+    </div>
+
+    <!-- Sidebar (Desktop) -->
+    <aside class="hidden md:block w-64 md:pr-8 mb-8 md:mb-0 border-r border-[#ecece5]">
         <h3 class="font-serif text-xl text-charcoal mb-4">Colección</h3>
         <ul class="space-y-4 text-sm tracking-widest text-soft-charcoal uppercase">
             <li>

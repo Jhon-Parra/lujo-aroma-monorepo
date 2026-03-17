@@ -5,6 +5,7 @@ import { DOCUMENT } from '@angular/common';
 type SeoConfig = {
   title?: string;
   description?: string;
+  keywords?: string;
   image?: string;
   url?: string;
   type?: 'website' | 'product' | 'article';
@@ -14,8 +15,9 @@ type SeoConfig = {
   providedIn: 'root'
 })
 export class SeoService {
-  private defaultTitle = 'Perfumissimo';
-  private defaultDescription = 'Perfumes y fragancias para mujer, hombre y unisex. Descubre tu esencia en Perfumissimo.';
+  private defaultTitle = 'Perfumissimo | Perfumes Originales en Bogotá y Colombia';
+  private defaultDescription = 'Perfumes originales de lujo en Bogotá. Fragancias exclusivas para mujer, hombre y unisex con envíos a toda Colombia. Descubre los mejores perfumes en Perfumissimo.';
+  private defaultKeywords = 'perfumes, perfumes originales, perfumería de lujo, perfumes Bogotá, fragancias, Perfumissimo';
 
   constructor(
     private title: Title,
@@ -26,12 +28,14 @@ export class SeoService {
   set(config: SeoConfig): void {
     const title = (config.title || this.defaultTitle).trim();
     const description = (config.description || this.defaultDescription).trim();
+    const keywords = (config.keywords || this.defaultKeywords).trim();
     const url = (config.url || this.getCurrentUrl()).trim();
     const type = (config.type || 'website').trim();
     const image = (config.image || '').trim();
 
     this.title.setTitle(title);
     this.meta.updateTag({ name: 'description', content: description });
+    this.meta.updateTag({ name: 'keywords', content: keywords });
 
     this.meta.updateTag({ property: 'og:title', content: title });
     this.meta.updateTag({ property: 'og:description', content: description });

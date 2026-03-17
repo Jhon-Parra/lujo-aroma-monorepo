@@ -38,8 +38,8 @@ export class CatalogComponent implements OnInit {
 
   ngOnInit(): void {
     this.seo.set({
-      title: 'Catalogo | Perfumissimo',
-      description: 'Explora perfumes para mujer, hombre y unisex. Filtra por categoria y encuentra tu aroma ideal.'
+      title: 'Catálogo de Perfumes en Bogotá | Perfumissimo',
+      description: 'Explora nuestra colección exclusiva de perfumes originales en Bogotá. Envíos a toda Colombia. Filtra por categoría y encuentra tu aroma ideal.'
     });
 
     this.categoryService.getPublicCategories().subscribe({

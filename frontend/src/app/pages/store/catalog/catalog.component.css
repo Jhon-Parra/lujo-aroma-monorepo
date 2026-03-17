@@ -1,0 +1,15 @@
+/* Ocultar barra de desplazamiento para Chrome, Safari y Opera */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Ocultar barra de desplazamiento para IE, Edge y Firefox */
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* Espaciado adicional para que el contenido no quede pegado al borde al hacer scroll horizontal */
+.no-scrollbar > div {
+    padding-right: 1rem;
+}

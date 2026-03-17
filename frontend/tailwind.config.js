@@ -19,6 +19,14 @@ module.exports = {
         serif: ['"Playfair Display"', 'serif'],
         sans: ['Montserrat', 'sans-serif'],
       },
+      keyframes: {
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        }
+      },
+      animation: {
+        shimmer: 'shimmer 1.5s infinite',
+      }
     },
   },
   plugins: [],

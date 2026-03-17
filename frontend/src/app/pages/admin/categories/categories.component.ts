@@ -19,6 +19,7 @@ export class CategoriesComponent implements OnInit {
   loading = true;
   error = '';
   categories: Category[] = [];
+  userRole = '';
 
   newName = '';
   isSaving = false;
@@ -32,6 +33,7 @@ export class CategoriesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.userRole = this.authService.getUserRole();
     this.load();
   }
 

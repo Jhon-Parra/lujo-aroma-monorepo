@@ -80,80 +80,20 @@ export class HomeComponent implements OnInit {
     this.heroVideoMuted = this.heroVideoMode === 'subsequent';
     this.heroVideoLoop = this.heroVideoMode === 'subsequent';
     this.seo.set({
-      title: 'Perfumissimo | Perfumes y Fragancias',
-      description: 'Perfumes y fragancias para mujer, hombre y unisex. Descubre tu esencia en Perfumissimo.'
+      title: 'Perfumissimo | Perfumes Originales en Bogotá y Colombia',
+      description: 'Compra los mejores perfumes originales en Bogotá y Colombia. Fragancias de lujo para hombre, mujer y unisex con envíos rápidos. ¡Descubre Perfumissimo!',
+      keywords: 'perfumes, perfumes originales, perfumes bogota, perfumeria de lujo, fragancias originales, perfumes colombia'
     });
 
-    // Cargar configuraciones globales (Textos y Colores)
-    this.settingsService.settings$.subscribe({
-      next: (data) => {
-        if (data) this.applySettings(data);
-      }
-    });
-    this.settingsService.getSettings().subscribe({
-      next: (data) => this.applySettings(data),
-      error: (err) => console.error('Error cargando configuración', err)
-    });
-    this.productService.getNewestProducts(8).subscribe({
-      next: (apiProducts) => {
-        this.products = apiProducts.map(ap => ({
-          id: ap.id || '',
-          name: ap.name || ap.nombre,
-          notes: ap.notes || ap.notas_olfativas || ap.descripcion,
-          price: ap.price ? Number(ap.price) : (ap.precio_con_descuento ? Number(ap.precio_con_descuento) : (typeof ap.precio === 'string' ? parseFloat(ap.precio) : ap.precio)),
-          imageUrl: ap.imageUrl || ap.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
-          soldCount: (ap.soldCount || ap.unidades_vendidas || 0).toString(),
-          isNew: !!(ap.isNew ?? ap.es_nuevo),
-          genero: ap.genero,
-          categoria_nombre: (ap as any).categoria_nombre ?? null,
-          categoria_slug: (ap as any).categoria_slug ?? null,
-          precio: (() => {
-            const original = (ap as any).precio_original ?? ap.precio;
-            return typeof original === 'string' ? parseFloat(original) : original;
-          })(),
-          precio_con_descuento: ap.precio_con_descuento !== null && ap.precio_con_descuento !== undefined ? Number(ap.precio_con_descuento) : null,
-          tiene_promocion: ap.tiene_promocion || false
-        }));
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Error fetching products', err);
-        this.error = 'No se pudieron cargar los productos. Asegúrese de que el backend esté en ejecución.';
-        this.loading = false;
-      }
-    });
-
-    this.promotionService.getPromotions().subscribe({
-      next: (promos) => {
-        const typeOf = (p: Promotion) => String((p as any).discount_type || 'PERCENT').toUpperCase();
-        const scoreOf = (p: Promotion) => {
-          const t = typeOf(p);
-          return t === 'AMOUNT' ? Number((p as any).amount_discount || 0) : Number(p.porcentaje_descuento || 0);
-        };
-        const priorityOf = (p: Promotion) => Number((p as any).priority || 0);
-
-        this.promotions = (promos || [])
-          .filter(p => {
-            if (!p?.activo) return false;
-            const now = Date.now();
-            const start = new Date(p.fecha_inicio).getTime();
-            const end = new Date(p.fecha_fin).getTime();
-            if (!Number.isFinite(start) || !Number.isFinite(end)) return false;
-            if (start > now || end < now) return false;
-            const t = typeOf(p);
-            if (t === 'AMOUNT') return Number((p as any).amount_discount || 0) > 0;
-            return Number(p.porcentaje_descuento || 0) > 0;
-          })
-          .sort((a, b) => {
-            const prio = priorityOf(b) - priorityOf(a);
-            if (prio !== 0) return prio;
-            return scoreOf(b) - scoreOf(a);
-          })
-          .slice(0, 2);
-      },
-      error: (err) => {
-        console.error('Error cargando promociones', err);
-        this.promotions = [];
+    this.seo.setJsonLd({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Perfumissimo",
+      "url": "https://perfumissimocol.com/",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://perfumissimocol.com/catalog?q={search_term_string}",
+        "query-input": "required name=search_term_string"
       }
     });
 

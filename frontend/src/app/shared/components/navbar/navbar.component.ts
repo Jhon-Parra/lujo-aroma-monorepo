@@ -25,6 +25,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   searchTerm = '';
   isAdminRoute = false;
   mobileMenuOpen = false;
+  mobileSearchOpen = false;
   private navSub?: Subscription;
   private settingsSub?: Subscription;
 
@@ -63,6 +64,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       .subscribe((e) => {
         this.isAdminRoute = e.urlAfterRedirects.startsWith('/admin');
         this.mobileMenuOpen = false;
+        this.mobileSearchOpen = false;
       });
   }
 
@@ -126,6 +128,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
   toggleMobileMenu(): void {
     if (this.isAdminRoute) return;
     this.mobileMenuOpen = !this.mobileMenuOpen;
+    if (this.mobileMenuOpen) this.mobileSearchOpen = false;
+  }
+
+  toggleMobileSearch(): void {
+    if (this.isAdminRoute) return;
+    this.mobileSearchOpen = !this.mobileSearchOpen;
+    if (this.mobileSearchOpen) this.mobileMenuOpen = false;
   }
 
   closeMobileMenu(): void {
@@ -137,6 +146,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.router.navigate(['/catalog'], { queryParams: { q: this.searchTerm.trim() }, queryParamsHandling: 'merge' });
       this.searchTerm = ''; // Limpiar input después de buscar
       this.mobileMenuOpen = false;
+      this.mobileSearchOpen = false;
     }
   }
 }

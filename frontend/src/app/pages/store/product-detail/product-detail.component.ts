@@ -93,9 +93,16 @@ export class ProductDetailComponent implements OnDestroy {
         const title = `${String(anyP?.nombre || 'Producto')} | Perfumissimo`;
         const description = String(anyP?.descripcion || 'Perfume disponible en Perfumissimo.').trim();
         const image = this.selectedImage || String(anyP?.imagen_url || '').trim();
-        this.seo.set({ title, description, image, type: 'product' });
-
         const price = Number(anyP?.precio_con_descuento ?? anyP?.precio ?? 0);
+        this.seo.set({ 
+          title, 
+          description, 
+          image, 
+          type: 'product',
+          price: Number.isFinite(price) ? String(price) : undefined,
+          currency: 'COP'
+        });
+
         this.seo.setJsonLd({
           '@context': 'https://schema.org',
           '@type': 'Product',

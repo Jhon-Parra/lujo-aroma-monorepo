@@ -9,6 +9,8 @@ type SeoConfig = {
   image?: string;
   url?: string;
   type?: 'website' | 'product' | 'article';
+  price?: string;
+  currency?: string;
 };
 
 @Injectable({
@@ -43,6 +45,14 @@ export class SeoService {
     this.meta.updateTag({ property: 'og:type', content: type });
     if (image) {
       this.meta.updateTag({ property: 'og:image', content: image });
+    }
+    if (config.price) {
+      this.meta.updateTag({ property: 'product:price:amount', content: config.price });
+      this.meta.updateTag({ property: 'og:price:amount', content: config.price });
+    }
+    if (config.currency) {
+      this.meta.updateTag({ property: 'product:price:currency', content: config.currency });
+      this.meta.updateTag({ property: 'og:price:currency', content: config.currency });
     }
 
     this.meta.updateTag({ name: 'twitter:card', content: image ? 'summary_large_image' : 'summary' });

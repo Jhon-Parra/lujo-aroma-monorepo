@@ -35,6 +35,18 @@
     @apply bg-sage text-white font-medium py-2 px-6 rounded-md hover:bg-opacity-90 transition-all duration-300;
   }
 
+  /* Botón Premium para Carrito */
+  .btn-premium-cart {
+    @apply relative overflow-hidden bg-gradient-to-r from-sage to-primary-green text-white font-bold rounded-xl shadow-lg transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl active:scale-95 flex items-center justify-center gap-2;
+    animation: soft-pulse 3s infinite ease-in-out;
+  }
+
+  .btn-premium-cart::after {
+    content: '';
+    @apply absolute top-0 -left-[100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-25deg];
+    animation: shine-sweep 3s infinite linear;
+  }
+
   /* Outline Button */
   .btn-outline {
     @apply border border-charcoal text-charcoal font-medium py-2 px-6 rounded-md hover:bg-charcoal hover:text-white transition-all duration-300;

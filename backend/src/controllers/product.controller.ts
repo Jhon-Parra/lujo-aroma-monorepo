@@ -402,8 +402,8 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         );
 
         // 3. Fetch specific mappings if needed
-        const [ppRows] = await pool.query<any[]>('SELECT promocion_id, producto_id FROM promocionproductos');
-        const [puRows] = userId ? await pool.query<any[]>('SELECT promocion_id FROM promocionusuarios WHERE usuario_id = ?', [userId]) : [[]];
+        const [ppRows] = assignmentReady ? await pool.query<any[]>('SELECT promocion_id, producto_id FROM promocionproductos') : [[]];
+        const [puRows] = (userId && assignmentReady) ? await pool.query<any[]>('SELECT promocion_id FROM promocionusuarios WHERE usuario_id = ?', [userId]) : [[]];
 
         const ppMap: Record<string, Set<string>> = {};
         ppRows.forEach(r => {
@@ -511,12 +511,14 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
             : 'COALESCE(p.es_nuevo, false) AS es_nuevo';
 
         const { categorySelect, categoryJoin } = await getCategorySqlParts();
+        const slugOk = await detectSlugSchema();
+        const slugSelect = slugOk ? 'p.slug, ' : '';
 
         let rows: any[] = [];
 
         // 1. Fetch newest products
         const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.nombre, p.slug, p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
+            `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
                     p.precio AS price, p.precio, p.stock, p.unidades_vendidas AS soldCount, p.unidades_vendidas,
                     p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en
@@ -539,8 +541,9 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
                AND pr.fecha_fin >= NOW()`
         );
 
-        const [ppRows] = await pool.query<any[]>('SELECT promocion_id, producto_id FROM promocionproductos');
-        const [puRows] = userId ? await pool.query<any[]>('SELECT promocion_id FROM promocionusuarios WHERE usuario_id = ?', [userId]) : [[]];
+        const assignmentReady = await detectPromotionAssignmentSchema();
+        const [ppRows] = assignmentReady ? await pool.query<any[]>('SELECT promocion_id, producto_id FROM promocionproductos') : [[]];
+        const [puRows] = (userId && assignmentReady) ? await pool.query<any[]>('SELECT promocion_id FROM promocionusuarios WHERE usuario_id = ?', [userId]) : [[]];
 
         const ppMap: Record<string, Set<string>> = {};
         ppRows.forEach(r => {
@@ -679,8 +682,9 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
                AND pr.fecha_fin >= NOW()`
         );
 
-        const [ppRows] = await pool.query<any[]>('SELECT promocion_id, producto_id FROM promocionproductos WHERE producto_id = ?', [id]);
-        const [puRows] = userId ? await pool.query<any[]>('SELECT promocion_id FROM promocionusuarios WHERE usuario_id = ?', [userId]) : [[]];
+        const assignmentReady = await detectPromotionAssignmentSchema();
+        const [ppRows] = assignmentReady ? await pool.query<any[]>('SELECT promocion_id, producto_id FROM promocionproductos WHERE producto_id = ?', [id]) : [[]];
+        const [puRows] = (userId && assignmentReady) ? await pool.query<any[]>('SELECT promocion_id FROM promocionusuarios WHERE usuario_id = ?', [userId]) : [[]];
 
         const hasSpecificPromo = ppRows.some(r => r.producto_id === id);
         const userPromos = new Set(puRows.map(r => r.promocion_id));
@@ -789,9 +793,12 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
             return;
         }
 
+        const slugOk = await detectSlugSchema();
+        const slugSelect = slugOk ? 'p.slug, ' : '';
+
         // 2. Fetch related products
         const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.nombre, p.slug, p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
+            `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
                     p.precio AS price, p.precio, p.stock, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en, p.unidades_vendidas AS soldCount, p.unidades_vendidas
              FROM productos p
@@ -820,8 +827,9 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
                AND pr.fecha_fin >= NOW()`
         );
 
-        const [ppRows] = await pool.query<any[]>('SELECT promocion_id, producto_id FROM promocionproductos');
-        const [puRows] = userId ? await pool.query<any[]>('SELECT promocion_id FROM promocionusuarios WHERE usuario_id = ?', [userId]) : [[]];
+        const assignmentReady = await detectPromotionAssignmentSchema();
+        const [ppRows] = assignmentReady ? await pool.query<any[]>('SELECT promocion_id, producto_id FROM promocionproductos') : [[]];
+        const [puRows] = (userId && assignmentReady) ? await pool.query<any[]>('SELECT promocion_id FROM promocionusuarios WHERE usuario_id = ?', [userId]) : [[]];
 
         const ppMap: Record<string, Set<string>> = {};
         ppRows.forEach(r => {
@@ -925,11 +933,15 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         const categoriesOk = await detectCategoriesSchema();
         const newUntilOk = await detectProductNewUntilSchema();
 
+        const slugOk = await detectSlugSchema();
+
         if (hasValue(nombre)) { 
             updates.push('nombre = ?'); 
             params.push(nombre); 
-            updates.push('slug = ?');
-            params.push(generateSlug(nombre));
+            if (slugOk) {
+                updates.push('slug = ?');
+                params.push(generateSlug(nombre));
+            }
         }
         if (hasValue(genero)) {
             const generoNormalized = normalizeCategorySlug(genero);

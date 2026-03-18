@@ -65,13 +65,16 @@ export type CreateOrderResult = {
 };
 
 // Mapa de transiciones válidas de estado
+// Cuando el cliente paga vía Wompi, el estado inicial siempre es PAGADO.
+// Flujo: PAGADO → ENVIADO → ENTREGADO  |  cualquier estado → CANCELADO (antes de ENTREGADO)
 const VALID_TRANSITIONS: Record<string, string[]> = {
-    PENDIENTE:  ['PAGADO', 'PROCESANDO', 'CANCELADO'],
-    PAGADO:     ['PROCESANDO', 'CANCELADO'],
+    PAGADO:    ['ENVIADO', 'CANCELADO'],
+    ENVIADO:   ['ENTREGADO', 'CANCELADO'],
+    ENTREGADO: [],   // terminal
+    CANCELADO: [],   // terminal
+    // Compatibilidad con pedidos legacy que puedan tener estos estados:
+    PENDIENTE:  ['PAGADO', 'ENVIADO', 'CANCELADO'],
     PROCESANDO: ['ENVIADO', 'CANCELADO'],
-    ENVIADO:    ['ENTREGADO'],
-    ENTREGADO:  [],   // terminal
-    CANCELADO:  [],   // terminal
 };
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
@@ -237,7 +240,7 @@ export class OrderModel {
 
             const cols: string[] = ['id', 'usuario_id', 'total', 'direccion_envio', 'estado', 'codigo_transaccion', 'telefono', 'nombre_cliente', 'metodo_pago', 'canal_pago'];
             const vals: any[] = [
-                orderId, orderData.user_id, total, orderData.shipping_address, 'PENDIENTE',
+                orderId, orderData.user_id, total, orderData.shipping_address, 'PAGADO',
                 orderData.transaction_code || null,
                 orderData.telefono || null,
                 orderData.nombre_cliente || null,
@@ -302,7 +305,7 @@ export class OrderModel {
             // Historial: estado inicial
             await connection.query(
                 `INSERT INTO historial_pedido (id, orden_id, estado_anterior, estado_nuevo, observacion)
-                 VALUES (?, ?, NULL, 'PENDIENTE', 'Pedido creado')`,
+                 VALUES (?, ?, NULL, 'PAGADO', 'Pedido creado y pago confirmado via Wompi')`,
                 [uuidv4(), orderId]
             );
 

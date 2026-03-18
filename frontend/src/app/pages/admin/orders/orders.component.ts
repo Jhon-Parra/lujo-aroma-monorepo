@@ -43,12 +43,11 @@ export class OrdersComponent implements OnInit {
 
   savingStatusForId = new Set<string>();
 
+  // Estados del nuevo flujo: PAGADO (inicial) → ENVIADO → ENTREGADO | CANCELADO
   statuses: { value: '' | OrderStatus; label: string }[] = [
-    { value: '', label: 'Todos' },
-    { value: 'PENDIENTE', label: 'Pendiente' },
-    { value: 'PAGADO', label: 'Pagado' },
-    { value: 'PROCESANDO', label: 'Procesando' },
-    { value: 'ENVIADO', label: 'Enviado' },
+    { value: '',          label: 'Todos' },
+    { value: 'PAGADO',    label: 'Pagado' },
+    { value: 'ENVIADO',   label: 'Enviado' },
     { value: 'ENTREGADO', label: 'Entregado' },
     { value: 'CANCELADO', label: 'Cancelado' }
   ];
@@ -63,7 +62,7 @@ export class OrdersComponent implements OnInit {
     this.route.queryParams.subscribe((params) => {
       const status = (params['status'] || '').toString().trim().toUpperCase();
       const q = (params['q'] || '').toString();
-      const allowed = new Set(['', 'PENDIENTE', 'PAGADO', 'PROCESANDO', 'ENVIADO', 'ENTREGADO', 'CANCELADO']);
+      const allowed = new Set(['', 'PAGADO', 'ENVIADO', 'ENTREGADO', 'CANCELADO', 'PENDIENTE', 'PROCESANDO']);
       this.statusFilter = (allowed.has(status) ? status : '') as any;
       this.query = q;
       this.load();

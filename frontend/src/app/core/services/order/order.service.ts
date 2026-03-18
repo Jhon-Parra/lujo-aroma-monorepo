@@ -212,15 +212,19 @@ export class OrderService {
     return colors[estado] || '#6b7280';
   }
 
-  /** Retorna true si la transición de estado es válida en el cliente */
+  /** Retorna true si la transición de estado es válida
+   * Flujo principal: PAGADO → ENVIADO → ENTREGADO  |  PAGADO/ENVIADO → CANCELADO
+   * Se mantienen PENDIENTE y PROCESANDO para compatibilidad con pedidos legacy.
+   */
   static isValidTransition(actual: string, nuevo: string): boolean {
     const transitions: Record<string, string[]> = {
-      PENDIENTE: ['PAGADO', 'PROCESANDO', 'CANCELADO'],
-      PAGADO: ['PROCESANDO', 'CANCELADO'],
+      PAGADO:     ['ENVIADO', 'CANCELADO'],
+      ENVIADO:    ['ENTREGADO', 'CANCELADO'],
+      ENTREGADO:  [],
+      CANCELADO:  [],
+      // legacy
+      PENDIENTE:  ['PAGADO', 'ENVIADO', 'CANCELADO'],
       PROCESANDO: ['ENVIADO', 'CANCELADO'],
-      ENVIADO: ['ENTREGADO'],
-      ENTREGADO: [],
-      CANCELADO: []
     };
     return (transitions[actual] || []).includes(nuevo);
   }

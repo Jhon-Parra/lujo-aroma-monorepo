@@ -55,7 +55,25 @@
                             ⚠ La dirección de envío es obligatoria.
                         </p>
                     </div>
+
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1 uppercase tracking-wider">Teléfono de contacto *</label>
+                        <input type="tel" [(ngModel)]="phone"
+                            placeholder="Ej: 3001234567"
+                            (blur)="touchedPhone = true"
+                            maxlength="15"
+                            [ngClass]="{
+                              'border-red-400 bg-red-50': touchedPhone && phoneDigits.length < 7,
+                              'border-green-400': touchedPhone && phoneDigits.length >= 7
+                            }"
+                            class="w-full border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-charcoal transition-colors rounded">
+                        <p *ngIf="touchedPhone && phoneDigits.length < 7" class="text-[11px] text-red-500 mt-1">
+                            ⚠ El teléfono es obligatorio (mínimo 7 dígitos).
+                        </p>
+                    </div>
                 </div>
+
+
 
                 <!-- Extras (opcional) -->
                 <div class="checkout-extras bg-gradient-to-br from-white via-white to-cream border border-[#ecece5] p-6 mb-6 rounded-2xl shadow-sm">

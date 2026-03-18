@@ -241,3 +241,45 @@ export const sendEmail = async (options: MailOptions): Promise<SendEmailResult> 
         return { success: false, error: err?.message || String(err), from: sender.from };
     }
 };
+
+// ─── Notificación de envío ────────────────────────────────────────────────────
+export interface ShippingEmailParams {
+    to: string;
+    cliente_nombre: string;
+    orden_id: string;
+    transportadora: string;
+    numero_guia: string;
+    link_rastreo?: string;
+}
+
+export const sendOrderShippingEmail = async (params: ShippingEmailParams): Promise<void> => {
+    const { to, cliente_nombre, orden_id, transportadora, numero_guia, link_rastreo } = params;
+    const pedidoRef = String(orden_id || '').slice(0, 8).toUpperCase();
+    const rastreoLink = link_rastreo
+        ? `<p style="margin-top:12px"><a href="${link_rastreo}" style="background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">🔍 Rastrear mi pedido</a></p>`
+        : '';
+
+    const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden">
+          <div style="background:#1a1a1a;padding:24px;text-align:center">
+            <h1 style="color:#e8c96a;margin:0;font-size:24px">Perfumissimo</h1>
+          </div>
+          <div style="padding:32px">
+            <h2 style="color:#1a1a1a;margin-top:0">🚚 ¡Tu pedido está en camino!</h2>
+            <p>Hola <strong>${cliente_nombre}</strong>,</p>
+            <p>Tu pedido <strong>#${pedidoRef}</strong> ha sido enviado y ya está en manos de la transportadora.</p>
+            <div style="background:#f9f6f0;border-left:4px solid #e8c96a;padding:16px;border-radius:4px;margin:20px 0">
+              <p style="margin:0 0 8px"><strong>Transportadora:</strong> ${transportadora}</p>
+              <p style="margin:0"><strong>Número de guía:</strong> ${numero_guia}</p>
+            </div>
+            ${rastreoLink}
+            <p style="color:#666;font-size:13px;margin-top:24px">Si tienes alguna pregunta, responde a este correo o contáctanos.</p>
+          </div>
+          <div style="background:#f5f5f5;padding:16px;text-align:center">
+            <p style="color:#888;font-size:12px;margin:0">© ${new Date().getFullYear()} Perfumissimo — perfumissimocol.com</p>
+          </div>
+        </div>`;
+
+    await sendEmail({ to, subject: `Tu pedido #${pedidoRef} ha sido enviado 🚚`, html });
+};
+

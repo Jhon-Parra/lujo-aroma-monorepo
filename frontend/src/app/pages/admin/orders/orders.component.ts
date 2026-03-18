@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { OrderService, Order } from '../../../core/services/order/order.service';
+import { OrderService, Order, RegisterShippingDto } from '../../../core/services/order/order.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { LowStockBellComponent } from '../../../shared/components/low-stock-bell/low-stock-bell.component';
 
@@ -19,15 +19,27 @@ export class OrdersComponent implements OnInit {
   loading = true;
   error = '';
 
+  // Filtros
   statusFilter: '' | OrderStatus = '';
   query = '';
+  fechaDesde = '';
+  fechaHasta = '';
 
   orders: Order[] = [];
 
+  // Panel detalle
   detailOpen = false;
   detailLoading = false;
   detailError = '';
   selectedOrder: Order | null = null;
+
+  // Modal de guía de envío
+  shippingModalOpen = false;
+  shippingPendingOrder: Order | null = null;
+  shippingPendingStatus: OrderStatus | null = null;
+  shippingForm: RegisterShippingDto = { transportadora: '', numero_guia: '' };
+  shippingError = '';
+  savingShipping = false;
 
   savingStatusForId = new Set<string>();
 
@@ -51,7 +63,6 @@ export class OrdersComponent implements OnInit {
     this.route.queryParams.subscribe((params) => {
       const status = (params['status'] || '').toString().trim().toUpperCase();
       const q = (params['q'] || '').toString();
-
       const allowed = new Set(['', 'PENDIENTE', 'PAGADO', 'PROCESANDO', 'ENVIADO', 'ENTREGADO', 'CANCELADO']);
       this.statusFilter = (allowed.has(status) ? status : '') as any;
       this.query = q;
@@ -62,12 +73,13 @@ export class OrdersComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.error = '';
-
-    this.orderService.getAllOrders({ status: this.statusFilter, q: this.query }).subscribe({
-      next: (data) => {
-        this.orders = data || [];
-        this.loading = false;
-      },
+    this.orderService.getAllOrders({
+      status: this.statusFilter,
+      q: this.query,
+      fechaDesde: this.fechaDesde,
+      fechaHasta: this.fechaHasta
+    }).subscribe({
+      next: (data) => { this.orders = data || []; this.loading = false; },
       error: (err) => {
         console.error('Error cargando ordenes', err);
         this.error = 'No se pudieron cargar los pedidos.';
@@ -83,10 +95,7 @@ export class OrdersComponent implements OnInit {
     this.selectedOrder = null;
 
     this.orderService.getAdminOrderById(orderId).subscribe({
-      next: (order) => {
-        this.selectedOrder = order;
-        this.detailLoading = false;
-      },
+      next: (order) => { this.selectedOrder = order; this.detailLoading = false; },
       error: (err) => {
         console.error('Error cargando detalle', err);
         this.detailError = err?.error?.message || 'No se pudo cargar el detalle del pedido.';
@@ -102,17 +111,35 @@ export class OrdersComponent implements OnInit {
     this.selectedOrder = null;
   }
 
-  updateStatus(order: Order, estado: OrderStatus): void {
+  /** Cambia estado: si es ENVIADO y no hay guía, abre el modal de guía primero */
+  requestStatusChange(order: Order, estado: OrderStatus): void {
     if (!order?.id) return;
 
+    if (estado === 'ENVIADO' && !order.numero_guia) {
+      // Verificar transición válida primero
+      if (!OrderService.isValidTransition(order.estado, estado)) {
+        alert(`No se puede pasar de ${order.estado} a ${estado}.`);
+        return;
+      }
+      this.shippingPendingOrder = order;
+      this.shippingPendingStatus = estado;
+      this.shippingForm = { transportadora: '', numero_guia: '', link_rastreo: '', observacion: '' };
+      this.shippingError = '';
+      this.shippingModalOpen = true;
+      return;
+    }
+
+    this.updateStatus(order, estado);
+  }
+
+  updateStatus(order: Order, estado: OrderStatus): void {
+    if (!order?.id) return;
     this.savingStatusForId.add(order.id);
+
     this.orderService.updateOrderStatus(order.id, estado).subscribe({
       next: () => {
-        // Actualizar en UI
         order.estado = estado as any;
-        if (this.selectedOrder?.id === order.id) {
-          this.selectedOrder.estado = estado as any;
-        }
+        if (this.selectedOrder?.id === order.id) this.selectedOrder!.estado = estado as any;
         this.savingStatusForId.delete(order.id);
       },
       error: (err) => {
@@ -124,38 +151,86 @@ export class OrdersComponent implements OnInit {
     });
   }
 
+  // ── Modal de guía ───────────────────────────────────────────────────────────
+  closeShippingModal(): void {
+    this.shippingModalOpen = false;
+    this.shippingPendingOrder = null;
+    this.shippingPendingStatus = null;
+    this.shippingError = '';
+    this.savingShipping = false;
+  }
+
+  submitShipping(): void {
+    const { transportadora, numero_guia } = this.shippingForm;
+    if (!transportadora.trim()) { this.shippingError = 'La transportadora es obligatoria.'; return; }
+    if (!numero_guia.trim()) { this.shippingError = 'El número de guía es obligatorio.'; return; }
+
+    const order = this.shippingPendingOrder!;
+    this.savingShipping = true;
+    this.shippingError = '';
+
+    this.orderService.registerShipping(order.id, this.shippingForm).subscribe({
+      next: () => {
+        // Actualizar datos de envío en la orden local
+        order.transportadora = this.shippingForm.transportadora;
+        order.numero_guia = this.shippingForm.numero_guia;
+        order.link_rastreo = this.shippingForm.link_rastreo;
+        this.closeShippingModal();
+
+        // Ahora cambiar el estado a ENVIADO
+        const pendingStatus = this.shippingPendingStatus || 'ENVIADO';
+        this.updateStatus(order, pendingStatus as OrderStatus);
+      },
+      error: (err) => {
+        this.shippingError = err?.error?.message || 'No se pudo registrar la guía.';
+        this.savingShipping = false;
+      }
+    });
+  }
+
+  // ── PDF ─────────────────────────────────────────────────────────────────────
+  downloadPdf(orderId: string): void {
+    if (!orderId) return;
+    this.orderService.downloadPdf(orderId);
+  }
+
   isSaving(orderId: string): boolean {
     return this.savingStatusForId.has(orderId);
   }
 
   getStatusClass(estado: string): string {
     const classes: Record<string, string> = {
-      'PENDIENTE': 'bg-yellow-100 text-yellow-800',
-      'PAGADO': 'bg-green-100 text-green-800',
-      'PROCESANDO': 'bg-sky-100 text-sky-800',
-      'ENVIADO': 'bg-blue-100 text-blue-800',
-      'CANCELADO': 'bg-red-100 text-red-800',
-      'ENTREGADO': 'bg-purple-100 text-purple-800'
+      PENDIENTE: 'bg-yellow-100 text-yellow-800',
+      PAGADO: 'bg-green-100 text-green-800',
+      PROCESANDO: 'bg-sky-100 text-sky-800',
+      ENVIADO: 'bg-blue-100 text-blue-800',
+      CANCELADO: 'bg-red-100 text-red-800',
+      ENTREGADO: 'bg-purple-100 text-purple-800'
     };
     return classes[estado] || 'bg-gray-100 text-gray-700';
   }
 
-  logout(): void {
-    this.authService.logout();
+  getValidNextStatuses(estado: string): { value: OrderStatus; label: string }[] {
+    return this.statuses
+      .filter((s): s is { value: OrderStatus; label: string } => s.value !== '')
+      .filter(s => OrderService.isValidTransition(estado, s.value));
   }
+
+  logout(): void { this.authService.logout(); }
 
   exportCsv(): void {
     const rows = (this.orders || []).map((o) => ({
       id: String(o.id || ''),
-      creado_en: String((o as any).creado_en || ''),
+      creado_en: String(o.creado_en || ''),
       estado: String(o.estado || ''),
-      cliente_nombre: String((o as any).cliente_nombre || ''),
-      cliente_email: String((o as any).cliente_email || ''),
-      total: Number((o as any).total || 0),
-      total_items: Number((o as any).total_items || 0)
+      cliente_nombre: String(o.cliente_nombre || ''),
+      cliente_email: String(o.cliente_email || ''),
+      cliente_telefono: String(o.cliente_telefono || o.telefono || ''),
+      total: Number(o.total || 0),
+      total_items: Number(o.total_items || 0)
     }));
 
-    const header = ['id', 'creado_en', 'estado', 'cliente_nombre', 'cliente_email', 'total', 'total_items'];
+    const header = ['id', 'creado_en', 'estado', 'cliente_nombre', 'cliente_email', 'cliente_telefono', 'total', 'total_items'];
     const csv = [header.join(',')]
       .concat(rows.map((r) => header.map((k) => this.csvCell((r as any)[k])).join(',')))
       .join('\n');

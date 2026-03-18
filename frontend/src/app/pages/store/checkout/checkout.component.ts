@@ -33,6 +33,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     luxuryPerfumeImg = '';
 
     shippingAddress = '';
+    phone = '';
     isPlacingOrder = false;
     orderSuccess = false;
     createdOrderId = '';
@@ -88,6 +89,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
     // ── Real-time validation touch tracking ──────────────────────────────────
     touchedAddress = false;
+    touchedPhone = false;
+
+    /** Returns the numeric-only characters of the phone field, for template validation */
+    get phoneDigits(): string { return this.phone.replace(/\D/g, ''); }
     touchedPseDoc = false;
     touchedPseBank = false;
     touchedNequi = false;
@@ -579,13 +584,21 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     placeOrder(): void {
+        if (this.cartItems.length === 0) {
+            this.errorMsg = 'Tu carrito está vacío. Agrega productos antes de finalizar la compra.';
+            return;
+        }
+
         if (!this.shippingAddress.trim()) {
+            this.touchedAddress = true;
             this.errorMsg = 'Por favor ingresa tu dirección de envío.';
             return;
         }
 
-        if (this.cartItems.length === 0) {
-            this.errorMsg = 'Tu carrito está vacío.';
+        const phoneClean = this.phone.trim().replace(/\D/g, '');
+        if (!phoneClean || phoneClean.length < 7) {
+            this.touchedPhone = true;
+            this.errorMsg = 'Por favor ingresa un número de teléfono válido (mínimo 7 dígitos).';
             return;
         }
 
@@ -877,7 +890,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     private buildOrderData(): CreateOrderDto {
         return {
             total: this.grandTotal,
-            shipping_address: this.shippingAddress,
+            shipping_address: this.shippingAddress.trim(),
+            phone: this.phone.trim(),
             items: this.cartItems.map((item: CartItem) => ({
                 product_id: item.product.id,
                 quantity: item.quantity,
@@ -887,7 +901,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             cart_recovery_applied: this.cartRecoveryApplied,
             cart_recovery_discount_pct: this.cartRecoveryApplied ? this.cartRecoveryDiscountPct : 0,
             envio_prioritario: this.envioPrioritario,
-            perfume_lujo: this.perfumeLujo
+            perfume_lujo: this.perfumeLujo,
+            metodo_pago: this.paymentMethod,
+            canal_pago: 'Wompi'
         };
     }
 

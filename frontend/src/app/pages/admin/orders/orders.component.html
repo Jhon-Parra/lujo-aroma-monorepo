@@ -101,10 +101,24 @@
         <div class="md:col-span-2">
           <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Buscar</label>
           <div class="flex flex-col sm:flex-row gap-3">
-            <input type="text" [(ngModel)]="query" placeholder="Numero de pedido o cliente (nombre/email)"
+            <input type="text" [(ngModel)]="query" placeholder="ID de pedido, nombre, email o teléfono"
               class="flex-1 border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold" />
             <button (click)="load()" class="btn-primary px-6 py-2 text-sm">Buscar</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Filtros de fecha -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        <div>
+          <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Desde</label>
+          <input type="date" [(ngModel)]="fechaDesde" (change)="load()"
+            class="w-full border border-[#dcdcd4] rounded-sm p-2 focus:outline-none focus:border-gold text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Hasta</label>
+          <input type="date" [(ngModel)]="fechaHasta" (change)="load()"
+            class="w-full border border-[#dcdcd4] rounded-sm p-2 focus:outline-none focus:border-gold text-sm" />
         </div>
       </div>
     </div>
@@ -137,6 +151,7 @@
             <td class="p-4">
               <div class="font-bold text-charcoal">{{ o.cliente_nombre || 'Cliente' }}</div>
               <div class="text-xs text-gray-500">{{ o.cliente_email }}</div>
+              <div class="text-xs text-gray-400">{{ o.cliente_telefono || o.telefono || '—' }}</div>
             </td>
             <td class="p-4 text-xs text-gray-600">{{ o.creado_en | date:'d MMM yyyy, HH:mm' }}</td>
             <td class="p-4 font-bold text-charcoal">{{ o.total | currency:'COP':'symbol-narrow' }}</td>
@@ -147,9 +162,11 @@
             </td>
             <td class="p-4 text-right">
               <div class="flex items-center justify-end gap-3">
-                <select [ngModel]="o.estado" (ngModelChange)="updateStatus(o, $event)" [disabled]="isSaving(o.id)"
+                <!-- Solo muestra transiciones válidas -->
+                <select [ngModel]="o.estado" (ngModelChange)="requestStatusChange(o, $event)" [disabled]="isSaving(o.id)"
                   class="border border-[#dcdcd4] rounded-sm p-2 text-xs bg-white">
-                  <option *ngFor="let s of statuses" [disabled]="s.value === ''" [ngValue]="s.value">{{ s.label }}</option>
+                  <option [ngValue]="o.estado">{{ orderService.getStatusLabel(o.estado) }}</option>
+                  <option *ngFor="let s of getValidNextStatuses(o.estado)" [ngValue]="s.value">{{ s.label }}</option>
                 </select>
                 <button class="text-gold hover:text-charcoal transition-colors" (click)="openDetail(o.id)">Ver</button>
               </div>
@@ -160,18 +177,23 @@
       </div>
     </div>
 
+
     <!-- Detail Modal -->
     <div *ngIf="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div class="absolute inset-0 bg-black/40" (click)="closeDetail()"></div>
-      <div class="relative w-full max-w-3xl bg-white border border-gray-100 shadow-xl p-6 max-h-[85vh] overflow-auto">
+      <div class="relative w-full max-w-3xl bg-white border border-gray-100 shadow-xl p-6 max-h-[90vh] overflow-auto">
         <div class="flex items-start justify-between gap-4">
           <div>
             <p class="text-xs text-gray-400 uppercase tracking-wider">Detalle de pedido</p>
             <h3 class="font-serif text-xl text-charcoal mt-1">
-              {{ selectedOrder?.id?.slice(0, 8)?.toUpperCase() || '...' }}
+              {{ (selectedOrder?.id || '').slice(0, 8).toUpperCase() || '...' }}
             </h3>
           </div>
-          <button type="button" (click)="closeDetail()" class="text-gray-400 hover:text-charcoal">✕</button>
+          <div class="flex items-center gap-3">
+            <button *ngIf="selectedOrder?.id" (click)="downloadPdf(selectedOrder!.id)"
+              class="text-xs px-3 py-1.5 border border-[#dcdcd4] rounded hover:bg-cream transition-colors font-bold">📄 PDF</button>
+            <button type="button" (click)="closeDetail()" class="text-gray-400 hover:text-charcoal">✕</button>
+          </div>
         </div>
 
         <div *ngIf="detailLoading" class="py-10 text-sm text-soft-charcoal">Cargando detalle...</div>
@@ -179,38 +201,131 @@
           {{ detailError }}
         </div>
 
-        <div *ngIf="!detailLoading && selectedOrder" class="mt-6">
+        <div *ngIf="!detailLoading && selectedOrder" class="mt-6 space-y-5">
+
+          <!-- Cliente + Envío -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="border border-[#ecece5] rounded-md p-4">
               <p class="text-xs font-bold text-soft-charcoal uppercase tracking-widest">Cliente</p>
-              <p class="text-sm font-bold text-charcoal mt-1">{{ selectedOrder.cliente_nombre || 'Cliente' }}</p>
+              <p class="text-sm font-bold text-charcoal mt-1">{{ selectedOrder.cliente_nombre || selectedOrder.nombre_cliente || 'Cliente' }}</p>
               <p class="text-xs text-gray-500">{{ selectedOrder.cliente_email }}</p>
+              <p class="text-xs text-gray-500">📞 {{ selectedOrder.cliente_telefono || selectedOrder.telefono || selectedOrder.orden_telefono || '—' }}</p>
             </div>
             <div class="border border-[#ecece5] rounded-md p-4">
-              <p class="text-xs font-bold text-soft-charcoal uppercase tracking-widest">Envío</p>
+              <p class="text-xs font-bold text-soft-charcoal uppercase tracking-widest">Dirección</p>
               <p class="text-sm text-charcoal mt-1">{{ selectedOrder.direccion_envio }}</p>
+              <p class="text-xs text-gray-500 mt-1">Fecha: {{ selectedOrder.creado_en | date:'d MMM yyyy, HH:mm' }}</p>
             </div>
           </div>
 
-          <div class="mt-5 border border-[#ecece5] rounded-md overflow-hidden">
-            <div class="bg-cream px-4 py-3 text-xs font-bold uppercase tracking-widest text-charcoal">Items</div>
+          <!-- Pago -->
+          <div class="border border-[#ecece5] rounded-md p-4">
+            <p class="text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-2">Información de Pago</p>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div><span class="text-gray-400">Método</span><br><span class="font-bold">{{ selectedOrder.metodo_pago || '—' }}</span></div>
+              <div><span class="text-gray-400">Canal</span><br><span class="font-bold">{{ selectedOrder.canal_pago || '—' }}</span></div>
+              <div><span class="text-gray-400">Estado Pago</span><br><span class="font-bold">{{ selectedOrder.estado_pago || '—' }}</span></div>
+              <div><span class="text-gray-400">Referencia</span><br><span class="font-bold font-mono">{{ selectedOrder.referencia_pago || selectedOrder.codigo_transaccion || '—' }}</span></div>
+            </div>
+          </div>
+
+          <!-- Productos -->
+          <div class="border border-[#ecece5] rounded-md overflow-hidden">
+            <div class="bg-cream px-4 py-3 text-xs font-bold uppercase tracking-widest text-charcoal">Productos</div>
             <div class="p-4 space-y-3">
               <div *ngFor="let it of (selectedOrder.items || [])" class="flex items-center justify-between gap-4">
-                <div class="min-w-0">
-                  <div class="text-sm font-bold text-charcoal truncate">{{ it.nombre }}</div>
-                  <div class="text-xs text-gray-500">{{ it.cantidad }} × {{ it.precio_unitario | currency:'COP':'symbol-narrow' }}</div>
+                <div class="flex items-center gap-3 min-w-0">
+                  <img *ngIf="it.imagen_url" [src]="it.imagen_url" class="w-10 h-10 object-cover rounded border" />
+                  <div class="min-w-0">
+                    <div class="text-sm font-bold text-charcoal truncate">{{ it.nombre }}</div>
+                    <div class="text-xs text-gray-500">{{ it.cantidad }} × {{ it.precio_unitario | currency:'COP':'symbol-narrow' }}</div>
+                  </div>
                 </div>
                 <div class="text-sm font-bold text-charcoal">{{ it.subtotal | currency:'COP':'symbol-narrow' }}</div>
               </div>
             </div>
           </div>
 
-          <div class="mt-5 flex items-center justify-between">
+          <!-- Envío -->
+          <div *ngIf="selectedOrder.transportadora || selectedOrder.numero_guia" class="border border-blue-100 bg-blue-50 rounded-md p-4">
+            <p class="text-xs font-bold text-blue-700 uppercase tracking-widest mb-2">🚚 Información de Envío</p>
+            <div class="text-sm space-y-1">
+              <p><span class="text-gray-500">Transportadora:</span> <span class="font-bold">{{ selectedOrder.transportadora }}</span></p>
+              <p><span class="text-gray-500">Guía:</span> <span class="font-bold font-mono">{{ selectedOrder.numero_guia }}</span></p>
+              <p *ngIf="selectedOrder.fecha_envio"><span class="text-gray-500">Fecha envío:</span> {{ selectedOrder.fecha_envio | date:'d MMM yyyy' }}</p>
+              <p *ngIf="selectedOrder.link_rastreo">
+                <a [href]="selectedOrder.link_rastreo" target="_blank" rel="noopener"
+                   class="text-blue-600 hover:underline text-xs">🔗 Rastrear pedido</a>
+              </p>
+            </div>
+          </div>
+
+          <!-- Historial -->
+          <div *ngIf="selectedOrder.historial && selectedOrder.historial.length" class="border border-[#ecece5] rounded-md p-4">
+            <p class="text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-3">🕓 Historial de Estados</p>
+            <div class="space-y-2">
+              <div *ngFor="let h of selectedOrder.historial" class="flex items-start gap-3 text-xs">
+                <div class="w-2 h-2 mt-1 rounded-full flex-shrink-0" [class]="getStatusClass(h.estado_nuevo)"></div>
+                <div>
+                  <span class="font-bold">{{ orderService.getStatusLabel(h.estado_nuevo) }}</span>
+                  <span class="text-gray-400 ml-2">{{ h.cambio_en | date:'d MMM yyyy HH:mm' }}</span>
+                  <span *ngIf="h.admin_nombre?.trim()" class="text-gray-400 ml-2">— {{ h.admin_nombre }}</span>
+                  <p *ngIf="h.observacion" class="text-gray-500 mt-0.5">{{ h.observacion }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total + Estado -->
+          <div class="flex items-center justify-between">
             <span [class]="getStatusClass(selectedOrder.estado)" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
               {{ orderService.getStatusLabel(selectedOrder.estado) }}
             </span>
             <div class="text-lg font-bold text-charcoal">{{ selectedOrder.total | currency:'COP':'symbol-narrow' }}</div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de guía de envío -->
+    <div *ngIf="shippingModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center px-4">
+      <div class="absolute inset-0 bg-black/50" (click)="closeShippingModal()"></div>
+      <div class="relative w-full max-w-md bg-white rounded-xl shadow-2xl p-6">
+        <h3 class="font-serif text-lg text-charcoal mb-1">📦 Registrar guía de envío</h3>
+        <p class="text-xs text-gray-500 mb-4">Ingresa los datos del envío antes de marcar como <strong>ENVIADO</strong>.</p>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Transportadora *</label>
+            <input type="text" [(ngModel)]="shippingForm.transportadora" placeholder="Ej: Servientrega, Coordinadora..."
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Número de guía *</label>
+            <input type="text" [(ngModel)]="shippingForm.numero_guia" placeholder="Ej: SV-123456789"
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Link de rastreo</label>
+            <input type="url" [(ngModel)]="shippingForm.link_rastreo" placeholder="https://..."
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Observación</label>
+            <textarea [(ngModel)]="shippingForm.observacion" rows="2" placeholder="Notas adicionales..."
+              class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold text-sm resize-none"></textarea>
+          </div>
+        </div>
+
+        <div *ngIf="shippingError" class="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded">{{ shippingError }}</div>
+
+        <div class="mt-6 flex gap-3 justify-end">
+          <button (click)="closeShippingModal()" [disabled]="savingShipping"
+            class="px-5 py-2 border border-[#dcdcd4] rounded text-sm hover:bg-gray-50 transition-colors">Cancelar</button>
+          <button (click)="submitShipping()" [disabled]="savingShipping"
+            class="btn-primary px-5 py-2 text-sm">
+            {{ savingShipping ? 'Guardando...' : 'Registrar y marcar Enviado' }}
+          </button>
         </div>
       </div>
     </div>

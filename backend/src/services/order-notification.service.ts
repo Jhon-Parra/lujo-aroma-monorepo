@@ -3,6 +3,13 @@ import { sendEmail, SendEmailResult } from './email.service';
 import { OrderEmailLogsService } from './order-email-logs.service';
 import { OrderEmailTemplateService, OrderEmailStatus } from './order-email-templates.service';
 
+/** MariaDB JSON_ARRAYAGG devuelve strings — parsear siempre antes de usar */
+const parseOrderJson = (val: any, fallback: any = []): any => {
+    if (!val) return fallback;
+    if (typeof val === 'string') { try { return JSON.parse(val); } catch { return fallback; } }
+    return val;
+};
+
 const statusLabel = (estado: string): string => {
     const labels: Record<string, string> = {
         PENDIENTE: 'Pendiente',
@@ -99,9 +106,10 @@ const buildTemplatePayload = async (status: OrderEmailStatus, order: any) => {
 };
 
 export const notifyOrderCreated = async (orderId: string): Promise<void> => {
-    const order = await OrderModel.getAdminOrderById(orderId);
-    if (!order?.cliente_email) return;
-    const status = OrderEmailTemplateService.normalizeStatus(order.estado) || 'PENDIENTE';
+    const orderRaw = await OrderModel.getAdminOrderById(orderId);
+    if (!orderRaw?.cliente_email) return;
+    const order = { ...orderRaw, items: (parseOrderJson(orderRaw.items, []) as any[]).filter((i:any) => i?.producto_id), historial: parseOrderJson(orderRaw.historial, []) };
+    const status = OrderEmailTemplateService.normalizeStatus(order.estado) || 'PAGADO';
     const payload = await buildTemplatePayload(status, order);
     const result = await sendEmail({
         to: order.cliente_email,
@@ -123,9 +131,10 @@ export const notifyOrderCreated = async (orderId: string): Promise<void> => {
 };
 
 export const notifyOrderStatusChanged = async (orderId: string, newStatus: string): Promise<void> => {
-    const order = await OrderModel.getAdminOrderById(orderId);
-    if (!order?.cliente_email) return;
-    const status = OrderEmailTemplateService.normalizeStatus(newStatus) || 'PENDIENTE';
+    const orderRaw = await OrderModel.getAdminOrderById(orderId);
+    if (!orderRaw?.cliente_email) return;
+    const order = { ...orderRaw, items: (parseOrderJson(orderRaw.items, []) as any[]).filter((i:any) => i?.producto_id), historial: parseOrderJson(orderRaw.historial, []) };
+    const status = OrderEmailTemplateService.normalizeStatus(newStatus) || 'PAGADO';
     const payload = await buildTemplatePayload(status, order);
     const result = await sendEmail({
         to: order.cliente_email,

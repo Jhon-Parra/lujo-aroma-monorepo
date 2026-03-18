@@ -237,24 +237,27 @@ export class OrderController {
 
             await OrderModel.registerShipping(shippingData);
 
-            // Notificar al cliente por email (no bloquear)
-            try {
-                const order = await OrderModel.getAdminOrderById(ordenId);
-                if (order?.cliente_email) {
-                    await sendOrderShippingEmail({
-                        to: order.cliente_email,
-                        cliente_nombre: order.cliente_nombre || order.cliente_email,
-                        orden_id: ordenId,
-                        transportadora: shippingData.transportadora,
-                        numero_guia: shippingData.numero_guia,
-                        link_rastreo: shippingData.link_rastreo
-                    });
-                }
-            } catch (emailErr) {
-                console.warn('No se pudo enviar email de envío:', emailErr);
-            }
-
+            // Responder inmediatamente al cliente — el email va en background
             res.json({ message: 'Guía de envío registrada correctamente' });
+
+            // Email en background: no bloquea la respuesta
+            OrderModel.getAdminOrderById(ordenId).then(async (order: any) => {
+                if (!order?.cliente_email) return;
+                const parseJson = (val: any, fb: any = []) => {
+                    if (!val) return fb;
+                    if (typeof val === 'string') { try { return JSON.parse(val); } catch { return fb; } }
+                    return val;
+                };
+                const orderParsed = { ...order, items: parseJson(order.items, []), historial: parseJson(order.historial, []) };
+                await sendOrderShippingEmail({
+                    to: orderParsed.cliente_email,
+                    cliente_nombre: orderParsed.cliente_nombre || orderParsed.cliente_email,
+                    orden_id: ordenId,
+                    transportadora: shippingData.transportadora,
+                    numero_guia: shippingData.numero_guia,
+                    link_rastreo: shippingData.link_rastreo
+                });
+            }).catch((emailErr: any) => console.warn('Email envío (background):', emailErr?.message || emailErr));
         } catch (error: any) {
             console.error('Error al registrar envío:', error);
             res.status(500).json({ message: 'Error interno del servidor', detail: error.message });

@@ -80,7 +80,9 @@ export class OrderService {
   }
 
   getMyOrderById(orderId: string): Observable<Order> {
-    return this.http.get<Order>(`${this.apiUrl}/my-orders/${encodeURIComponent(orderId)}`, { withCredentials: true });
+    return this.http.get<Order>(`${this.apiUrl}/my-orders/${encodeURIComponent(orderId)}`, { withCredentials: true }).pipe(
+      map((o: Order) => ({ ...o, items: Array.isArray(o?.items) ? o.items.filter(i => i != null) : [] }))
+    );
   }
 
   getAllOrders(filters?: { status?: string; q?: string }): Observable<Order[]> {
@@ -90,11 +92,18 @@ export class OrderService {
     if (status) params.set('status', status);
     if (q) params.set('q', q);
     const suffix = params.toString() ? `?${params.toString()}` : '';
-    return this.http.get<Order[]>(`${this.apiUrl}${suffix}`, { withCredentials: true });
+    return this.http.get<Order[]>(`${this.apiUrl}${suffix}`, { withCredentials: true }).pipe(
+      map((orders: Order[]) => (orders || []).map(o => ({
+        ...o,
+        items: Array.isArray(o?.items) ? o.items.filter(i => i != null) : []
+      })))
+    );
   }
 
   getAdminOrderById(orderId: string): Observable<Order> {
-    return this.http.get<Order>(`${this.apiUrl}/${orderId}`, { withCredentials: true });
+    return this.http.get<Order>(`${this.apiUrl}/${orderId}`, { withCredentials: true }).pipe(
+      map((o: Order) => ({ ...o, items: Array.isArray(o?.items) ? o.items.filter(i => i != null) : [] }))
+    );
   }
 
   updateOrderStatus(orderId: string, estado: string): Observable<any> {

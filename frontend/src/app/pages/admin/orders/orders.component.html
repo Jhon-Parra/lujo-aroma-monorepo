@@ -131,7 +131,7 @@
         <tbody>
           <tr *ngFor="let o of orders" class="border-b border-[#ecece5] hover:bg-gray-50">
             <td class="p-4">
-              <div class="font-mono font-bold text-charcoal">{{ o.id.slice(0, 8).toUpperCase() }}</div>
+              <div class="font-mono font-bold text-charcoal">{{ (o.id || '').slice(0, 8).toUpperCase() }}</div>
               <div class="text-xs text-gray-500">Items: {{ o.total_items || 0 }}</div>
             </td>
             <td class="p-4">
@@ -195,7 +195,7 @@
           <div class="mt-5 border border-[#ecece5] rounded-md overflow-hidden">
             <div class="bg-cream px-4 py-3 text-xs font-bold uppercase tracking-widest text-charcoal">Items</div>
             <div class="p-4 space-y-3">
-              <div *ngFor="let it of selectedOrder.items" class="flex items-center justify-between gap-4">
+              <div *ngFor="let it of (selectedOrder.items || [])" class="flex items-center justify-between gap-4">
                 <div class="min-w-0">
                   <div class="text-sm font-bold text-charcoal truncate">{{ it.nombre }}</div>
                   <div class="text-xs text-gray-500">{{ it.cantidad }} × {{ it.precio_unitario | currency:'COP':'symbol-narrow' }}</div>

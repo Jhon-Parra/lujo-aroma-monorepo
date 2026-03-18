@@ -41,7 +41,7 @@
                     class="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 gap-3">
                     <div>
                         <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Número de pedido</p>
-                        <p class="font-mono font-bold text-charcoal text-sm">{{ order.id.slice(0,8).toUpperCase() }}</p>
+                        <p class="font-mono font-bold text-charcoal text-sm">{{ (order.id || '').slice(0,8).toUpperCase() }}</p>
                     </div>
                     <div class="text-left sm:text-center">
                         <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Fecha</p>
@@ -63,7 +63,7 @@
                 <!-- Order Items -->
                 <div class="px-4 sm:px-6 py-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div *ngFor="let item of order.items" class="flex items-center gap-3">
+                        <div *ngFor="let item of (order.items || [])" class="flex items-center gap-3">
                             <img [src]="item.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=100'"
                                 [alt]="item.nombre" class="w-14 h-14 object-cover border border-gray-100 flex-shrink-0">
                             <div class="min-w-0">

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface CartItemForOrder {
   product_id: string;
@@ -69,7 +70,13 @@ export class OrderService {
   }
 
   getMyOrders(): Observable<Order[]> {
-    return this.http.get<Order[]>(`${this.apiUrl}/my-orders`, { withCredentials: true });
+    return this.http.get<Order[]>(`${this.apiUrl}/my-orders`, { withCredentials: true }).pipe(
+      map((orders) => (orders || []).map(o => ({
+        ...o,
+        // JSON_ARRAYAGG puede devolver null cuando no hay items — normalizamos a []
+        items: Array.isArray(o.items) ? o.items.filter(i => i != null) : []
+      })))
+    );
   }
 
   getMyOrderById(orderId: string): Observable<Order> {

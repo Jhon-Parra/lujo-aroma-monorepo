@@ -138,7 +138,7 @@ const computeHeuristicScore = (p: ProductRow, tokens: string[], preferGenero?: s
 
 const selectCandidates = async (opts: { preferGenero?: string | null }): Promise<ProductRow[]> => {
     const hasCategories = await detectCategoriesSchema();
-    const join = hasCategories ? 'LEFT JOIN categorias c ON c.slug = p.genero' : '';
+    const join = hasCategories ? 'LEFT JOIN Categorias c ON c.slug = p.genero' : '';
     const categorySelect = hasCategories ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
 
     const whereParts: string[] = ['p.stock > 0'];
@@ -155,7 +155,7 @@ const selectCandidates = async (opts: { preferGenero?: string | null }): Promise
         `SELECT p.id, p.nombre AS name, p.nombre, p.genero, p.descripcion AS description, p.descripcion,
                 p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                 p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url${categorySelect}
-         FROM productos p
+         FROM Productos p
          ${join}
          ${whereSql}
          ORDER BY COALESCE(p.unidades_vendidas, 0) DESC, p.creado_en DESC
@@ -405,13 +405,13 @@ export const recommendSimilar = async (req: Request, res: Response): Promise<voi
         }
 
         const hasCategories = await detectCategoriesSchema();
-        const join = hasCategories ? 'LEFT JOIN categorias c ON c.slug = p.genero' : '';
+        const join = hasCategories ? 'LEFT JOIN Categorias c ON c.slug = p.genero' : '';
         const categorySelect = hasCategories ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
         const [rows] = await pool.query<ProductRow[]>(
             `SELECT p.id, p.nombre AS name, p.nombre, p.genero, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url${categorySelect}
-             FROM productos p
+             FROM Productos p
              ${join}
              WHERE p.id = ?
              LIMIT 1`,

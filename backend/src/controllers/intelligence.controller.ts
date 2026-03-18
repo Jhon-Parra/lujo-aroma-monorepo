@@ -90,7 +90,7 @@ const getAlertConfig = async (): Promise<AlertConfig> => {
         if (!selectParts.length) return { ...DEFAULT_ALERT_CONFIG };
 
         const [rows] = await pool.query<any[]>(
-            `SELECT ${selectParts.join(', ')} FROM configuracionglobal WHERE id = 1`
+            `SELECT ${selectParts.join(', ')} FROM ConfiguracionGlobal WHERE id = 1`
         );
 
         const row = rows?.[0] || {};
@@ -290,7 +290,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const topSearches: any[] = [];
         if (sortedSearchIds.length > 0) {
             const [pRows] = await pool.query<any[]>(
-                `SELECT id, nombre FROM productos WHERE id IN (${sortedSearchIds.map(() => '?').join(', ')})`,
+                `SELECT id, nombre FROM Productos WHERE id IN (${sortedSearchIds.map(() => '?').join(', ')})`,
                 sortedSearchIds
             );
             
@@ -373,7 +373,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const abandonedTopProducts: any[] = [];
         if (sortedAbIds.length > 0) {
             const [pRows] = await pool.query<any[]>(
-                `SELECT id, nombre FROM productos WHERE id IN (${sortedAbIds.map(() => '?').join(', ')})`,
+                `SELECT id, nombre FROM Productos WHERE id IN (${sortedAbIds.map(() => '?').join(', ')})`,
                 sortedAbIds
             );
             sortedAbIds.forEach(id => {
@@ -393,7 +393,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             `SELECT a.session_id, a.user_id, a.total, a.updated_at, a.items,
                     u.email AS user_email
              FROM cartsessions a
-             LEFT JOIN usuarios u ON u.id = a.user_id
+             LEFT JOIN Usuarios u ON u.id = a.user_id
              WHERE a.status = 'OPEN'
                AND a.updated_at < DATE_SUB(NOW(), INTERVAL ? HOUR)
              ORDER BY a.updated_at DESC
@@ -406,8 +406,8 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             `SELECT u.id, u.nombre, u.apellido, u.email,
                     CAST(COUNT(*) AS SIGNED) AS orders_count,
                     COALESCE(SUM(o.total), 0) AS total_spent
-             FROM ordenes o
-             JOIN usuarios u ON u.id = o.usuario_id
+             FROM Ordenes o
+             JOIN Usuarios u ON u.id = o.usuario_id
              WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL ? DAY)
              GROUP BY u.id, u.nombre, u.apellido, u.email
@@ -435,10 +435,10 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
                 p.nombre AS product_name,
                 SUM(d.cantidad) as units,
                 SUM(d.subtotal) as revenue
-             FROM detalleordenes d
-             JOIN ordenes o ON o.id = d.orden_id
-             JOIN productos p ON p.id = d.producto_id
-             LEFT JOIN categorias c ON c.slug = p.genero
+             FROM Detalle_Ordenes d
+             JOIN Ordenes o ON o.id = d.orden_id
+             JOIN Productos p ON p.id = d.producto_id
+             LEFT JOIN Categorias c ON c.slug = p.genero
              WHERE ${salesWhere}
              GROUP BY p.genero, c.nombre, p.nombre`,
             salesParams
@@ -476,7 +476,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         // 8. Sales Stats
         const [salesCurrentRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
-             FROM ordenes o
+             FROM Ordenes o
              WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY)`,
             [...okStates]
@@ -484,7 +484,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
 
         const [salesPrevRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
-             FROM ordenes o
+             FROM Ordenes o
              WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
                AND o.creado_en < DATE_SUB(NOW(), INTERVAL 7 DAY)`,
@@ -525,7 +525,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             `SELECT p.id, p.nombre, CAST(COUNT(*) AS SIGNED) AS negative_count,
                     GROUP_CONCAT(r.comentario SEPARATOR ' · ') AS comentarios
              FROM resenas r
-             JOIN productos p ON p.id = r.producto_id
+             JOIN Productos p ON p.id = r.producto_id
              WHERE r.rating <= 2
                AND r.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY)
                AND r.comentario IS NOT NULL
@@ -541,9 +541,9 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
             `SELECT d.producto_id, p.nombre, 
                     SUM(CASE WHEN o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN d.cantidad ELSE 0 END) AS current_units,
                     SUM(CASE WHEN o.creado_en < DATE_SUB(NOW(), INTERVAL 7 DAY) THEN d.cantidad ELSE 0 END) AS prev_units
-             FROM detalleordenes d
-             JOIN ordenes o ON o.id = d.orden_id
-             JOIN productos p ON p.id = d.producto_id
+             FROM Detalle_Ordenes d
+             JOIN Ordenes o ON o.id = d.orden_id
+             JOIN Productos p ON p.id = d.producto_id
              WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
              GROUP BY d.producto_id, p.nombre

@@ -49,7 +49,7 @@ const parseBoolean = (value: any, fallback?: boolean): boolean | undefined => {
 
 const ensureCategoryExists = async (slug: string): Promise<boolean> => {
     try {
-        const [rows] = await pool.query<any[]>('SELECT 1 AS ok FROM categorias WHERE slug = ? LIMIT 1', [slug]);
+        const [rows] = await pool.query<any[]>('SELECT 1 AS ok FROM Categorias WHERE slug = ? LIMIT 1', [slug]);
         return !!rows?.[0]?.ok;
     } catch {
         return false;
@@ -352,7 +352,7 @@ export const getPromotions = async (_req: Request, res: Response): Promise<void>
                       AND pr.product_gender IS NOT NULL
                       AND EXISTS (
                         SELECT 1
-                        FROM productos p
+                        FROM Productos p
                         WHERE p.genero = pr.product_gender
                           AND p.stock > 0
                       )
@@ -361,7 +361,7 @@ export const getPromotions = async (_req: Request, res: Response): Promise<void>
 
             const [rows] = await pool.query<any[]>(`
                 SELECT id, nombre, descripcion${mediaReady ? ', imagen_url' : ''}, porcentaje_descuento${advancedReady ? ', discount_type, amount_discount, priority' : ''}, fecha_inicio, fecha_fin, activo
-                FROM promociones pr
+                FROM Promociones pr
                 WHERE pr.activo = true
                   AND (
                     ${advancedReady
@@ -375,7 +375,7 @@ export const getPromotions = async (_req: Request, res: Response): Promise<void>
                     COALESCE(pr.product_scope, 'GLOBAL') = 'GLOBAL'
                     OR EXISTS (SELECT 1 FROM promocionproductos pp WHERE pp.promocion_id = pr.id)
                     ${genderOr}
-                    OR EXISTS (SELECT 1 FROM productos p WHERE p.promocion_id = pr.id)
+                    OR EXISTS (SELECT 1 FROM Productos p WHERE p.promocion_id = pr.id)
                   )
                 ORDER BY ${advancedReady ? 'pr.priority DESC, COALESCE(pr.amount_discount, 0) DESC, pr.porcentaje_descuento DESC,' : 'pr.porcentaje_descuento DESC,'} pr.creado_en DESC
             `);
@@ -385,7 +385,7 @@ export const getPromotions = async (_req: Request, res: Response): Promise<void>
 
         const [rows] = await pool.query<any[]>(`
             SELECT pr.id, pr.nombre, pr.descripcion, pr.porcentaje_descuento${advancedReady ? ', pr.discount_type, pr.amount_discount, pr.priority' : ''}, pr.fecha_inicio, pr.fecha_fin, pr.activo
-            FROM promociones pr
+            FROM Promociones pr
             WHERE pr.activo = true
               AND (
                 ${advancedReady
@@ -396,7 +396,7 @@ export const getPromotions = async (_req: Request, res: Response): Promise<void>
               AND pr.fecha_fin >= NOW()
               AND EXISTS (
                 SELECT 1
-                FROM productos p
+                FROM Productos p
                 WHERE p.promocion_id = pr.id
                   AND p.stock > 0
               )
@@ -433,7 +433,7 @@ export const getPromotionsAdmin = async (_req: Request, res: Response): Promise<
                     pr.audience_segment,
                     COALESCE((SELECT JSON_ARRAYAGG(pp.producto_id) FROM promocionproductos pp WHERE pp.promocion_id = pr.id), '[]') AS product_ids,
                     COALESCE((SELECT JSON_ARRAYAGG(pu.usuario_id) FROM promocionusuarios pu WHERE pu.promocion_id = pr.id), '[]') AS audience_user_ids
-                FROM promociones pr
+                FROM Promociones pr
                 ORDER BY ${advancedReady ? 'pr.priority DESC,' : ''} pr.creado_en DESC
             `);
             res.status(200).json(rows);
@@ -442,7 +442,7 @@ export const getPromotionsAdmin = async (_req: Request, res: Response): Promise<
 
         const [rows] = await pool.query<any[]>(`
             SELECT id, nombre, descripcion, porcentaje_descuento${advancedReady ? ', discount_type, amount_discount, priority' : ''}, fecha_inicio, fecha_fin, activo
-            FROM promociones
+            FROM Promociones
             ORDER BY ${advancedReady ? 'priority DESC,' : ''} creado_en DESC
         `);
         res.status(200).json(rows);
@@ -693,7 +693,7 @@ export const deletePromotion = async (req: Request, res: Response): Promise<void
         const { id } = req.params;
 
         const [result] = await pool.query<any>(
-            `DELETE FROM promociones WHERE id = ?`,
+            `DELETE FROM Promociones WHERE id = ?`,
             [id]
         );
 

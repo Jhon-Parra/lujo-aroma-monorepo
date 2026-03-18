@@ -58,7 +58,7 @@ const logSecurityEvent = async (req: Request, email: string | null, eventType: s
 
 const getUserById = async (id: string) => {
     const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE id = ?',
+        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE id = ?',
         [id]
     );
     return (rows as any[])?.[0] || null;
@@ -66,7 +66,7 @@ const getUserById = async (id: string) => {
 
 const getUserBySupabaseId = async (supabaseUserId: string) => {
     const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE supabase_user_id = ?',
+        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol FROM Usuarios WHERE supabase_user_id = ?',
         [supabaseUserId]
     );
     return (rows as any[])?.[0] || null;
@@ -74,7 +74,7 @@ const getUserBySupabaseId = async (supabaseUserId: string) => {
 
 const getUserByEmail = async (email: string) => {
     const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol, password_hash FROM usuarios WHERE email = ?',
+        'SELECT id, supabase_user_id, email, nombre, apellido, foto_perfil, rol, password_hash FROM Usuarios WHERE email = ?',
         [email]
     );
     return (rows as any[])?.[0] || null;
@@ -82,7 +82,7 @@ const getUserByEmail = async (email: string) => {
 
 const linkSupabaseUser = async (localUserId: string, supabaseUserId: string) => {
     await pool.query(
-        'UPDATE usuarios SET supabase_user_id = ? WHERE id = ?',
+        'UPDATE Usuarios SET supabase_user_id = ? WHERE id = ?',
         [supabaseUserId, localUserId]
     );
 };

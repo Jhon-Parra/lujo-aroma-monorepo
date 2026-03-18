@@ -6,7 +6,7 @@ export const getUsers = async (req: Request, res: Response): Promise<void> => {
     try {
         const [rows] = await pool.query<any[]>(`
             SELECT id, nombre, apellido, email, telefono, rol, segmento, creado_en 
-            FROM usuarios
+            FROM Usuarios
             ORDER BY creado_en DESC
         `);
         res.status(200).json(rows);
@@ -29,7 +29,7 @@ export const updateUserRole = async (req: Request, res: Response): Promise<void>
         }
 
         const [result] = await pool.query<any>(`
-            UPDATE usuarios SET rol = ? WHERE id = ?
+            UPDATE Usuarios SET rol = ? WHERE id = ?
         `, [rol, id]);
 
         if (result.affectedRows === 0) {
@@ -53,7 +53,7 @@ export const updateUserSegment = async (req: Request, res: Response): Promise<vo
         const value = typeof segmento === 'string' ? segmento.trim() : '';
 
         const [result] = await pool.query<any>(`
-            UPDATE usuarios SET segmento = ? WHERE id = ?
+            UPDATE Usuarios SET segmento = ? WHERE id = ?
         `, [value.length > 0 ? value : null, id]);
 
         if (result.affectedRows === 0) {

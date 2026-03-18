@@ -53,7 +53,7 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
         if (order_id) {
             const [rows] = await pool.query<any[]>(
                 `SELECT 1
-                 FROM ordenes o
+                 FROM Ordenes o
                  JOIN detalle_ordenes d ON d.orden_id = o.id
                  WHERE o.id = ?
                    AND o.usuario_id = ?
@@ -69,7 +69,7 @@ export const createReview = async (req: AuthRequest, res: Response): Promise<voi
         } else {
             const [rows] = await pool.query<any[]>(
                 `SELECT 1
-                 FROM ordenes o
+                 FROM Ordenes o
                  JOIN detalle_ordenes d ON d.orden_id = o.id
                  WHERE o.usuario_id = ?
                    AND o.estado = 'ENTREGADO'
@@ -151,7 +151,7 @@ export const getProductReviews = async (req: AuthRequest, res: Response): Promis
                 u.nombre,
                 u.apellido
              FROM resenas r
-             JOIN usuarios u ON u.id = r.usuario_id
+             JOIN Usuarios u ON u.id = r.usuario_id
              WHERE r.producto_id = ?
              ORDER BY r.creado_en DESC
              LIMIT 50`,

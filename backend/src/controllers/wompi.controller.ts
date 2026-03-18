@@ -18,12 +18,28 @@ export class WompiController {
             const hasPrivateKey = await WompiService.hasPrivateKey();
             res.status(200).json({
                 ...cfg,
-                has_private_key: hasPrivateKey
+                has_private_key: hasPrivateKey,
+                configured: true
             });
         } catch (e: any) {
-            res.status(500).json({ error: e?.message || 'No se pudo obtener configuracion Wompi' });
+            const msg = String(e?.message || '');
+            // Si la clave simplemente no está configurada, devolver estado 200
+            // con configured:false en lugar de 500 para no romper el frontend.
+            if (msg.includes('WOMPI_PUBLIC_KEY') || msg.includes('WOMPI API key')) {
+                res.status(200).json({
+                    configured: false,
+                    env: 'sandbox',
+                    public_key: null,
+                    base_url: 'https://sandbox.wompi.co/v1',
+                    has_private_key: false,
+                    message: 'Wompi no está configurado aún. Configura las llaves en el panel de administrador.'
+                });
+                return;
+            }
+            res.status(500).json({ error: msg || 'No se pudo obtener configuracion Wompi' });
         }
     }
+
 
     static async getMerchant(req: AuthRequest, res: Response): Promise<void> {
         try {

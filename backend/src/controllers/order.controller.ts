@@ -294,12 +294,30 @@ export class OrderController {
             const doc = new PDFDocument({ margin: 50, size: 'A4' });
             doc.pipe(res);
 
-            // ── Encabezado ──────────────────────────────────────────────────
-            doc.fontSize(20).font('Helvetica-Bold').text('PERFUMISSIMO', { align: 'center' });
-            doc.fontSize(10).font('Helvetica').text('perfumissimocol.com', { align: 'center' });
-            doc.moveDown();
-            doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-            doc.moveDown(0.5);
+            // ── Encabezado con logo ──────────────────────────────────────────
+            const path = require('path');
+            const logoPath = path.join(__dirname, '..', 'assets', 'logo.png');
+            const fs = require('fs');
+
+            if (fs.existsSync(logoPath)) {
+                // Logo centrado con tamaño proporcional
+                const logoWidth = 140;
+                const pageWidth = doc.page.width;
+                const logoX = (pageWidth - logoWidth) / 2;
+                doc.image(logoPath, logoX, doc.y, { width: logoWidth, align: 'center' });
+                doc.moveDown(6);
+            } else {
+                // Fallback si no existe el logo
+                doc.fontSize(22).font('Helvetica-Bold').text('PERFUMISSIMO', { align: 'center' });
+                doc.moveDown(0.3);
+            }
+
+            doc.fontSize(9).font('Helvetica').fillColor('#888888').text('perfumissimocol.com  ·  Perfumería de lujo', { align: 'center' });
+            doc.fillColor('#000000');
+            doc.moveDown(0.8);
+            doc.moveTo(50, doc.y).lineTo(545, doc.y).lineWidth(1.5).strokeColor('#c9a84c').stroke();
+            doc.strokeColor('#000000').lineWidth(1);
+            doc.moveDown(0.8);
 
             // ── Info del pedido ─────────────────────────────────────────────
             doc.fontSize(13).font('Helvetica-Bold').text('DETALLE DEL PEDIDO');

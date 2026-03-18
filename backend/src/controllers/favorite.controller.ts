@@ -160,7 +160,7 @@ export const getFavorites = async (req: AuthRequest, res: Response): Promise<voi
                 p.creado_en,
                 ${esNuevoExpr}
             FROM favoritos f
-            JOIN Productos p ON f.producto_id = p.id
+            JOIN productos p ON f.producto_id = p.id
             WHERE f.usuario_id = ?
             ORDER BY ${orderCol} DESC`,
             [userId]

@@ -75,14 +75,14 @@ const getCategorySqlParts = async (): Promise<CategorySqlParts> => {
     if (!ok) return { categorySelect: '', categoryJoin: '' };
     return {
         categorySelect: ', c.nombre AS categoria_nombre, c.slug AS categoria_slug',
-        categoryJoin: 'LEFT JOIN Categorias c ON c.slug = p.genero'
+        categoryJoin: 'LEFT JOIN categorias c ON c.slug = p.genero'
     };
 };
 
 const ensureCategoryExists = async (slug: string): Promise<boolean> => {
     try {
         const [rows] = await pool.query<any[]>(
-            'SELECT 1 AS ok FROM Categorias WHERE slug = ? LIMIT 1',
+            'SELECT 1 AS ok FROM categorias WHERE slug = ? LIMIT 1',
             [slug]
         );
         return !!rows?.[0]?.ok;
@@ -329,7 +329,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
                     p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
                     ${esNuevoExpr}${extraSelect}, p.creado_en
-             FROM Productos p
+             FROM productos p
              ${categoryJoin}
              ORDER BY p.creado_en DESC`
         );
@@ -365,7 +365,7 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         if (userId) {
             try {
                 const [uRows] = await pool.query<any[]>(
-                    'SELECT segmento FROM Usuarios WHERE id = ?',
+                    'SELECT segmento FROM usuarios WHERE id = ?',
                     [userId]
                 );
                 userSegment = uRows?.[0]?.segmento || null;
@@ -398,7 +398,7 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en
-             FROM Productos p
+             FROM productos p
              ${categoryJoin}
              WHERE p.stock > 0
              ORDER BY p.creado_en DESC`
@@ -409,7 +409,7 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             `SELECT pr.id, pr.nombre, pr.porcentaje_descuento,
                     ${advancedReady ? 'pr.discount_type, pr.amount_discount, pr.priority,' : "'PERCENT' AS discount_type, 0 AS amount_discount, 0 AS priority,"}
                     pr.product_scope, pr.product_gender, pr.audience_scope, pr.audience_segment
-             FROM Promociones pr
+             FROM promociones pr
              WHERE pr.activo = true
                AND pr.fecha_inicio <= NOW()
                AND pr.fecha_fin >= NOW()
@@ -512,7 +512,7 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
         if (userId) {
             try {
                 const [uRows] = await pool.query<any[]>(
-                    'SELECT segmento FROM Usuarios WHERE id = ?',
+                    'SELECT segmento FROM usuarios WHERE id = ?',
                     [userId]
                 );
                 userSegment = uRows?.[0]?.segmento || null;
@@ -548,7 +548,7 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
                     p.precio AS price, p.precio, p.stock, p.unidades_vendidas AS soldCount, p.unidades_vendidas,
                     p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en
-             FROM Productos p
+             FROM productos p
              ${categoryJoin}
              WHERE p.stock > 0
              ORDER BY p.creado_en DESC
@@ -561,7 +561,7 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
             `SELECT pr.id, pr.nombre, pr.porcentaje_descuento,
                     ${advancedReady ? 'pr.discount_type, pr.amount_discount, pr.priority,' : "'PERCENT' AS discount_type, 0 AS amount_discount, 0 AS priority,"}
                     pr.product_scope, pr.product_gender, pr.audience_scope, pr.audience_segment
-             FROM Promociones pr
+             FROM promociones pr
              WHERE pr.activo = true
                AND pr.fecha_inicio <= NOW()
                AND pr.fecha_fin >= NOW()`
@@ -649,7 +649,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
         if (userId) {
             try {
                 const [uRows] = await pool.query<any[]>(
-                    'SELECT segmento FROM Usuarios WHERE id = ?',
+                    'SELECT segmento FROM usuarios WHERE id = ?',
                     [userId]
                 );
                 userSegment = uRows?.[0]?.segmento || null;
@@ -684,7 +684,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
                     p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
                     p.promocion_id, ${esNuevoExpr}, p.creado_en
-             FROM Productos p
+             FROM productos p
              ${categoryJoin}
              ${whereClause}`,
             queryParams
@@ -702,7 +702,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
             `SELECT pr.id, pr.nombre, pr.porcentaje_descuento,
                     ${advancedReady ? 'pr.discount_type, pr.amount_discount, pr.priority,' : "'PERCENT' AS discount_type, 0 AS amount_discount, 0 AS priority,"}
                     pr.product_scope, pr.product_gender, pr.audience_scope, pr.audience_segment
-             FROM Promociones pr
+             FROM promociones pr
              WHERE pr.activo = true
                AND pr.fecha_inicio <= NOW()
                AND pr.fecha_fin >= NOW()`
@@ -780,7 +780,7 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
         if (userId) {
             try {
                 const [uRows] = await pool.query<any[]>(
-                    'SELECT segmento FROM Usuarios WHERE id = ?',
+                    'SELECT segmento FROM usuarios WHERE id = ?',
                     [userId]
                 );
                 userSegment = uRows?.[0]?.segmento || null;
@@ -810,7 +810,7 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
 
         // 1. Base genero
         const [gRows] = await pool.query<any[]>(
-            'SELECT genero FROM Productos WHERE id = ? LIMIT 1',
+            'SELECT genero FROM productos WHERE id = ? LIMIT 1',
             [id]
         );
         const genero = gRows?.[0]?.genero;
@@ -827,7 +827,7 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
             `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
                     p.precio AS price, p.precio, p.stock, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}, p.creado_en, p.unidades_vendidas AS soldCount, p.unidades_vendidas
-             FROM Productos p
+             FROM productos p
              ${categoryJoin}
              WHERE p.id <> ?
                AND p.genero = ?
@@ -847,7 +847,7 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
             `SELECT pr.id, pr.nombre, pr.porcentaje_descuento,
                     ${advancedReady ? 'pr.discount_type, pr.amount_discount, pr.priority,' : "'PERCENT' AS discount_type, 0 AS amount_discount, 0 AS priority,"}
                     pr.product_scope, pr.product_gender, pr.audience_scope, pr.audience_segment
-             FROM Promociones pr
+             FROM promociones pr
              WHERE pr.activo = true
                AND pr.fecha_inicio <= NOW()
                AND pr.fecha_fin >= NOW()`
@@ -1031,7 +1031,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
-        const query = `UPDATE Productos SET ${updates.join(', ')} WHERE id = ?`;
+        const query = `UPDATE productos SET ${updates.join(', ')} WHERE id = ?`;
         params.push(id);
 
         const [result] = await pool.query<any>(query, params);
@@ -1057,7 +1057,7 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
         const { id } = req.params;
 
         const [result] = await pool.query<any>(`
-            DELETE FROM Productos WHERE id = ?
+            DELETE FROM productos WHERE id = ?
         `, [id]);
 
         if (result.affectedRows === 0) {
@@ -1241,7 +1241,7 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
         const validSlugs = new Set<string>();
         if (categoriesSchemaOk) {
             try {
-                const [cRows] = await pool.query<any[]>('SELECT slug FROM Categorias');
+                const [cRows] = await pool.query<any[]>('SELECT slug FROM categorias');
                 for (const r of (cRows || [])) {
                     const s = String(r?.slug || '').trim().toLowerCase();
                     if (s) validSlugs.add(s);
@@ -1427,14 +1427,14 @@ export const getLowStockProducts = async (req: Request, res: Response): Promise<
 
         const [countRows] = await pool.query<any[]>(
             `SELECT CAST(COUNT(*) AS SIGNED) AS count
-             FROM Productos
+             FROM productos
              WHERE COALESCE(stock, 0) <= ?`,
             [threshold]
         );
 
         const [rows] = await pool.query<any[]>(
             `SELECT id, nombre, stock, imagen_url
-             FROM Productos
+             FROM productos
              WHERE COALESCE(stock, 0) <= ?
              ORDER BY COALESCE(stock, 0) ASC, nombre ASC
              LIMIT ?`,

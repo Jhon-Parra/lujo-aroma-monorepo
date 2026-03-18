@@ -78,7 +78,23 @@ export class OrderController {
         try {
             const user_id = req.user?.id;
             if (!user_id) { res.status(401).json({ message: 'Usuario no autenticado' }); return; }
-            const orders = await OrderModel.getUserOrders(user_id);
+            const rawOrders: any[] = await OrderModel.getUserOrders(user_id) as any[];
+
+            // MariaDB devuelve JSON_ARRAYAGG como string — parsear y limpiar nulos
+            const parseJson = (val: any, fallback: any = []) => {
+                if (!val) return fallback;
+                if (typeof val === 'string') {
+                    try { return JSON.parse(val); } catch { return fallback; }
+                }
+                return val;
+            };
+
+            const orders = rawOrders.map((o: any) => ({
+                ...o,
+                items: (parseJson(o.items, []) as any[]).filter((i: any) => i && i.producto_id),
+                historial: parseJson(o.historial, [])
+            }));
+
             res.json(orders);
         } catch (error) {
             console.error('Error al obtener órdenes del usuario:', error);

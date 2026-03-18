@@ -89,118 +89,93 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <label class="group relative p-5 rounded-2xl border cursor-pointer transition-all"
+                        <label class="group relative p-4 rounded-2xl border cursor-pointer transition-all"
                             [ngClass]="envioPrioritario ? 'border-gold bg-gold/5 shadow-sm' : 'border-[#ecece5] bg-white hover:shadow-sm'">
-                            <div class="flex items-start gap-4">
-                                <input type="checkbox" [(ngModel)]="envioPrioritario" (change)="onToggleExtras()" class="mt-1 accent-gold" />
-
-                                <div class="flex gap-4 flex-1 min-w-0">
-                                    <div class="relative">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" [(ngModel)]="envioPrioritario" (change)="onToggleExtras()" class="mt-1 accent-gold flex-shrink-0" />
+                                <div class="flex gap-3 flex-1 min-w-0">
+                                    <div class="relative flex-shrink-0">
                                         <img [src]="priorityShippingImg" alt="Envio prioritario"
-                                            class="w-16 h-16 rounded-2xl object-cover ring-1 ring-black/5 shadow-sm" />
-                                        <span class="absolute -bottom-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase bg-primary-green text-white">
+                                            class="w-14 h-14 rounded-2xl object-cover ring-1 ring-black/5 shadow-sm" />
+                                        <span class="absolute -bottom-2 left-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold tracking-widest uppercase bg-primary-green text-white whitespace-nowrap">
                                             Recomendado
                                         </span>
                                     </div>
-
                                     <div class="min-w-0 flex-1">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div class="min-w-0">
-                                                <div class="text-sm font-bold text-charcoal">Envio prioritario</div>
-                                                <div class="text-xs text-gray-500 mt-1 leading-relaxed">
-                                                    Prioridad en alistamiento y despacho. Ideal si lo necesitas rapido.
-                                                </div>
-                                            </div>
-
-                                            <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border"
-                                                    [ngClass]="envioPrioritarioPrecio > 0 ? 'bg-dark-green text-white border-dark-green' : 'bg-green-50 text-green-700 border-green-100'">
-                                                    +{{ envioPrioritarioPrecio > 0 ? (envioPrioritarioPrecio | currency:'COP':'symbol-narrow':'1.0-0') : '0' }}
-                                                </span>
-                                                <span class="text-[10px] text-gray-400 uppercase tracking-widest">Adicional</span>
-                                            </div>
+                                        <div class="text-sm font-bold text-charcoal leading-tight">Envio prioritario</div>
+                                        <div class="text-xs text-gray-500 mt-1 leading-relaxed">
+                                            Prioridad en alistamiento y despacho. Ideal si lo necesitas rápido.
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-2">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border"
+                                                [ngClass]="envioPrioritarioPrecio > 0 ? 'bg-dark-green text-white border-dark-green' : 'bg-green-50 text-green-700 border-green-100'">
+                                                +{{ envioPrioritarioPrecio > 0 ? (envioPrioritarioPrecio | currency:'COP':'symbol-narrow':'1.0-0') : 'Gratis' }}
+                                            </span>
+                                            <span class="text-[10px] text-gray-400 uppercase tracking-widest">Adicional</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                             <div class="absolute inset-0 rounded-2xl pointer-events-none ring-1 ring-transparent group-hover:ring-gold/25 transition"></div>
                         </label>
 
-                        <label class="group relative p-5 rounded-2xl border cursor-pointer transition-all"
+                        <label class="group relative p-4 rounded-2xl border cursor-pointer transition-all"
                             [ngClass]="perfumeLujo ? 'border-gold bg-gold/5 shadow-sm' : 'border-[#ecece5] bg-white hover:shadow-sm'">
-                            <div class="flex items-start gap-4">
-                                <input type="checkbox" [(ngModel)]="perfumeLujo" (change)="onToggleExtras()" class="mt-1 accent-gold" />
-
-                                <div class="flex gap-4 flex-1 min-w-0">
-                                    <div class="relative">
-                                        <img [src]="luxuryPerfumeImg" alt="Perfume de lujo"
-                                            class="w-16 h-16 rounded-2xl object-cover ring-1 ring-black/5 shadow-sm" />
-                                        <span class="absolute -bottom-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase bg-gold text-white">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" [(ngModel)]="perfumeLujo" (change)="onToggleExtras()" class="mt-1 accent-gold flex-shrink-0" />
+                                <div class="flex gap-3 flex-1 min-w-0">
+                                    <div class="relative flex-shrink-0">
+                                        <img [src]="luxuryPerfumeImg" alt="Perfumero de lujo"
+                                            class="w-14 h-14 rounded-2xl object-cover ring-1 ring-black/5 shadow-sm" />
+                                        <span class="absolute -bottom-2 left-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold tracking-widest uppercase bg-gold text-white whitespace-nowrap">
                                             Premium
                                         </span>
                                     </div>
-
                                     <div class="min-w-0 flex-1">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div class="min-w-0">
-                                                <div class="text-sm font-bold text-charcoal">Perfumero de lujo <span class="text-[10px] font-normal text-gold">(5ml)</span></div>
-                                                <div class="text-xs text-gray-500 mt-1 leading-relaxed">
-                                                    Presentacion premium para regalo (empaque especial y detalle).
-                                                </div>
-                                            </div>
-
-                                            <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border"
-                                                    [ngClass]="perfumeLujoPrecio > 0 ? 'bg-dark-green text-white border-dark-green' : 'bg-green-50 text-green-700 border-green-100'">
-                                                    +{{ perfumeLujoPrecio > 0 ? (perfumeLujoPrecio | currency:'COP':'symbol-narrow':'1.0-0') : '0' }}
-                                                </span>
-                                                <span class="text-[10px] text-gray-400 uppercase tracking-widest">Adicional</span>
-                                            </div>
+                                        <div class="text-sm font-bold text-charcoal leading-tight">Perfumero de lujo <span class="text-[10px] font-normal text-gold">(5ml)</span></div>
+                                        <div class="text-xs text-gray-500 mt-1 leading-relaxed">
+                                            Presentación premium para regalo (empaque especial y detalle).
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-2">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border"
+                                                [ngClass]="perfumeLujoPrecio > 0 ? 'bg-dark-green text-white border-dark-green' : 'bg-green-50 text-green-700 border-green-100'">
+                                                +{{ perfumeLujoPrecio > 0 ? (perfumeLujoPrecio | currency:'COP':'symbol-narrow':'1.0-0') : 'Gratis' }}
+                                            </span>
+                                            <span class="text-[10px] text-gray-400 uppercase tracking-widest">Adicional</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                             <div class="absolute inset-0 rounded-2xl pointer-events-none ring-1 ring-transparent group-hover:ring-gold/25 transition"></div>
                         </label>
 
-                        <!-- Empaque de regalo -->
-                        <label class="group relative p-5 rounded-2xl border cursor-pointer transition-all"
+                        <label class="group relative p-4 rounded-2xl border cursor-pointer transition-all"
                             [ngClass]="empaqueRegalo ? 'border-[#e91e8c] bg-pink-50/30 shadow-sm' : 'border-[#ecece5] bg-white hover:shadow-sm'">
-                            <div class="flex items-start gap-4">
-                                <input type="checkbox" [(ngModel)]="empaqueRegalo" (change)="onToggleExtras()" class="mt-1 accent-[#e91e8c]" />
-
-                                <div class="flex gap-4 flex-1 min-w-0">
-                                    <div class="relative">
+                            <div class="flex items-start gap-3">
+                                <input type="checkbox" [(ngModel)]="empaqueRegalo" (change)="onToggleExtras()" class="mt-1 accent-[#e91e8c] flex-shrink-0" />
+                                <div class="flex gap-3 flex-1 min-w-0">
+                                    <div class="relative flex-shrink-0">
                                         <img [src]="giftWrapImg" alt="Empaque de regalo"
-                                            class="w-16 h-16 rounded-2xl object-cover ring-1 ring-black/5 shadow-sm" />
-                                        <span class="absolute -bottom-2 left-2 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase bg-[#e91e8c] text-white">
+                                            class="w-14 h-14 rounded-2xl object-cover ring-1 ring-black/5 shadow-sm" />
+                                        <span class="absolute -bottom-2 left-1 px-1.5 py-0.5 rounded-full text-[8px] font-bold tracking-widest uppercase bg-[#e91e8c] text-white whitespace-nowrap">
                                             Especial
                                         </span>
                                     </div>
-
                                     <div class="min-w-0 flex-1">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div class="min-w-0">
-                                                <div class="text-sm font-bold text-charcoal">Empaque de regalo</div>
-                                                <div class="text-xs text-gray-500 mt-1 leading-relaxed">
-                                                    Caja premium, lazo y tarjeta dedicatoria personalizada.
-                                                </div>
-                                            </div>
-
-                                            <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                                                <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border"
-                                                    [ngClass]="empaqueRegaloPrecio > 0 ? 'bg-[#e91e8c] text-white border-[#e91e8c]' : 'bg-pink-50 text-pink-700 border-pink-100'">
-                                                    +{{ empaqueRegaloPrecio > 0 ? (empaqueRegaloPrecio | currency:'COP':'symbol-narrow':'1.0-0') : '0' }}
-                                                </span>
-                                                <span class="text-[10px] text-gray-400 uppercase tracking-widest">Adicional</span>
-                                            </div>
+                                        <div class="text-sm font-bold text-charcoal leading-tight">Empaque de regalo</div>
+                                        <div class="text-xs text-gray-500 mt-1 leading-relaxed">
+                                            Caja premium, lazo y tarjeta dedicatoria personalizada.
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-2">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border"
+                                                [ngClass]="empaqueRegaloPrecio > 0 ? 'bg-[#e91e8c] text-white border-[#e91e8c]' : 'bg-pink-50 text-pink-700 border-pink-100'">
+                                                +{{ empaqueRegaloPrecio > 0 ? (empaqueRegaloPrecio | currency:'COP':'symbol-narrow':'1.0-0') : 'Gratis' }}
+                                            </span>
+                                            <span class="text-[10px] text-gray-400 uppercase tracking-widest">Adicional</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                             <div class="absolute inset-0 rounded-2xl pointer-events-none ring-1 ring-transparent group-hover:ring-[#e91e8c]/25 transition"></div>
                         </label>
                     </div>

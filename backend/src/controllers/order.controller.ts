@@ -138,9 +138,23 @@ export class OrderController {
         try {
             const id = String(req.params['id'] || '').trim();
             if (!id) { res.status(400).json({ message: 'ID de orden requerido' }); return; }
-            const order = await OrderModel.getAdminOrderById(id);
+            const order: any = await OrderModel.getAdminOrderById(id);
             if (!order) { res.status(404).json({ message: 'Orden no encontrada' }); return; }
-            res.json(order);
+
+            // MariaDB devuelve JSON_ARRAYAGG como string — parsear antes de enviar
+            const parseJson = (val: any, fallback: any = []) => {
+                if (!val) return fallback;
+                if (typeof val === 'string') {
+                    try { return JSON.parse(val); } catch { return fallback; }
+                }
+                return val;
+            };
+
+            res.json({
+                ...order,
+                items: (parseJson(order.items, []) as any[]).filter((i: any) => i && i.producto_id),
+                historial: parseJson(order.historial, order.historial || [])
+            });
         } catch (error) {
             console.error('Error al obtener detalle de orden:', error);
             res.status(500).json({ message: 'Error interno del servidor' });

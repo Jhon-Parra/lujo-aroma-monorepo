@@ -89,8 +89,11 @@ const resolveSenderConfig = async (fallbackFrom?: string): Promise<SenderConfig>
 
     const colsReady = await detectSenderColumns();
     if (!colsReady) {
-        senderCache = { expiresAt: now + 5 * 60 * 1000, value: fallback };
-        return fallback;
+        // Use env-level BCC if available (e.g. EMAIL_BCC_ORDERS=ventas@perfumissimocol.com)
+        const envBcc = String(process.env.EMAIL_BCC_ORDERS || '').trim() || undefined;
+        const value: SenderConfig = { from: baseFrom, bccOrders: envBcc };
+        senderCache = { expiresAt: now + 5 * 60 * 1000, value };
+        return value;
     }
 
     try {
@@ -102,7 +105,9 @@ const resolveSenderConfig = async (fallbackFrom?: string): Promise<SenderConfig>
         const r = rows?.[0] || {};
         const from = buildFrom(r.email_from_name, r.email_from_address, baseFrom);
         const replyTo = String(r.email_reply_to || '').trim() || undefined;
-        const bccOrders = parseEmailList(r.email_bcc_orders).join(',') || undefined;
+        // DB value takes precedence; fall back to env
+        const bccRaw = String(r.email_bcc_orders || '').trim() || process.env.EMAIL_BCC_ORDERS || '';
+        const bccOrders = parseEmailList(bccRaw).join(',') || undefined;
 
         const value: SenderConfig = { from, replyTo, bccOrders };
         senderCache = { expiresAt: now + 5 * 60 * 1000, value };

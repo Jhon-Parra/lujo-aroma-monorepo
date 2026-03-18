@@ -22,6 +22,7 @@ export interface CreateOrderParams {
 
     envio_prioritario?: boolean;
     perfume_lujo?: boolean;
+    empaque_regalo?: boolean;
 
     cart_recovery_applied?: boolean;
     cart_recovery_discount_pct?: number;
@@ -40,6 +41,7 @@ export interface RegisterShippingParams {
 type AddonConfig = {
     envio_prioritario_precio: number;
     perfume_lujo_precio: number;
+    empaque_regalo_precio: number;
     supported: boolean;
 };
 
@@ -49,6 +51,8 @@ type OrderAddonCols = {
     costo_envio_prioritario: boolean;
     perfume_lujo: boolean;
     costo_perfume_lujo: boolean;
+    empaque_regalo: boolean;
+    costo_empaque_regalo: boolean;
     cart_recovery_applied: boolean;
     cart_recovery_discount_pct: boolean;
     cart_recovery_discount_amount: boolean;
@@ -61,6 +65,8 @@ export type CreateOrderResult = {
     costo_envio_prioritario: number;
     perfume_lujo: boolean;
     costo_perfume_lujo: number;
+    empaque_regalo: boolean;
+    costo_empaque_regalo: number;
     total: number;
 };
 
@@ -132,21 +138,27 @@ const detectAddonConfigColumns = async (): Promise<boolean> => {
 
 const getAddonConfig = async (): Promise<AddonConfig> => {
     const supported = await detectAddonConfigColumns();
-    if (!supported) return { envio_prioritario_precio: 0, perfume_lujo_precio: 0, supported: false };
+    if (!supported) return { envio_prioritario_precio: 0, perfume_lujo_precio: 0, empaque_regalo_precio: 0, supported: false };
     try {
         const [rows] = await pool.query<any[]>(
-            'SELECT COALESCE(envio_prioritario_precio, 0) AS envio_prioritario_precio, COALESCE(perfume_lujo_precio, 0) AS perfume_lujo_precio FROM configuracionglobal WHERE id = 1'
+            `SELECT
+               COALESCE(envio_prioritario_precio, 0) AS envio_prioritario_precio,
+               COALESCE(perfume_lujo_precio, 0) AS perfume_lujo_precio,
+               COALESCE(empaque_regalo_precio, 0) AS empaque_regalo_precio
+             FROM configuracionglobal WHERE id = 1`
         );
         const r = rows?.[0] || {};
         const ep = Number(r.envio_prioritario_precio || 0);
         const pl = Number(r.perfume_lujo_precio || 0);
+        const er = Number(r.empaque_regalo_precio || 0);
         return {
             envio_prioritario_precio: Number.isFinite(ep) && ep > 0 ? ep : 0,
             perfume_lujo_precio: Number.isFinite(pl) && pl > 0 ? pl : 0,
+            empaque_regalo_precio: Number.isFinite(er) && er > 0 ? er : 0,
             supported: true
         };
     } catch {
-        return { envio_prioritario_precio: 0, perfume_lujo_precio: 0, supported: true };
+        return { envio_prioritario_precio: 0, perfume_lujo_precio: 0, empaque_regalo_precio: 0, supported: true };
     }
 };
 
@@ -156,7 +168,7 @@ const detectOrderAddonColumns = async (): Promise<OrderAddonCols> => {
             `SELECT column_name FROM information_schema.columns
              WHERE table_schema = DATABASE()
                AND lower(table_name) = 'ordenes'
-               AND column_name IN ('subtotal_productos','envio_prioritario','costo_envio_prioritario','perfume_lujo','costo_perfume_lujo','cart_recovery_applied','cart_recovery_discount_pct','cart_recovery_discount_amount')`
+               AND column_name IN ('subtotal_productos','envio_prioritario','costo_envio_prioritario','perfume_lujo','costo_perfume_lujo','empaque_regalo','costo_empaque_regalo','cart_recovery_applied','cart_recovery_discount_pct','cart_recovery_discount_amount')`
         );
         const cols = new Set((rows || []).map((r: any) => String(r.COLUMN_NAME || r.column_name || r.Column_Name).toLowerCase()));
         return {
@@ -165,6 +177,8 @@ const detectOrderAddonColumns = async (): Promise<OrderAddonCols> => {
             costo_envio_prioritario: cols.has('costo_envio_prioritario'),
             perfume_lujo: cols.has('perfume_lujo'),
             costo_perfume_lujo: cols.has('costo_perfume_lujo'),
+            empaque_regalo: cols.has('empaque_regalo'),
+            costo_empaque_regalo: cols.has('costo_empaque_regalo'),
             cart_recovery_applied: cols.has('cart_recovery_applied'),
             cart_recovery_discount_pct: cols.has('cart_recovery_discount_pct'),
             cart_recovery_discount_amount: cols.has('cart_recovery_discount_amount')
@@ -172,7 +186,9 @@ const detectOrderAddonColumns = async (): Promise<OrderAddonCols> => {
     } catch {
         return {
             subtotal_productos: false, envio_prioritario: false, costo_envio_prioritario: false,
-            perfume_lujo: false, costo_perfume_lujo: false, cart_recovery_applied: false,
+            perfume_lujo: false, costo_perfume_lujo: false,
+            empaque_regalo: false, costo_empaque_regalo: false,
+            cart_recovery_applied: false,
             cart_recovery_discount_pct: false, cart_recovery_discount_amount: false
         };
     }
@@ -223,8 +239,10 @@ export class OrderModel {
             const addons = await getAddonConfig();
             const envio_prioritario = !!orderData.envio_prioritario;
             const perfume_lujo = !!orderData.perfume_lujo;
+            const empaque_regalo = !!orderData.empaque_regalo;
             const costo_envio_prioritario = envio_prioritario ? round2(addons.envio_prioritario_precio) : 0;
             const costo_perfume_lujo = perfume_lujo ? round2(addons.perfume_lujo_precio) : 0;
+            const costo_empaque_regalo = empaque_regalo ? round2(addons.empaque_regalo_precio) : 0;
             const cart_recovery_applied = !!orderData.cart_recovery_applied;
             const cart_recovery_discount_pct = cart_recovery_applied
                 ? Math.max(0, Math.min(80, Math.trunc(Number(orderData.cart_recovery_discount_pct || 0)))) : 0;
@@ -232,7 +250,7 @@ export class OrderModel {
                 ? round2(subtotal_productos * (cart_recovery_discount_pct / 100)) : 0;
             const total = round2(
                 Math.max(0, subtotal_productos - cart_recovery_discount_amount) +
-                costo_envio_prioritario + costo_perfume_lujo
+                costo_envio_prioritario + costo_perfume_lujo + costo_empaque_regalo
             );
 
             const addonCols = await detectOrderAddonColumns();
@@ -253,6 +271,8 @@ export class OrderModel {
             if (addonCols.costo_envio_prioritario) { cols.push('costo_envio_prioritario'); vals.push(costo_envio_prioritario); }
             if (addonCols.perfume_lujo) { cols.push('perfume_lujo'); vals.push(perfume_lujo); }
             if (addonCols.costo_perfume_lujo) { cols.push('costo_perfume_lujo'); vals.push(costo_perfume_lujo); }
+            if (addonCols.empaque_regalo) { cols.push('empaque_regalo'); vals.push(empaque_regalo); }
+            if (addonCols.costo_empaque_regalo) { cols.push('costo_empaque_regalo'); vals.push(costo_empaque_regalo); }
             if (addonCols.cart_recovery_applied) { cols.push('cart_recovery_applied'); vals.push(cart_recovery_applied); }
             if (addonCols.cart_recovery_discount_pct) { cols.push('cart_recovery_discount_pct'); vals.push(cart_recovery_discount_pct); }
             if (addonCols.cart_recovery_discount_amount) { cols.push('cart_recovery_discount_amount'); vals.push(cart_recovery_discount_amount); }
@@ -310,7 +330,7 @@ export class OrderModel {
             );
 
             await connection.query('COMMIT');
-            return { orderId, subtotal_productos, envio_prioritario, costo_envio_prioritario, perfume_lujo, costo_perfume_lujo, total };
+            return { orderId, subtotal_productos, envio_prioritario, costo_envio_prioritario, perfume_lujo, costo_perfume_lujo, empaque_regalo, costo_empaque_regalo, total };
         } catch (error) {
             await connection.query('ROLLBACK');
             throw error;

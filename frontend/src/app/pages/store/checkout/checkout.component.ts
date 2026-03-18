@@ -22,8 +22,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
     envioPrioritario = false;
     perfumeLujo = false;
+    empaqueRegalo = false;
     envioPrioritarioPrecio = 0;
     perfumeLujoPrecio = 0;
+    empaqueRegaloPrecio = 0;
     extrasTotal = 0;
     grandTotal = 0;
 
@@ -31,6 +33,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
     priorityShippingImg = '';
     luxuryPerfumeImg = '';
+    giftWrapImg = '';
 
     shippingAddress = '';
     phone = '';
@@ -138,6 +141,29 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   <path d="M35 48h26" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
   <path d="M48 40l3 6 7 1-5 4 1 7-6-3-6 3 1-7-5-4 7-1z" fill="#ffffff" opacity="0.9"/>
 </svg>`);
+
+        this.giftWrapImg = this.svgToDataUrl(`
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e91e8c"/>
+      <stop offset="1" stop-color="#c2a878"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="96" height="96" rx="18" fill="url(#g)"/>
+  <!-- caja regalo -->
+  <rect x="20" y="46" width="56" height="36" rx="5" fill="none" stroke="#fff" stroke-width="5"/>
+  <!-- tapa -->
+  <rect x="16" y="36" width="64" height="14" rx="4" fill="none" stroke="#fff" stroke-width="5"/>
+  <!-- lazo vertical -->
+  <line x1="48" y1="36" x2="48" y2="82" stroke="#fff" stroke-width="5"/>
+  <!-- lazo horizontal -->
+  <line x1="16" y1="46" x2="80" y2="46" stroke="#fff" stroke-width="5"/>
+  <!-- moño izquierdo -->
+  <path d="M48 36 C38 28, 26 30, 30 36 C34 42, 44 38, 48 36" fill="#fff" opacity="0.85"/>
+  <!-- moño derecho -->
+  <path d="M48 36 C58 28, 70 30, 66 36 C62 42, 52 38, 48 36" fill="#fff" opacity="0.85"/>
+</svg>`);
     }
 
     ngOnInit(): void {
@@ -155,13 +181,16 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             if (!s) return;
             this.envioPrioritarioPrecio = Number((s as any).envio_prioritario_precio || 0) || 0;
             this.perfumeLujoPrecio = Number((s as any).perfume_lujo_precio || 0) || 0;
+            this.empaqueRegaloPrecio = Number((s as any).empaque_regalo_precio || 0) || 0;
 
             this.applyCartRecoverySettings(s);
 
             const envioImg = String((s as any).envio_prioritario_image_url || '').trim();
             const lujoImg = String((s as any).perfume_lujo_image_url || '').trim();
+            const regalImg = String((s as any).empaque_regalo_image_url || '').trim();
             if (envioImg) this.priorityShippingImg = envioImg;
             if (lujoImg) this.luxuryPerfumeImg = lujoImg;
+            if (regalImg) this.giftWrapImg = regalImg;
             this.recalcTotals();
         });
 
@@ -170,13 +199,16 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             next: (s: Settings) => {
                 this.envioPrioritarioPrecio = Number((s as any).envio_prioritario_precio || 0) || 0;
                 this.perfumeLujoPrecio = Number((s as any).perfume_lujo_precio || 0) || 0;
+                this.empaqueRegaloPrecio = Number((s as any).empaque_regalo_precio || 0) || 0;
 
                 this.applyCartRecoverySettings(s);
 
                 const envioImg = String((s as any).envio_prioritario_image_url || '').trim();
                 const lujoImg = String((s as any).perfume_lujo_image_url || '').trim();
+                const regalImg = String((s as any).empaque_regalo_image_url || '').trim();
                 if (envioImg) this.priorityShippingImg = envioImg;
                 if (lujoImg) this.luxuryPerfumeImg = lujoImg;
+                if (regalImg) this.giftWrapImg = regalImg;
                 this.recalcTotals();
             },
             error: () => {
@@ -486,7 +518,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     private recalcTotals(): void {
         const ep = this.envioPrioritario ? Math.max(0, Number(this.envioPrioritarioPrecio || 0)) : 0;
         const pl = this.perfumeLujo ? Math.max(0, Number(this.perfumeLujoPrecio || 0)) : 0;
-        this.extrasTotal = ep + pl;
+        const er = this.empaqueRegalo ? Math.max(0, Number(this.empaqueRegaloPrecio || 0)) : 0;
+        this.extrasTotal = ep + pl + er;
         const pct = Math.max(0, Math.min(80, Number(this.cartRecoveryDiscountPct || 0)));
         this.cartRecoveryDiscountAmount = this.cartRecoveryApplied ? Math.round((this.cartTotal * (pct / 100)) * 100) / 100 : 0;
         this.grandTotal = Math.max(0, this.cartTotal - this.cartRecoveryDiscountAmount) + this.extrasTotal;
@@ -902,6 +935,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             cart_recovery_discount_pct: this.cartRecoveryApplied ? this.cartRecoveryDiscountPct : 0,
             envio_prioritario: this.envioPrioritario,
             perfume_lujo: this.perfumeLujo,
+            empaque_regalo: this.empaqueRegalo,
             metodo_pago: this.paymentMethod,
             canal_pago: 'Wompi'
         };

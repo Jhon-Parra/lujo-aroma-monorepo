@@ -27,6 +27,7 @@ export interface CreateOrderDto {
   cart_recovery_discount_pct?: number;
   envio_prioritario?: boolean;
   perfume_lujo?: boolean;
+  empaque_regalo?: boolean;
 }
 
 // ─── Interfaces de respuesta ──────────────────────────────────────────────────

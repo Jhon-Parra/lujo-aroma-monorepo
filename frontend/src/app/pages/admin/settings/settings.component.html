@@ -478,7 +478,7 @@
             <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
                 <h3 class="font-serif text-xl border-b border-[#ecece5] pb-4 mb-6">Extras en Checkout</h3>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Envio prioritario (COP)</label>
                         <input type="number" min="0" step="100" [(ngModel)]="settings.envio_prioritario_precio"
@@ -487,14 +487,26 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Perfume de lujo (COP)</label>
+                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Perfumero de lujo (COP)</label>
                         <input type="number" min="0" step="100" [(ngModel)]="settings.perfume_lujo_precio"
+                            class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none" />
+                        <p class="text-xs text-gray-500 mt-2">Usa 0 para deshabilitar el cobro.</p>
+                        <label class="block text-xs font-bold text-soft-charcoal tracking-widest uppercase mt-4 mb-1">Nombre del extra (visible al cliente)</label>
+                        <input type="text" [(ngModel)]="settings.perfume_lujo_nombre" placeholder="Perfumero de lujo (5ml)"
+                            class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none" />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">
+                            🎁 Empaque de regalo (COP)
+                        </label>
+                        <input type="number" min="0" step="100" [(ngModel)]="settings.empaque_regalo_precio"
                             class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none" />
                         <p class="text-xs text-gray-500 mt-2">Usa 0 para deshabilitar el cobro.</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                     <div>
                         <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Imagen Envio prioritario</label>
                         <input type="file" (change)="onEnvioPrioritarioImageSelected($event)" accept="image/*"
@@ -507,13 +519,20 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Imagen Perfume de lujo</label>
+                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Imagen Perfumero de lujo</label>
                         <input type="file" (change)="onPerfumeLujoImageSelected($event)" accept="image/*"
                             class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none" />
                         <div *ngIf="getPerfumeLujoImageUrl()" class="mt-3">
-                            <img [src]="getPerfumeLujoImageUrl()" alt="Perfume de lujo"
+                            <img [src]="getPerfumeLujoImageUrl()" alt="Perfumero de lujo"
                                 class="h-28 w-28 rounded-xl object-cover border border-[#ecece5]" />
                         </div>
+                        <p class="text-xs text-gray-500 mt-2">PNG/JPG/WebP recomendado. Max 8MB.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Imagen Empaque de regalo</label>
+                        <input type="file" (change)="onEmpaqueRegalorImageSelected($event)" accept="image/*"
+                            class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none" />
                         <p class="text-xs text-gray-500 mt-2">PNG/JPG/WebP recomendado. Max 8MB.</p>
                     </div>
                 </div>

@@ -39,6 +39,8 @@ export class SettingsComponent implements OnInit {
     ,
     envio_prioritario_precio: 0,
     perfume_lujo_precio: 0,
+    perfume_lujo_nombre: 'Perfumero de lujo (5ml)',
+    empaque_regalo_precio: 0,
     email_from_name: '',
     email_from_address: '',
     email_reply_to: '',
@@ -72,6 +74,7 @@ export class SettingsComponent implements OnInit {
   selectedLogoFile: File | null = null;
   selectedEnvioPrioritarioImageFile: File | null = null;
   selectedPerfumeLujoImageFile: File | null = null;
+  selectedEmpaqueRegalorImageFile: File | null = null;
   saving = false;
   logoError: string | null = null;
 
@@ -265,6 +268,12 @@ export class SettingsComponent implements OnInit {
     reader.readAsDataURL(file);
   }
 
+  onEmpaqueRegalorImageSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+    this.selectedEmpaqueRegalorImageFile = file;
+  }
+
   saveSettings() {
     this.saving = true;
 
@@ -290,6 +299,8 @@ export class SettingsComponent implements OnInit {
 
     formData.append('envio_prioritario_precio', String((this.settings as any).envio_prioritario_precio ?? 0));
     formData.append('perfume_lujo_precio', String((this.settings as any).perfume_lujo_precio ?? 0));
+    formData.append('perfume_lujo_nombre', String((this.settings as any).perfume_lujo_nombre ?? 'Perfumero de lujo (5ml)'));
+    formData.append('empaque_regalo_precio', String((this.settings as any).empaque_regalo_precio ?? 0));
 
     formData.append('email_from_name', this.settings.email_from_name || '');
     formData.append('email_from_address', this.settings.email_from_address || '');
@@ -343,6 +354,10 @@ export class SettingsComponent implements OnInit {
       formData.append('perfume_lujo_image', this.selectedPerfumeLujoImageFile);
     }
 
+    if (this.selectedEmpaqueRegalorImageFile) {
+      formData.append('empaque_regalo_image', this.selectedEmpaqueRegalorImageFile);
+    }
+
     this.settingsService.updateSettings(formData).subscribe({
       next: (res) => {
         this.saving = false;
@@ -364,9 +379,13 @@ export class SettingsComponent implements OnInit {
         if (res && res.perfume_lujo_image_url) {
           (this.settings as any).perfume_lujo_image_url = res.perfume_lujo_image_url;
         }
+        if (res && res.empaque_regalo_image_url) {
+          (this.settings as any).empaque_regalo_image_url = res.empaque_regalo_image_url;
+        }
         this.instagramTokenInput = '';
         this.selectedEnvioPrioritarioImageFile = null;
         this.selectedPerfumeLujoImageFile = null;
+        this.selectedEmpaqueRegalorImageFile = null;
         this.settings.smtp_pass = '';
         alert('Configuración actualizada exitosamente');
       },

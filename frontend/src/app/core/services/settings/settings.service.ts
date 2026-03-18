@@ -29,9 +29,12 @@ export interface Settings {
 
     envio_prioritario_precio?: number | null;
     perfume_lujo_precio?: number | null;
+    perfume_lujo_nombre?: string | null;
+    empaque_regalo_precio?: number | null;
 
     envio_prioritario_image_url?: string | null;
     perfume_lujo_image_url?: string | null;
+    empaque_regalo_image_url?: string | null;
 
     email_from_name?: string | null;
     email_from_address?: string | null;

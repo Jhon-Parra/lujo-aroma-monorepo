@@ -267,14 +267,26 @@ export class OrderController {
             const orderId = String(req.params['id'] || '').trim();
             if (!orderId) { res.status(400).json({ message: 'ID de orden requerido' }); return; }
 
-            const order = await OrderModel.getAdminOrderById(orderId);
-            if (!order) { res.status(404).json({ message: 'Orden no encontrada' }); return; }
+            const orderRaw: any = await OrderModel.getAdminOrderById(orderId);
+            if (!orderRaw) { res.status(404).json({ message: 'Orden no encontrada' }); return; }
 
             // Verificar que el usuario tiene acceso (admin o dueño del pedido)
             const isAdmin = ['ADMIN', 'SUPERADMIN'].includes(String(req.user?.rol || '').toUpperCase());
-            if (!isAdmin && order.usuario_id !== req.user?.id) {
+            if (!isAdmin && orderRaw.usuario_id !== req.user?.id) {
                 res.status(403).json({ message: 'Acceso denegado' }); return;
             }
+
+            // MariaDB devuelve JSON_ARRAYAGG como string — parsear
+            const parseJsonPdf = (val: any, fallback: any = []) => {
+                if (!val) return fallback;
+                if (typeof val === 'string') { try { return JSON.parse(val); } catch { return fallback; } }
+                return val;
+            };
+            const order: any = {
+                ...orderRaw,
+                items: (parseJsonPdf(orderRaw.items, []) as any[]).filter((i: any) => i && i.producto_id),
+                historial: parseJsonPdf(orderRaw.historial, orderRaw.historial || [])
+            };
 
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', `attachment; filename="pedido-${orderId.slice(0,8).toUpperCase()}.pdf"`);

@@ -2,26 +2,29 @@ import rateLimit from 'express-rate-limit';
 
 export const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 100,
+    limit: process.env.DISABLE_RATE_LIMIT === 'true' ? 999999 : 1000,
     message: { error: 'Demasiadas solicitudes, intenta más tarde' },
     standardHeaders: 'draft-7',
-    legacyHeaders: false
+    legacyHeaders: false,
+    skip: () => process.env.DISABLE_RATE_LIMIT === 'true'
 });
 
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 5,
+    limit: process.env.DISABLE_RATE_LIMIT === 'true' ? 999999 : 20,
     message: { error: 'Demasiados intentos de login, intenta en 15 minutos' },
     standardHeaders: 'draft-7',
-    legacyHeaders: false
+    legacyHeaders: false,
+    skip: () => process.env.DISABLE_RATE_LIMIT === 'true'
 });
 
 export const refreshLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 30,
+    limit: process.env.DISABLE_RATE_LIMIT === 'true' ? 999999 : 200,
     message: { error: 'Demasiadas solicitudes de refresh, intenta más tarde' },
     standardHeaders: 'draft-7',
-    legacyHeaders: false
+    legacyHeaders: false,
+    skip: () => process.env.DISABLE_RATE_LIMIT === 'true'
 });
 
 export const logoutLimiter = rateLimit({

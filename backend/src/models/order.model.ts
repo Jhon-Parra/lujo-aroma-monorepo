@@ -49,6 +49,53 @@ export type CreateOrderResult = {
 
 const round2 = (n: number): number => Math.round(n * 100) / 100;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers: detecta si las IDs se guardan como BINARY(16) o CHAR(36)/VARCHAR
+// ─────────────────────────────────────────────────────────────────────────────
+let _idIsBinary: boolean | null = null;
+
+const detectIdType = async (): Promise<boolean> => {
+    if (_idIsBinary !== null) return _idIsBinary;
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT DATA_TYPE
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND LOWER(table_name) IN ('ordenes','Ordenes')
+               AND LOWER(column_name) = 'id'
+             LIMIT 1`
+        );
+        const dtype = String(rows?.[0]?.DATA_TYPE || '').toLowerCase();
+        _idIsBinary = dtype === 'binary' || dtype === 'varbinary';
+    } catch {
+        _idIsBinary = false;
+    }
+    return _idIsBinary;
+};
+
+/**
+ * Convierte un UUID string al formato adecuado para usar en WHERE id = ?
+ * Si las IDs son BINARY(16) devuelve UUID_TO_BIN(?) como expresión SQL y
+ * el valor para el placeholder; si no, devuelve '?' y el string tal cual.
+ */
+const idToSql = async (uuid: string): Promise<{ expr: string; val: string }> => {
+    const binary = await detectIdType();
+    if (binary) return { expr: 'UUID_TO_BIN(?)', val: uuid };
+    return { expr: '?', val: uuid };
+};
+
+/**
+ * Función SQL para leer un campo BINARY(16) de ID como UUID legible.
+ * Si no es binario, simplemente usa el campo tal cual.
+ */
+const binToUuidExpr = async (field: string): Promise<string> => {
+    const binary = await detectIdType();
+    return binary ? `BIN_TO_UUID(${field})` : field;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers: columnas dinámicas
+// ─────────────────────────────────────────────────────────────────────────────
 const detectAddonConfigColumns = async (): Promise<boolean> => {
     try {
         const [rows] = await pool.query<any[]>(
@@ -72,7 +119,7 @@ const getAddonConfig = async (): Promise<AddonConfig> => {
 
     try {
         const [rows] = await pool.query<any[]>(
-            'SELECT COALESCE(envio_prioritario_precio, 0) AS envio_prioritario_precio, COALESCE(perfume_lujo_precio, 0) AS perfume_lujo_precio FROM configuracionglobal WHERE id = 1'
+            'SELECT COALESCE(envio_prioritario_precio, 0) AS envio_prioritario_precio, COALESCE(perfume_lujo_precio, 0) AS perfume_lujo_precio FROM ConfiguracionGlobal WHERE id = 1'
         );
         const r = rows?.[0] || {};
         const ep = Number(r.envio_prioritario_precio || 0);
@@ -132,13 +179,17 @@ const computeSubtotal = (items: OrderItem[]): number => {
     );
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Model
+// ─────────────────────────────────────────────────────────────────────────────
 export class OrderModel {
     static async getOrderStatus(orderId: string): Promise<string | null> {
         const id = String(orderId || '').trim();
         if (!id) return null;
+        const { expr, val } = await idToSql(id);
         const [rows] = await pool.query<any[]>(
-            'SELECT estado FROM ordenes WHERE id = ? LIMIT 1',
-            [id]
+            `SELECT estado FROM Ordenes WHERE id = ${expr} LIMIT 1`,
+            [val]
         );
         const estado = String(rows?.[0]?.estado || '').trim();
         return estado || null;
@@ -150,6 +201,7 @@ export class OrderModel {
             await connection.query('BEGIN');
 
             const orderId = uuidv4();
+            const binary = await detectIdType();
 
             const subtotal_productos = computeSubtotal(orderData.items);
             if (!Number.isFinite(subtotal_productos) || subtotal_productos <= 0) {
@@ -172,7 +224,9 @@ export class OrderModel {
 
             const addonCols = await detectOrderAddonColumns();
 
-            // Insertar orden principal — nombres de columnas reales de la BD
+            // IDs como expresión correcta según el tipo de columna
+            const idExpr = binary ? 'UUID_TO_BIN(?)' : '?';
+
             const cols: string[] = ['id', 'usuario_id', 'total', 'direccion_envio', 'estado', 'codigo_transaccion'];
             const vals: any[] = [orderId, orderData.user_id, total, orderData.shipping_address, 'PENDIENTE', orderData.transaction_code || null];
 
@@ -185,24 +239,31 @@ export class OrderModel {
             if (addonCols.cart_recovery_discount_pct) { cols.push('cart_recovery_discount_pct'); vals.push(cart_recovery_discount_pct); }
             if (addonCols.cart_recovery_discount_amount) { cols.push('cart_recovery_discount_amount'); vals.push(cart_recovery_discount_amount); }
 
-            const placeholders = cols.map(() => `?`).join(', ');
+            // Reemplazar los dos primeros '?' por UUID_TO_BIN si aplica
+            const placeholders = cols.map((c) =>
+                (c === 'id' || c === 'usuario_id') ? idExpr : '?'
+            ).join(', ');
+
             await connection.query(
-                `INSERT INTO ordenes (${cols.join(', ')}) VALUES (${placeholders})`,
+                `INSERT INTO Ordenes (${cols.join(', ')}) VALUES (${placeholders})`,
                 vals
             );
 
-            // Insertar cada ítem de la orden
             for (const item of orderData.items) {
                 const itemId = uuidv4();
                 await connection.query(
-                    `INSERT INTO detalleordenes (id, orden_id, producto_id, cantidad, precio_unitario)
-                     VALUES (?, ?, ?, ?, ?)`,
+                    binary
+                        ? `INSERT INTO Detalle_Ordenes (id, orden_id, producto_id, cantidad, precio_unitario)
+                           VALUES (UUID_TO_BIN(?), UUID_TO_BIN(?), UUID_TO_BIN(?), ?, ?)`
+                        : `INSERT INTO Detalle_Ordenes (id, orden_id, producto_id, cantidad, precio_unitario)
+                           VALUES (?, ?, ?, ?, ?)`,
                     [itemId, orderId, item.product_id, item.quantity, item.price]
                 );
 
-                // Descontar stock del producto
                 const [stockResult] = await connection.query(
-                    'UPDATE productos SET stock = stock - ? WHERE id = ? AND stock >= ?',
+                    binary
+                        ? 'UPDATE Productos SET stock = stock - ? WHERE id = UUID_TO_BIN(?) AND stock >= ?'
+                        : 'UPDATE Productos SET stock = stock - ? WHERE id = ? AND stock >= ?',
                     [item.quantity, item.product_id, item.quantity]
                 );
 
@@ -240,6 +301,11 @@ export class OrderModel {
 
     static async getUserOrders(userId: string) {
         const addonCols = await detectOrderAddonColumns();
+        const binary = await detectIdType();
+        const idExprRead = binary ? 'BIN_TO_UUID(o.id)' : 'o.id';
+        const productoIdRead = binary ? 'BIN_TO_UUID(d.producto_id)' : 'd.producto_id';
+        const userWhere = binary ? 'UUID_TO_BIN(?)' : '?';
+
         const extraSelect = [
             addonCols.subtotal_productos ? 'o.subtotal_productos' : null,
             addonCols.envio_prioritario ? 'o.envio_prioritario' : null,
@@ -248,7 +314,7 @@ export class OrderModel {
             addonCols.costo_perfume_lujo ? 'o.costo_perfume_lujo' : null
         ].filter(Boolean).join(', ');
 
-        const groupBy = ['o.id'];
+        const groupBy = [`${idExprRead}`];
         if (addonCols.subtotal_productos) groupBy.push('o.subtotal_productos');
         if (addonCols.envio_prioritario) groupBy.push('o.envio_prioritario');
         if (addonCols.costo_envio_prioritario) groupBy.push('o.costo_envio_prioritario');
@@ -257,7 +323,7 @@ export class OrderModel {
 
         const [rows] = await pool.query(
             `SELECT 
-                o.id,
+                ${idExprRead} AS id,
                 o.total,
                 o.estado,
                 o.direccion_envio,
@@ -266,7 +332,7 @@ export class OrderModel {
                 ${extraSelect ? `, ${extraSelect}` : ''},
                 JSON_ARRAYAGG(
                     JSON_OBJECT(
-                        'producto_id', d.producto_id,
+                        'producto_id', ${productoIdRead},
                         'nombre', p.nombre,
                         'cantidad', d.cantidad,
                         'precio_unitario', d.precio_unitario,
@@ -274,11 +340,11 @@ export class OrderModel {
                         'imagen_url', p.imagen_url
                     )
                 ) as items
-            FROM ordenes o
-            JOIN detalleordenes d ON d.orden_id = o.id
-            JOIN productos p ON p.id = d.producto_id
-            WHERE o.usuario_id = ?
-            GROUP BY ${groupBy.join(', ')}
+            FROM Ordenes o
+            JOIN Detalle_Ordenes d ON d.orden_id = o.id
+            JOIN Productos p ON p.id = d.producto_id
+            WHERE o.usuario_id = ${userWhere}
+            GROUP BY ${idExprRead}${extraSelect ? `, ${extraSelect}` : ''}
             ORDER BY o.creado_en DESC`,
             [userId]
         );
@@ -288,6 +354,8 @@ export class OrderModel {
     static async getAllOrders(filters?: { status?: string; q?: string }) {
         const status = (filters?.status || '').trim();
         const q = (filters?.q || '').trim();
+        const binary = await detectIdType();
+        const idExprRead = binary ? 'BIN_TO_UUID(o.id)' : 'o.id';
 
         const params: any[] = [];
         let where = 'WHERE 1=1';
@@ -298,19 +366,17 @@ export class OrderModel {
         }
 
         if (q) {
-            params.push(`%${q}%`);
-            const pIdx = params.length;
+            params.push(`%${q}%`, `%${q}%`, `%${q}%`);
             where += ` AND (
-                o.id LIKE ?
+                ${idExprRead} LIKE ?
                 OR CONCAT(u.nombre, ' ', u.apellido) LIKE ?
                 OR u.email LIKE ?
             )`;
-            params.push(`%${q}%`, `%${q}%`); // Duplicate for the 3 '?'
         }
 
         const [rows] = await pool.query(
             `SELECT 
-                o.id,
+                ${idExprRead} AS id,
                 o.total,
                 o.estado,
                 o.direccion_envio,
@@ -319,37 +385,45 @@ export class OrderModel {
                 CONCAT(u.nombre, ' ', u.apellido) AS cliente_nombre,
                 u.email AS cliente_email,
                 COUNT(d.id) AS total_items
-            FROM ordenes o
-            JOIN usuarios u ON u.id = o.usuario_id
-            JOIN detalleordenes d ON d.orden_id = o.id
+            FROM Ordenes o
+            JOIN Usuarios u ON u.id = o.usuario_id
+            JOIN Detalle_Ordenes d ON d.orden_id = o.id
             ${where}
             GROUP BY o.id, u.nombre, u.apellido, u.email
-            ORDER BY o.creado_en DESC`
-            ,
+            ORDER BY o.creado_en DESC`,
             params
         );
         return rows;
     }
 
     static async updateOrderStatus(orderId: string, estado: string) {
+        const { expr, val } = await idToSql(orderId);
         await pool.query(
-            'UPDATE ordenes SET estado = ?, actualizado_en = NOW() WHERE id = ?',
-            [estado, orderId]
+            `UPDATE Ordenes SET estado = ?, actualizado_en = NOW() WHERE id = ${expr}`,
+            [estado, val]
         );
         return true;
     }
 
     static async updateTransactionCode(orderId: string, transactionCode: string | null): Promise<void> {
-        await pool.query('UPDATE ordenes SET codigo_transaccion = ?, actualizado_en = NOW() WHERE id = ?', [transactionCode, orderId]);
+        const { expr, val } = await idToSql(orderId);
+        await pool.query(
+            `UPDATE Ordenes SET codigo_transaccion = ?, actualizado_en = NOW() WHERE id = ${expr}`,
+            [transactionCode, val]
+        );
     }
 
     static async cancelAndRestock(orderId: string): Promise<void> {
         const connection = await pool.getConnection();
+        const binary = await detectIdType();
+        const idExpr = binary ? 'UUID_TO_BIN(?)' : '?';
+        const productoIdRead = binary ? 'BIN_TO_UUID(producto_id)' : 'producto_id';
+
         try {
             await connection.query('BEGIN');
 
             const [resOrder] = await connection.query(
-                'SELECT estado FROM ordenes WHERE id = ? FOR UPDATE',
+                `SELECT estado FROM Ordenes WHERE id = ${idExpr} FOR UPDATE`,
                 [orderId]
             );
             const current = (resOrder as any)?.[0]?.estado;
@@ -358,10 +432,13 @@ export class OrderModel {
                 return;
             }
 
-            await connection.query('UPDATE ordenes SET estado = ?, actualizado_en = NOW() WHERE id = ?', ['CANCELADO', orderId]);
+            await connection.query(
+                `UPDATE Ordenes SET estado = ?, actualizado_en = NOW() WHERE id = ${idExpr}`,
+                ['CANCELADO', orderId]
+            );
 
             const [resItems] = await connection.query(
-                'SELECT producto_id, cantidad FROM detalleordenes WHERE orden_id = ?',
+                `SELECT ${productoIdRead} AS producto_id, cantidad FROM Detalle_Ordenes WHERE orden_id = ${idExpr}`,
                 [orderId]
             );
             const items: any[] = resItems as any[] || [];
@@ -369,7 +446,12 @@ export class OrderModel {
                 const pid = it?.producto_id;
                 const qty = Number(it?.cantidad || 0);
                 if (!pid || !Number.isFinite(qty) || qty <= 0) continue;
-                await connection.query('UPDATE productos SET stock = stock + ? WHERE id = ?', [qty, pid]);
+                await connection.query(
+                    binary
+                        ? 'UPDATE Productos SET stock = stock + ? WHERE id = UUID_TO_BIN(?)'
+                        : 'UPDATE Productos SET stock = stock + ? WHERE id = ?',
+                    [qty, pid]
+                );
             }
 
             await connection.query('COMMIT');
@@ -383,6 +465,11 @@ export class OrderModel {
 
     static async getOrderById(orderId: string, userId?: string) {
         const addonCols = await detectOrderAddonColumns();
+        const binary = await detectIdType();
+        const idExprRead = binary ? 'BIN_TO_UUID(o.id)' : 'o.id';
+        const productoIdRead = binary ? 'BIN_TO_UUID(d.producto_id)' : 'd.producto_id';
+        const idExprWhere = binary ? 'UUID_TO_BIN(?)' : '?';
+
         const extraSelect = [
             addonCols.subtotal_productos ? 'o.subtotal_productos' : null,
             addonCols.envio_prioritario ? 'o.envio_prioritario' : null,
@@ -393,10 +480,10 @@ export class OrderModel {
 
         let query = `
             SELECT 
-                o.id, o.total, o.estado, o.direccion_envio, o.codigo_transaccion, o.creado_en${extraSelect ? `, ${extraSelect}` : ''},
+                ${idExprRead} AS id, o.total, o.estado, o.direccion_envio, o.codigo_transaccion, o.creado_en${extraSelect ? `, ${extraSelect}` : ''},
                 JSON_ARRAYAGG(
                     JSON_OBJECT(
-                        'producto_id', d.producto_id,
+                        'producto_id', ${productoIdRead},
                         'nombre', p.nombre,
                         'cantidad', d.cantidad,
                         'precio_unitario', d.precio_unitario,
@@ -404,28 +491,27 @@ export class OrderModel {
                         'imagen_url', p.imagen_url
                     )
                 ) as items
-            FROM ordenes o
-            JOIN detalleordenes d ON d.orden_id = o.id
-            JOIN productos p ON p.id = d.producto_id
-            WHERE o.id = ?`;
+            FROM Ordenes o
+            JOIN Detalle_Ordenes d ON d.orden_id = o.id
+            JOIN Productos p ON p.id = d.producto_id
+            WHERE o.id = ${idExprWhere}`;
         const params: string[] = [orderId];
         if (userId) {
-            query += ` AND o.usuario_id = ?`;
+            query += ` AND o.usuario_id = ${idExprWhere}`;
             params.push(userId);
         }
-        const groupBy = ['o.id'];
-        if (addonCols.subtotal_productos) groupBy.push('o.subtotal_productos');
-        if (addonCols.envio_prioritario) groupBy.push('o.envio_prioritario');
-        if (addonCols.costo_envio_prioritario) groupBy.push('o.costo_envio_prioritario');
-        if (addonCols.perfume_lujo) groupBy.push('o.perfume_lujo');
-        if (addonCols.costo_perfume_lujo) groupBy.push('o.costo_perfume_lujo');
-        query += ` GROUP BY ${groupBy.join(', ')}`;
+        query += ` GROUP BY ${idExprRead}${extraSelect ? `, ${extraSelect}` : ''}`;
         const [rows] = await pool.query(query, params);
         return (rows as any[])[0] || null;
     }
 
     static async getAdminOrderById(orderId: string) {
         const addonCols = await detectOrderAddonColumns();
+        const binary = await detectIdType();
+        const idExprRead = binary ? 'BIN_TO_UUID(o.id)' : 'o.id';
+        const productoIdRead = binary ? 'BIN_TO_UUID(d.producto_id)' : 'd.producto_id';
+        const idExprWhere = binary ? 'UUID_TO_BIN(?)' : '?';
+
         const extraSelect = [
             addonCols.subtotal_productos ? 'o.subtotal_productos' : null,
             addonCols.envio_prioritario ? 'o.envio_prioritario' : null,
@@ -434,16 +520,9 @@ export class OrderModel {
             addonCols.costo_perfume_lujo ? 'o.costo_perfume_lujo' : null
         ].filter(Boolean).join(', ');
 
-        const groupBy = ['o.id', 'u.nombre', 'u.apellido', 'u.email', 'u.telefono'];
-        if (addonCols.subtotal_productos) groupBy.push('o.subtotal_productos');
-        if (addonCols.envio_prioritario) groupBy.push('o.envio_prioritario');
-        if (addonCols.costo_envio_prioritario) groupBy.push('o.costo_envio_prioritario');
-        if (addonCols.perfume_lujo) groupBy.push('o.perfume_lujo');
-        if (addonCols.costo_perfume_lujo) groupBy.push('o.costo_perfume_lujo');
-
         const [rows] = await pool.query<any[]>(
             `SELECT 
-                o.id,
+                ${idExprRead} AS id,
                 o.total,
                 o.estado,
                 o.direccion_envio,
@@ -453,7 +532,7 @@ export class OrderModel {
                 u.nombre, u.apellido, u.email, u.telefono,
                 JSON_ARRAYAGG(
                     JSON_OBJECT(
-                        'producto_id', d.producto_id,
+                        'producto_id', ${productoIdRead},
                         'nombre', p.nombre,
                         'cantidad', d.cantidad,
                         'precio_unitario', d.precio_unitario,
@@ -461,12 +540,12 @@ export class OrderModel {
                         'imagen_url', p.imagen_url
                     )
                 ) as items
-            FROM ordenes o
-            JOIN usuarios u ON u.id = o.usuario_id
-            JOIN detalleordenes d ON d.orden_id = o.id
-            JOIN productos p ON p.id = d.producto_id
-            WHERE o.id = ?
-            GROUP BY ${groupBy.join(', ')}`,
+            FROM Ordenes o
+            JOIN Usuarios u ON u.id = o.usuario_id
+            JOIN Detalle_Ordenes d ON d.orden_id = o.id
+            JOIN Productos p ON p.id = d.producto_id
+            WHERE o.id = ${idExprWhere}
+            GROUP BY o.id, u.nombre, u.apellido, u.email, u.telefono${extraSelect ? `, ${extraSelect}` : ''}`,
             [orderId]
         );
         return rows?.[0] || null;

@@ -12,16 +12,23 @@ const loadKey = (): Buffer => {
     throw new Error('SETTINGS_ENCRYPTION_KEY no esta configurado');
   }
 
-  // Se espera hex de 32 bytes (AES-256) - 64 caracteres hex
   let key: Buffer;
-  try {
+
+  // Primero intentamos como Hex (64 caracteres)
+  if (raw.length === 64 && /^[0-9a-fA-F]+$/.test(raw)) {
     key = Buffer.from(raw, 'hex');
-  } catch {
-    throw new Error('SETTINGS_ENCRYPTION_KEY debe estar en formato hexadecimal');
+  } 
+  // Otros casos (ej. Base64 de 44 caracteres como el del usuario)
+  else {
+    try {
+      key = Buffer.from(raw, 'base64');
+    } catch (e) {
+      throw new Error('SETTINGS_ENCRYPTION_KEY no tiene un formato válido (Hex o Base64)');
+    }
   }
 
   if (key.length !== 32) {
-    throw new Error('SETTINGS_ENCRYPTION_KEY debe tener 32 bytes (64 caracteres hex) para AES-256');
+    throw new Error(`SETTINGS_ENCRYPTION_KEY debe derivar en 32 bytes (AES-256). Detectados: ${key.length} bytes. Longitud string: ${raw.length}`);
   }
 
   return key;

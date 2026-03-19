@@ -325,7 +325,7 @@ export class OrderModel {
             // Historial: estado inicial
             await connection.query(
                 `INSERT INTO historial_pedido (id, orden_id, estado_anterior, estado_nuevo, observacion)
-                 VALUES (?, ?, NULL, 'PAGADO', 'Pedido creado y pago confirmado via Wompi')`,
+                 VALUES (${binary ? 'UUID_TO_BIN(?)' : '?'}, ${binary ? 'UUID_TO_BIN(?)' : '?'}, NULL, 'PAGADO', 'Pedido creado y pago confirmado via Wompi')`,
                 [uuidv4(), orderId]
             );
 
@@ -340,13 +340,15 @@ export class OrderModel {
     }
 
     static async markCartSessionConverted(sessionId: string, orderId: string): Promise<void> {
+        const binary = await detectIdType();
         await pool.query(
-            `UPDATE cartsessions SET status = 'CONVERTED', order_id = ?, updated_at = NOW() WHERE session_id = ?`,
+            `UPDATE cartsessions SET status = 'CONVERTED', order_id = ${binary ? 'UUID_TO_BIN(?)' : '?'}, updated_at = NOW() WHERE session_id = ?`,
             [orderId, sessionId]
         );
     }
 
     // ── Historial de estados ──────────────────────────────────────────────────
+    /** Registra un cambio en el historial del pedido */
     static async addHistorial(
         ordenId: string,
         estadoAnterior: string | null,
@@ -354,10 +356,23 @@ export class OrderModel {
         adminId?: string | null,
         observacion?: string | null
     ): Promise<void> {
+        const binary = await detectIdType();
+        const idExpr = binary ? 'UUID_TO_BIN(?)' : '?';
+
         await pool.query(
             `INSERT INTO historial_pedido (id, orden_id, estado_anterior, estado_nuevo, admin_id, observacion)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [uuidv4(), ordenId, estadoAnterior || null, estadoNuevo, adminId || null, observacion || null]
+             VALUES (${idExpr}, ${idExpr}, ?, ?, ${adminId ? idExpr : 'NULL'}, ?)`,
+            [
+                uuidv4(),
+                ordenId,
+                estadoAnterior || null,
+                estadoNuevo,
+                ...(adminId ? [adminId] : []),
+                observacion || null
+            ].filter((v, i) => {
+                // Si adminId es null, el placeholder es 'NULL', así que no pasamos parámetro
+                return true; 
+            })
         );
     }
 
@@ -376,10 +391,13 @@ export class OrderModel {
 
     // ── Envíos ────────────────────────────────────────────────────────────────
     static async registerShipping(data: RegisterShippingParams): Promise<void> {
+        const binary = await detectIdType();
+        const idExpr = binary ? 'UUID_TO_BIN(?)' : '?';
         const envioId = uuidv4();
+
         await pool.query(
             `INSERT INTO envios (id, orden_id, transportadora, numero_guia, fecha_envio, link_rastreo, observacion, admin_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             VALUES (${idExpr}, ${idExpr}, ?, ?, ?, ?, ?, ${data.admin_id ? idExpr : 'NULL'})
              ON DUPLICATE KEY UPDATE
                transportadora = VALUES(transportadora),
                numero_guia = VALUES(numero_guia),
@@ -387,9 +405,14 @@ export class OrderModel {
                observacion = VALUES(observacion),
                admin_id = VALUES(admin_id)`,
             [
-                envioId, data.orden_id, data.transportadora, data.numero_guia,
+                envioId,
+                data.orden_id,
+                data.transportadora,
+                data.numero_guia,
                 data.fecha_envio || new Date().toISOString(),
-                data.link_rastreo || null, data.observacion || null, data.admin_id || null
+                data.link_rastreo || null,
+                data.observacion || null,
+                ...(data.admin_id ? [data.admin_id] : [])
             ]
         );
     }

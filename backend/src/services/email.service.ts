@@ -202,7 +202,11 @@ const getTransporter = (config: SmtpConfig): nodemailer.Transporter => {
         host: config.host,
         port: config.port,
         secure: config.secure,
-        auth: { user: config.user, pass: config.pass }
+        auth: { user: config.user, pass: config.pass },
+        tls: {
+            // Esto ayuda en algunos hostings (como Hostinger) si hay problemas de certificados o versiones de TLS
+            rejectUnauthorized: false
+        }
     });
     lastTransportKey = key;
     return transporter;

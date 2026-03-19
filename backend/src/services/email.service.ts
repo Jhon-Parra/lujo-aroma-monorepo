@@ -206,7 +206,10 @@ const getTransporter = (config: SmtpConfig): nodemailer.Transporter => {
         tls: {
             // Esto ayuda en algunos hostings (como Hostinger) si hay problemas de certificados o versiones de TLS
             rejectUnauthorized: false
-        }
+        },
+        greetingTimeout: 30000,   // Aumentar a 30 segundos para evitar "Greeting never received"
+        connectionTimeout: 30000, // Aumentar a 30 segundos
+        socketTimeout: 30000      // Aumentar a 30 segundos
     });
     lastTransportKey = key;
     return transporter;

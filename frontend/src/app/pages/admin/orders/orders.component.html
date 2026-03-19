@@ -179,7 +179,7 @@
 
 
     <!-- Detail Modal -->
-    <div *ngIf="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div *ngIf="detailOpen" class="fixed inset-0 z-[70] flex items-center justify-center px-4">
       <div class="absolute inset-0 bg-black/40" (click)="closeDetail()"></div>
       <div class="relative w-full max-w-3xl bg-white border border-gray-100 shadow-xl p-6 max-h-[90vh] overflow-auto">
         <div class="flex items-start justify-between gap-4">
@@ -288,7 +288,7 @@
     </div>
 
     <!-- Modal de guía de envío -->
-    <div *ngIf="shippingModalOpen" class="fixed inset-0 z-[60] flex items-center justify-center px-4">
+    <div *ngIf="shippingModalOpen" class="fixed inset-0 z-[80] flex items-center justify-center px-4">
       <div class="absolute inset-0 bg-black/50" (click)="closeShippingModal()"></div>
       <div class="relative w-full max-w-md bg-white rounded-xl shadow-2xl p-6">
         <h3 class="font-serif text-lg text-charcoal mb-1">📦 Registrar guía de envío</h3>

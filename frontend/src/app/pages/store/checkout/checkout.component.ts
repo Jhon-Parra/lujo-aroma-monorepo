@@ -17,6 +17,10 @@ import { SettingsService, Settings } from '../../../core/services/settings/setti
 })
 export class CheckoutComponent implements OnInit, OnDestroy {
 
+    private readonly checkoutDraftPrefix = 'perfumissimo_checkout_draft_v1';
+    private readonly checkoutDraftTtlMs = 7 * 24 * 60 * 60 * 1000; // 7 dias
+    private draftSaveTimer?: any;
+
     @HostListener('document:keydown', ['$event'])
     onDocumentKeydown(event: KeyboardEvent): void {
         if (event.key !== 'Escape') return;
@@ -178,6 +182,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        // Restaurar borrador (direccion/paso/metodo/extras) antes de pintar
+        this.loadCheckoutDraft();
+
         // Usar la suscripción correcta del CartService (items$)
         this.cartService.items$.subscribe((items: CartItem[]) => {
             this.cartItems = items;
@@ -227,8 +234,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             }
         });
 
-        // Prefetch si el usuario llega directo con PSE seleccionado por default en el futuro
-        if (this.paymentMethod === 'WOMPI_PSE') {
+        // Prefetch Wompi data segun metodo restaurado
+        if (this.paymentMethod === 'WOMPI_PSE' || this.paymentMethod === 'WOMPI_NEQUI' || this.paymentMethod === 'WOMPI_CARD') {
             this.loadWompiData();
         }
 
@@ -237,9 +244,18 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.cartRecoveryApplied = this.getRecoveryApplied();
         this.scheduleRecoveryExpiryCheck();
         this.recalcTotals();
+
+        // Guardar inmediatamente el estado restaurado
+        this.scheduleDraftSave();
     }
 
     ngOnDestroy(): void {
+        this.saveCheckoutDraft();
+        if (this.draftSaveTimer) {
+            clearTimeout(this.draftSaveTimer);
+            this.draftSaveTimer = undefined;
+        }
+
         try {
             this.settingsSub?.unsubscribe?.();
         } catch {
@@ -256,6 +272,107 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         if (this.cartRecoveryExpiryTimer) {
             clearTimeout(this.cartRecoveryExpiryTimer);
             this.cartRecoveryExpiryTimer = undefined;
+        }
+    }
+
+    @HostListener('window:beforeunload')
+    onBeforeUnload(): void {
+        this.saveCheckoutDraft();
+    }
+
+    scheduleDraftSave(): void {
+        if (this.draftSaveTimer) clearTimeout(this.draftSaveTimer);
+        this.draftSaveTimer = setTimeout(() => {
+            this.saveCheckoutDraft();
+        }, 450);
+    }
+
+    private getCheckoutDraftKey(): string {
+        const userId = this.authService.getUserId();
+        return `${this.checkoutDraftPrefix}_${userId || 'guest'}`;
+    }
+
+    private loadCheckoutDraft(): void {
+        const key = this.getCheckoutDraftKey();
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            const updatedAt = Number(parsed?.updatedAt || 0);
+            if (!Number.isFinite(updatedAt) || updatedAt <= 0) {
+                localStorage.removeItem(key);
+                return;
+            }
+            if (Date.now() - updatedAt > this.checkoutDraftTtlMs) {
+                localStorage.removeItem(key);
+                return;
+            }
+
+            const step = Math.max(1, Math.min(3, Math.trunc(Number(parsed?.step || 1))));
+            this.checkoutStep = step;
+
+            this.shippingAddress = String(parsed?.shippingAddress || this.shippingAddress);
+            this.city = String(parsed?.city || this.city);
+            this.phone = String(parsed?.phone || this.phone);
+
+            this.envioPrioritario = !!parsed?.envioPrioritario;
+            this.perfumeLujo = !!parsed?.perfumeLujo;
+            this.empaqueRegalo = !!parsed?.empaqueRegalo;
+
+            const pm = String(parsed?.paymentMethod || '').toUpperCase();
+            if (pm === 'WOMPI_PSE' || pm === 'WOMPI_NEQUI' || pm === 'WOMPI_CARD') {
+                this.paymentMethod = pm as any;
+            }
+
+            // Guardar solo datos no sensibles
+            const userType = String(parsed?.pseUserType || this.pseUserType);
+            if (userType === '0' || userType === '1') this.pseUserType = userType as any;
+            this.pseLegalIdType = String(parsed?.pseLegalIdType || this.pseLegalIdType);
+            this.pseLegalId = String(parsed?.pseLegalId || this.pseLegalId);
+            this.pseBankCode = String(parsed?.pseBankCode || this.pseBankCode);
+            this.pseAcceptedTerms = !!parsed?.pseAcceptedTerms;
+            this.nequiPhone = String(parsed?.nequiPhone || this.nequiPhone);
+            this.cardInstallments = Math.max(1, Math.min(36, Math.trunc(Number(parsed?.cardInstallments || this.cardInstallments || 1))));
+
+            this.recalcTotals();
+        } catch {
+            // ignore
+        }
+    }
+
+    private saveCheckoutDraft(): void {
+        const key = this.getCheckoutDraftKey();
+        try {
+            const payload = {
+                updatedAt: Date.now(),
+                step: this.checkoutStep,
+                shippingAddress: this.shippingAddress,
+                city: this.city,
+                phone: this.phone,
+                envioPrioritario: this.envioPrioritario,
+                perfumeLujo: this.perfumeLujo,
+                empaqueRegalo: this.empaqueRegalo,
+                paymentMethod: this.paymentMethod,
+                pseUserType: this.pseUserType,
+                pseLegalIdType: this.pseLegalIdType,
+                pseLegalId: this.pseLegalId,
+                pseBankCode: this.pseBankCode,
+                pseAcceptedTerms: this.pseAcceptedTerms,
+                nequiPhone: this.nequiPhone,
+                cardInstallments: this.cardInstallments
+            };
+            localStorage.setItem(key, JSON.stringify(payload));
+        } catch {
+            // ignore
+        }
+    }
+
+    private clearCheckoutDraft(): void {
+        const key = this.getCheckoutDraftKey();
+        try {
+            localStorage.removeItem(key);
+        } catch {
+            // ignore
         }
     }
 
@@ -327,6 +444,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             return;
         }
         if (pending === 'cancel') {
+            // Seguir comprando: volver al catalogo/categorias
+            this.saveCheckoutDraft();
             this.router.navigate(['/catalog']);
         }
     }
@@ -338,7 +457,17 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.cartRecoveryExpiredNotice = false;
         this.recalcTotals();
         this.closeCartRecovery();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Mantener al usuario en el modal de pago: si ya tiene datos minimos,
+        // llevarlo al paso 3 para que finalice la compra.
+        const phoneClean = this.phone.trim().replace(/\D/g, '');
+        const canGoToPayment = !!this.shippingAddress.trim() && !!this.city.trim() && phoneClean.length >= 7;
+        if (canGoToPayment) {
+            this.checkoutStep = 3;
+            this.loadWompiData();
+        }
+
+        this.saveCheckoutDraft();
     }
 
     private getRecoveryStorageKey(suffix: 'applied' | 'shown'): string {
@@ -484,6 +613,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     cancelPurchase(): void {
         if (this.isPlacingOrder) return;
 
+        this.saveCheckoutDraft();
+
         if (this.cartRecoveryEnabled && this.cartItems.length > 0 && !this.cartRecoveryApplied) {
             this.cartRecoveryPendingAction = 'cancel';
             this.openCartRecovery();
@@ -542,6 +673,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
     onToggleExtras(): void {
         this.recalcTotals();
+        this.scheduleDraftSave();
     }
 
     private recalcTotals(): void {
@@ -565,6 +697,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         if (this.paymentMethod === 'WOMPI_PSE' || this.paymentMethod === 'WOMPI_NEQUI' || this.paymentMethod === 'WOMPI_CARD') {
             this.loadWompiData();
         }
+        this.scheduleDraftSave();
     }
 
     private loadWompiData(): void {
@@ -712,6 +845,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 return;
             }
             this.checkoutStep = 2;
+            this.saveCheckoutDraft();
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
@@ -724,6 +858,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             }
             this.checkoutStep = 3;
             this.loadWompiData(); // Ensure data is loaded for step 3
+            this.saveCheckoutDraft();
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
@@ -733,6 +868,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.errorMsg = '';
         if (this.checkoutStep > 1) {
             this.checkoutStep--;
+            this.saveCheckoutDraft();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
@@ -805,6 +941,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 next: (res) => {
                     this.isPlacingOrder = false;
                     this.clearRecoveryState();
+                    this.clearCheckoutDraft();
                     this.cartService.clearCart();
                     this.router.navigate(['/order-success', res.orderId]);
                 },
@@ -909,6 +1046,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 next: (res) => {
                     this.isPlacingOrder = false;
                     this.clearRecoveryState();
+                    this.clearCheckoutDraft();
                     this.cartService.clearCart();
                     // Nequi no requiere redireccion: queda en verificacion.
                     this.router.navigate(['/order-success', res.orderId]);
@@ -970,6 +1108,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                     this.isPlacingOrder = false;
                     // La orden ya fue creada (y se reservo stock). Evitar duplicados en el carrito.
                     this.clearRecoveryState();
+                    this.clearCheckoutDraft();
                     this.cartService.clearCart();
                     // Redirigir a PSE (Wompi)
                     window.location.href = res.asyncPaymentUrl;
@@ -1025,6 +1164,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             next: (response) => {
                 this.createdOrderId = response.orderId;
                 this.clearRecoveryState();
+                this.clearCheckoutDraft();
                 this.cartService.clearCart();
                 this.isPlacingOrder = false;
                 this.router.navigate(['/order-success', response.orderId]);

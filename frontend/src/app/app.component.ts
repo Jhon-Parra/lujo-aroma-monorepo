@@ -10,6 +10,7 @@ import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { API_CONFIG } from './core/config/api-config';
 import { SeoService } from './core/services/seo/seo.service';
+import { PromotionService, Promotion } from './core/services/promotion/promotion.service';
 
 @Component({
   selector: 'app-root',
@@ -22,10 +23,13 @@ export class AppComponent implements OnInit, OnDestroy {
   title = 'frontend';
   settings: Settings | null = null;
   whatsappUrl = '';
+  promotions: Promotion[] = [];
   private settingsSub?: Subscription;
+  private promoSub?: Subscription;
 
   constructor(
     private settingsService: SettingsService,
+    private promotionService: PromotionService,
     private router: Router,
     private seoService: SeoService,
     @Inject(DOCUMENT) private document: Document
@@ -98,10 +102,34 @@ export class AppComponent implements OnInit, OnDestroy {
         this.whatsappUrl = '';
       }
     });
+
+    this.loadActivePromotions();
+  }
+
+  loadActivePromotions(): void {
+    this.promoSub = this.promotionService.getPromotions().subscribe({
+      next: (data) => {
+        const now = new Date();
+        this.promotions = data.filter(p => {
+          const start = p.fecha_inicio ? new Date(p.fecha_inicio) : null;
+          const end = p.fecha_fin ? new Date(p.fecha_fin) : null;
+          const isActive = p.activo !== false;
+          const isStarted = !start || start <= now;
+          const isNotEnded = !end || end >= now;
+          return isActive && isStarted && isNotEnded;
+        });
+      },
+      error: (err) => console.error('Error cargando promociones globales', err)
+    });
+  }
+
+  filterByPromotions(): void {
+    this.router.navigate(['/catalog'], { queryParams: { promo: 'true' } });
   }
 
   ngOnDestroy(): void {
     this.settingsSub?.unsubscribe();
+    this.promoSub?.unsubscribe();
   }
 
   private updateFavicon(logoUrl: string | null | undefined): void {

@@ -11,6 +11,24 @@
   <!-- Footer -->
   <app-footer></app-footer>
 
+  <!-- Floating Promotions Button -->
+  <button *ngIf="promotions.length > 0"
+    (click)="filterByPromotions()"
+    class="fixed bottom-28 right-6 bg-gold text-white p-4 rounded-full shadow-lg hover:scale-110 hover:shadow-xl transition-all z-50 flex items-center justify-center group"
+    aria-label="Ver promociones">
+    <div class="relative">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+      </svg>
+      <span class="absolute -top-2 -right-2 bg-white text-gold text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-sm border border-gold">
+        {{ promotions.length }}
+      </span>
+    </div>
+    <span class="absolute right-full mr-3 bg-white text-gold text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none uppercase tracking-widest border border-gold/20">
+      Ver Promociones
+    </span>
+  </button>
+
   <app-toast></app-toast>
 
   <!-- WhatsApp Floating Button -->

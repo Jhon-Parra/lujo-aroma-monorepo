@@ -237,4 +237,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.closeSuggestions();
     }
   }
+
+  filterByPromotions() {
+    this.router.navigate(['/catalog'], { queryParams: { promo: 'true' } });
+    this.mobileMenuOpen = false;
+    this.mobileSearchOpen = false;
+  }
 }

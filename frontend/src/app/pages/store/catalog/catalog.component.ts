@@ -160,7 +160,33 @@ export class CatalogComponent implements OnInit {
     }
 
     if (this.selectedCategory && this.selectedCategory !== 'todos') {
-      result = result.filter(p => p.genero === this.selectedCategory);
+      const category = this.selectedCategory.toLowerCase();
+      result = result.filter(p => {
+        const productGenero = (p.genero || '').toLowerCase();
+        // Mapeo de sinónimos para intenciones comerciales
+        if (category === 'caballero' || category === 'hombre') {
+          return productGenero === 'hombre' || productGenero === 'caballero';
+        }
+        if (category === 'dama' || category === 'mujer') {
+          return productGenero === 'mujer' || productGenero === 'dama';
+        }
+        if (category === 'unisex') {
+          return productGenero === 'unisex';
+        }
+        // Para categorías especiales, filtramos por nombre/descripción/categoría si está disponible
+        if (category === 'arabe') {
+          return (p.name || '').toLowerCase().includes('arabe') || 
+                 (p.notes || '').toLowerCase().includes('arabe') ||
+                 (p.categoria_slug || '').includes('arabe');
+        }
+        if (category === 'kits' || category === 'kits-de-perfumes') {
+          return (p.name || '').toLowerCase().includes('kit') || 
+                 (p.notes || '').toLowerCase().includes('kit') ||
+                 (p.categoria_slug || '').includes('kit');
+        }
+        
+        return productGenero === category || (p.categoria_slug || '') === category;
+      });
     }
 
     if (this.searchTerm) {

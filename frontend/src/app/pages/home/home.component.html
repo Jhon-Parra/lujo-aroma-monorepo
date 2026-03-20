@@ -1,18 +1,21 @@
 <div class="w-full bg-[#FAFAF9] relative">
-    <!-- Barra de Anuncio Superior Estratégica -->
-    <div class="w-full bg-gold py-2.5 text-center text-white text-[9px] md:text-xs font-bold tracking-[0.25em] relative z-[100] cursor-pointer hover:bg-[#b59a68] transition-colors shadow-sm" (click)="filterByPromotions()">
-        ✨ {{ promotions[0]?.nombre || 'LLEVATE TU SEGUNDO PERFUME CON DESCUENTO' }} — ¡SOLO POR HOY! ✨ 
+    <!-- Barra de Anuncio Superior Estratégica (Controlada desde el Admin) -->
+    <div *ngIf="settings?.show_banner" 
+        class="w-full bg-gold py-2.5 text-center text-white text-[9px] md:text-xs font-bold tracking-[0.25em] relative z-[100] cursor-pointer hover:bg-[#b59a68] transition-colors shadow-sm" 
+        (click)="filterByPromotions()"
+        [style.border-bottom]="settings?.banner_accent_color ? '2px solid ' + settings?.banner_accent_color : 'none'">
+        ✨ {{ settings?.banner_text || 'BIENVENIDO A PERFUMISSIMO' }} ✨ 
         <span class="ml-2 underline decoration-white/30 underline-offset-4">VER OFERTAS</span>
     </div>
 
-    <!-- Badge Flotante de Ofertas (Escritorio) -->
-    <div class="fixed right-0 top-1/2 -translate-y-1/2 z-[100] hidden lg:block group pointer-events-none">
+    <!-- Badge de Promociones Flotante (Solo si hay promociones activas) -->
+    <div *ngIf="promotions.length > 0" 
+        class="fixed right-0 top-1/2 -translate-y-1/2 z-[99] flex flex-col gap-2 items-end pointer-events-none pr-0 md:pr-0">
         <button (click)="filterByPromotions()" 
-            class="pointer-events-auto bg-charcoal text-white w-12 h-44 rounded-l-2xl flex flex-col items-center justify-center gap-6 shadow-[-10px_0_30px_rgba(0,0,0,0.3)] hover:bg-gold transition-all duration-700 hover:w-16 hover:gap-8 border-l border-t border-b border-white/10 group">
-            <span class="[writing-mode:vertical-lr] rotate-180 uppercase tracking-[0.5em] font-black text-[10px] group-hover:scale-110 transition-transform">PROMOCIONES</span>
-            <div class="relative flex h-3 w-3">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-gold"></span>
+            class="pointer-events-auto bg-gold text-white px-3 py-6 rounded-l-xl shadow-2xl flex flex-col items-center gap-3 hover:bg-[#b09765] transition-all hover:-translate-x-1 group border-y border-l border-white/20">
+            <span class="[writing-mode:vertical-lr] rotate-180 uppercase tracking-[0.3em] text-[9px] md:text-[10px] font-bold">Promociones</span>
+            <div class="bg-white/20 p-1.5 rounded-full group-hover:scale-110 transition-transform">
+                <i class="bi bi-percent text-sm"></i>
             </div>
         </button>
     </div>

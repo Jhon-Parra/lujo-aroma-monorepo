@@ -27,11 +27,11 @@ export const updateOrderEmailTemplate = async (req: Request, res: Response): Pro
             return;
         }
 
-        const { subject, body_text } = req.body || {};
+        const { subject, body_text, body_html } = req.body || {};
         const template = await OrderEmailTemplateService.upsertTemplate(status, {
             subject,
             body_text,
-            body_html: ''
+            body_html: body_html !== undefined ? body_html : ''
         });
         res.status(200).json(template);
     } catch (e: any) {

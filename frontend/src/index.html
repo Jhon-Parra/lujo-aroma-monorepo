@@ -3,10 +3,10 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Perfumissimo | Perfumería de Lujo</title>
+  <title>Perfumissimo | Perfumería Árabe</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Perfumissimo - Tu destino de lujo para fragancias originales. Envíos a toda Colombia.">
+  <meta name="description" content="Perfumissimo - Perfumería árabe y perfumes originales. Envíos a toda Colombia.">
   <meta name="robots" content="index,follow">
   <meta name="theme-color" content="#b59a68">
   <meta name="google-site-verification" content="sPYzifNiHeOj4LO_Jhl4XXb_vSfGCesVRHQd6Ds7EiA" />
@@ -14,15 +14,88 @@
   <meta property="og:site_name" content="Perfumissimo">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="es_CO">
-  <meta property="og:title" content="Perfumissimo | Perfumes Originales">
-  <meta property="og:description" content="Descubre fragancias exclusivas en Perfumissimo. Calidad original garantizada.">
+  <meta property="og:title" content="Perfumissimo | Perfumería Árabe">
+  <meta property="og:description" content="Perfumería árabe y perfumes originales. Descubre fragancias exclusivas en Perfumissimo.">
   <meta property="og:image" content="assets/images/logo-og.png">
 
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Perfumissimo | Perfumería de Lujo en Bogotá y Colombia">
-  <meta name="twitter:description" content="Perfumes originales de lujo en Bogotá y envíos a toda Colombia. Descubre tu esencia en Perfumissimo.">
+  <meta name="twitter:title" content="Perfumissimo | Perfumería Árabe">
+  <meta name="twitter:description" content="Perfumería árabe y perfumes originales en Bogotá y envíos a toda Colombia. Descubre tu esencia en Perfumissimo.">
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <link rel="preload" as="fetch" href="assets/config.json">
+
+  <style>
+    /* Minimal preloader shown until Angular boots */
+    #app-preloader {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f6f3ea;
+      color: #1f1f1f;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    #app-preloader .wrap {
+      width: min(520px, calc(100vw - 48px));
+      text-align: center;
+      padding: 28px 24px;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(10px);
+    }
+
+    #app-preloader .brand {
+      letter-spacing: 0.22em;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      opacity: 0.75;
+    }
+
+    #app-preloader .title {
+      margin-top: 10px;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    #app-preloader .sub {
+      margin-top: 8px;
+      font-size: 12px;
+      opacity: 0.7;
+      line-height: 1.45;
+    }
+
+    #app-preloader .bar {
+      margin: 18px auto 0;
+      width: 160px;
+      height: 3px;
+      background: rgba(0,0,0,0.10);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    #app-preloader .bar::after {
+      content: "";
+      display: block;
+      width: 40%;
+      height: 100%;
+      background: #b59a68;
+      border-radius: 999px;
+      transform: translateX(-120%);
+      animation: preloader-sweep 1.15s ease-in-out infinite;
+    }
+
+    @keyframes preloader-sweep {
+      0% { transform: translateX(-120%); }
+      50% { transform: translateX(120%); }
+      100% { transform: translateX(120%); }
+    }
+  </style>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,7 +109,21 @@
 </head>
 
 <body>
-  <app-root></app-root>
+  <app-root>
+    <div id="app-preloader">
+      <div class="wrap">
+        <div class="brand">Perfumissimo</div>
+        <div class="title">Cargando la tienda…</div>
+        <div class="sub">Preparando el catalogo y las promociones.</div>
+        <div class="bar"></div>
+        <noscript>
+          <div class="sub" style="margin-top: 14px; opacity: 0.85;">
+            Necesitas habilitar JavaScript para continuar.
+          </div>
+        </noscript>
+      </div>
+    </div>
+  </app-root>
 </body>
 
 </html>

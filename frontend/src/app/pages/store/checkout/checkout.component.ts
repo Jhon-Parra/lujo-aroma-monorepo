@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -16,6 +16,14 @@ import { SettingsService, Settings } from '../../../core/services/settings/setti
     styleUrls: ['./checkout.component.css']
 })
 export class CheckoutComponent implements OnInit, OnDestroy {
+
+    @HostListener('document:keydown', ['$event'])
+    onDocumentKeydown(event: KeyboardEvent): void {
+        if (event.key !== 'Escape') return;
+        if (this.isPlacingOrder) return;
+        event.preventDefault();
+        this.cancelPurchase();
+    }
 
     cartItems: CartItem[] = [];
     cartTotal = 0;
@@ -36,11 +44,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     giftWrapImg = '';
 
     shippingAddress = '';
+    city = '';
     phone = '';
     isPlacingOrder = false;
     orderSuccess = false;
     createdOrderId = '';
     errorMsg = '';
+    checkoutStep = 1; // 1: Info, 2: extras/Payment method, 3: Payment details
     private attemptedRefresh = false;
 
     cartRecoveryEnabled = false; // DESACTIVADO: Removed per user request
@@ -92,6 +102,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
     // ── Real-time validation touch tracking ──────────────────────────────────
     touchedAddress = false;
+    touchedCity = false;
     touchedPhone = false;
 
     /** Returns the numeric-only characters of the phone field, for template validation */
@@ -295,16 +306,25 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     closeCartRecovery(): void {
+        // Cierra el modal sin ejecutar la accion pendiente.
         this.showCartRecovery = false;
-        const pending = this.cartRecoveryPendingAction;
         this.cartRecoveryPendingAction = null;
         if (this.cartRecoveryTimer) {
             clearInterval(this.cartRecoveryTimer);
             this.cartRecoveryTimer = undefined;
         }
+    }
 
+    dismissCartRecovery(): void {
+        this.closeCartRecovery();
+    }
+
+    proceedCartRecoveryPendingAction(): void {
+        const pending = this.cartRecoveryPendingAction;
+        this.closeCartRecovery();
         if (pending === 'clear') {
             this.cartService.clearCart();
+            return;
         }
         if (pending === 'cancel') {
             this.router.navigate(['/catalog']);
@@ -462,11 +482,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     cancelPurchase(): void {
+        if (this.isPlacingOrder) return;
+
         if (this.cartRecoveryEnabled && this.cartItems.length > 0 && !this.cartRecoveryApplied) {
             this.cartRecoveryPendingAction = 'cancel';
             this.openCartRecovery();
             return;
         }
+
         this.router.navigate(['/catalog']);
     }
 
@@ -511,6 +534,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         return `${min}:${sec}`;
     }
 
+    get cartRecoverySecondaryLabel(): string {
+        if (this.cartRecoveryPendingAction === 'clear') return 'Vaciar carrito';
+        if (this.cartRecoveryPendingAction === 'cancel') return 'Seguir comprando';
+        return 'Salir';
+    }
+
     onToggleExtras(): void {
         this.recalcTotals();
     }
@@ -521,7 +550,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         const er = this.empaqueRegalo ? Math.max(0, Number(this.empaqueRegaloPrecio || 0)) : 0;
         this.extrasTotal = ep + pl + er;
         const pct = Math.max(0, Math.min(80, Number(this.cartRecoveryDiscountPct || 0)));
-        this.cartRecoveryDiscountAmount = 0; // REMOVED: Loyalty/Recovery discounts disabled
+        this.cartRecoveryDiscountAmount = this.cartRecoveryApplied
+            ? Math.max(0, Math.round(this.cartTotal * (pct / 100)))
+            : 0;
         this.grandTotal = Math.max(0, this.cartTotal - this.cartRecoveryDiscountAmount) + this.extrasTotal;
     }
 
@@ -659,6 +690,51 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
         this.errorMsg = 'Selecciona un método de pago válido.';
         this.isPlacingOrder = false;
+    }
+
+    nextStep(): void {
+        this.errorMsg = '';
+        if (this.checkoutStep === 1) {
+            if (!this.shippingAddress.trim()) {
+                this.touchedAddress = true;
+                this.errorMsg = 'Ingresa la dirección de envío.';
+                return;
+            }
+            if (!this.city.trim()) {
+                this.touchedCity = true;
+                this.errorMsg = 'Ingresa la ciudad.';
+                return;
+            }
+            const phoneClean = this.phone.trim().replace(/\D/g, '');
+            if (!phoneClean || phoneClean.length < 7) {
+                this.touchedPhone = true;
+                this.errorMsg = 'Ingresa un teléfono válido.';
+                return;
+            }
+            this.checkoutStep = 2;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
+        if (this.checkoutStep === 2) {
+            // Step 2 is payment method selection
+            if (!this.paymentMethod) {
+                this.errorMsg = 'Selecciona un método de pago.';
+                return;
+            }
+            this.checkoutStep = 3;
+            this.loadWompiData(); // Ensure data is loaded for step 3
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+    }
+
+    prevStep(): void {
+        this.errorMsg = '';
+        if (this.checkoutStep > 1) {
+            this.checkoutStep--;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     }
 
     private submitWompiCard(): void {
@@ -923,7 +999,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     private buildOrderData(): CreateOrderDto {
         return {
             total: this.grandTotal,
-            shipping_address: this.shippingAddress.trim(),
+            shipping_address: `${this.city.trim()}, ${this.shippingAddress.trim()}`,
             phone: this.phone.trim(),
             items: this.cartItems.map((item: CartItem) => ({
                 product_id: item.product.id,
@@ -937,6 +1013,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             perfume_lujo: this.perfumeLujo,
             empaque_regalo: this.empaqueRegalo,
             metodo_pago: this.paymentMethod,
+            nombre_cliente: this.authService.getUserFullName(),
             canal_pago: 'Wompi'
         };
     }

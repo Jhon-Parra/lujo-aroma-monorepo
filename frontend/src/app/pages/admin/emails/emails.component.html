@@ -138,6 +138,15 @@
             <label class="block text-xs font-bold text-soft-charcoal tracking-widest uppercase mb-2">Contenido del correo</label>
             <textarea rows="16" [(ngModel)]="templateDraft.body_text"
               class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm font-mono focus:ring-gold focus:border-gold outline-none"></textarea>
+            <p class="mt-2 text-[11px] text-gray-500">Este es el contenido en texto plano (fallback). El correo se enviara con diseño HTML por defecto.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-soft-charcoal tracking-widest uppercase mb-2">HTML (opcional)</label>
+            <textarea rows="10" [(ngModel)]="templateDraft.body_html"
+              class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm font-mono focus:ring-gold focus:border-gold outline-none"
+              placeholder="Si lo dejas vacio, se usa el diseño predeterminado con logo y tabla de productos."></textarea>
+            <p class="mt-2 text-[11px] text-gray-500">Tip: puedes usar las mismas variables. Si no quieres editar HTML, dejalo vacio.</p>
           </div>
         </div>
 
@@ -156,6 +165,9 @@
               <span class="font-mono" ngNonBindable>{{addons_text}}</span>
               <span class="font-mono" ngNonBindable>{{status_headline}}</span>
               <span class="font-mono" ngNonBindable>{{status_message}}</span>
+              <span class="font-mono" ngNonBindable>{{transportadora}}</span>
+              <span class="font-mono" ngNonBindable>{{numero_guia}}</span>
+              <span class="font-mono" ngNonBindable>{{link_rastreo}}</span>
             </div>
           </div>
         </div>

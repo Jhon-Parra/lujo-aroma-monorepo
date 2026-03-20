@@ -17,9 +17,9 @@ type SeoConfig = {
   providedIn: 'root'
 })
 export class SeoService {
-  private defaultTitle = 'Perfumissimo | Perfumes Originales en Bogotá y Colombia';
-  private defaultDescription = 'Perfumes originales de lujo en Bogotá. Fragancias exclusivas para mujer, hombre y unisex con envíos a toda Colombia. Descubre los mejores perfumes en Perfumissimo.';
-  private defaultKeywords = 'perfumes, perfumes originales, perfumería de lujo, perfumes Bogotá, fragancias, Perfumissimo';
+  private defaultTitle = 'Perfumissimo | Perfumería Árabe';
+  private defaultDescription = 'Perfumería árabe y perfumes originales. Fragancias exclusivas para mujer, hombre y unisex con envíos a toda Colombia. Compra en Perfumissimo.';
+  private defaultKeywords = 'perfumería árabe, perfumes árabes, perfumes originales, oud, fragancias, Perfumissimo, perfumes Bogotá';
 
   constructor(
     private title: Title,

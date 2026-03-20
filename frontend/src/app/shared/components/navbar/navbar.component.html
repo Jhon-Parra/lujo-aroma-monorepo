@@ -224,8 +224,29 @@
                         class="h-12 w-12 rounded-md object-cover border border-[#ecece5]" />
                       <div class="flex-1 min-w-0">
                         <div class="text-xs font-bold uppercase tracking-widest text-charcoal truncate">{{ getCartItemName(item) }}</div>
-                        <div class="text-[11px] text-gray-500">{{ item.quantity }} x {{ getCartItemUnitPrice(item) | currency:'COP':'symbol-narrow':'1.0-0' }}</div>
+                        <div class="mt-2 flex items-center justify-between gap-3">
+                          <div class="inline-flex items-center rounded-full border border-[#ecece5] bg-white">
+                            <button type="button" (click)="updateCartQuantity(item, -1)" aria-label="Restar"
+                              class="w-8 h-8 flex items-center justify-center text-charcoal hover:bg-[#f9f9f6] transition-colors rounded-l-full">
+                              <span class="text-lg leading-none">-</span>
+                            </button>
+                            <div class="w-8 text-center text-[11px] font-bold text-charcoal">{{ item.quantity }}</div>
+                            <button type="button" (click)="updateCartQuantity(item, 1)" aria-label="Sumar"
+                              class="w-8 h-8 flex items-center justify-center text-charcoal hover:bg-[#f9f9f6] transition-colors rounded-r-full">
+                              <span class="text-lg leading-none">+</span>
+                            </button>
+                          </div>
+                          <div class="text-[11px] font-bold text-charcoal whitespace-nowrap">
+                            {{ (getCartItemUnitPrice(item) * item.quantity) | currency:'COP':'symbol-narrow':'1.0-0' }}
+                          </div>
+                        </div>
                       </div>
+                      <button type="button" (click)="removeCartItem(item)" aria-label="Eliminar"
+                        class="w-9 h-9 flex items-center justify-center rounded-full border border-[#ecece5] text-gray-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0l1 14h8l1-14" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                   <div class="mt-4 border-t border-gray-100 pt-3 flex items-center justify-between text-sm font-bold text-charcoal">
@@ -234,6 +255,9 @@
                   </div>
                   <div class="mt-4 grid grid-cols-1 gap-2">
                     <a routerLink="/checkout" class="w-full text-center bg-charcoal text-white text-xs uppercase tracking-widest py-3 rounded-md hover:bg-gold transition-colors">Finalizar compra</a>
+                    <button type="button" (click)="clearCart()" class="w-full text-center border border-red-200 text-red-700 text-xs uppercase tracking-widest py-3 rounded-md hover:bg-red-50 transition-colors">
+                      Vaciar carrito
+                    </button>
                   </div>
                 </ng-container>
               </div>

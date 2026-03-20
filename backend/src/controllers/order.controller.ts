@@ -2,7 +2,6 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { OrderModel, CreateOrderParams, RegisterShippingParams } from '../models/order.model';
 import { notifyOrderCreated, notifyOrderStatusChanged } from '../services/order-notification.service';
-import { sendOrderShippingEmail } from '../services/email.service';
 import PDFDocument from 'pdfkit';
 
 export class OrderController {
@@ -237,27 +236,9 @@ export class OrderController {
 
             await OrderModel.registerShipping(shippingData);
 
-            // Responder inmediatamente al cliente — el email va en background
+            // Responder inmediatamente al cliente.
+            // El correo de "ENVIADO" se dispara cuando el admin marca el pedido como ENVIADO.
             res.json({ message: 'Guía de envío registrada correctamente' });
-
-            // Email en background: no bloquea la respuesta
-            OrderModel.getAdminOrderById(ordenId).then(async (order: any) => {
-                if (!order?.cliente_email) return;
-                const parseJson = (val: any, fb: any = []) => {
-                    if (!val) return fb;
-                    if (typeof val === 'string') { try { return JSON.parse(val); } catch { return fb; } }
-                    return val;
-                };
-                const orderParsed = { ...order, items: parseJson(order.items, []), historial: parseJson(order.historial, []) };
-                await sendOrderShippingEmail({
-                    to: orderParsed.cliente_email,
-                    cliente_nombre: orderParsed.cliente_nombre || orderParsed.cliente_email,
-                    orden_id: ordenId,
-                    transportadora: shippingData.transportadora,
-                    numero_guia: shippingData.numero_guia,
-                    link_rastreo: shippingData.link_rastreo
-                });
-            }).catch((emailErr: any) => console.warn('Email envío (background):', emailErr?.message || emailErr));
         } catch (error: any) {
             console.error('Error al registrar envío:', error);
             res.status(500).json({ message: 'Error interno del servidor', detail: error.message });

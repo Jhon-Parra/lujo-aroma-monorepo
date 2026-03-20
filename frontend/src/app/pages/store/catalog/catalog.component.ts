@@ -25,6 +25,23 @@ export class CatalogComponent implements OnInit {
   isMobileMenuOpen = false;
   private lastTrackedSearch = '';
 
+  // Paginacion (cliente)
+  // En categorias (filtro activo): 4 columnas (lg) x 3 filas = 12 productos.
+  // En "Ver todo": se muestran mas por pagina.
+  pageSizeAll = 24;
+  pageSizeCategory = 12;
+  currentPage = 1;
+  totalPages = 1;
+  pages: number[] = [];
+  private lastFilterKey = '';
+  skeletonCards: number[] = Array.from({ length: 24 }, (_, i) => i);
+
+  private get effectivePageSize(): number {
+    return (this.selectedCategory && this.selectedCategory !== 'todos')
+      ? this.pageSizeCategory
+      : this.pageSizeAll;
+  }
+
 
   categories: Category[] = [];
 
@@ -79,7 +96,32 @@ export class CatalogComponent implements OnInit {
           this.searchTerm = params['q'] || '';
           this.selectedCategory = params['category'] || 'todos';
           this.selectedPromotionId = params['promo'] || '';
+
+          // si cambian filtros, resetear pagina
+          const nextFilterKey = `${this.searchTerm}|${this.selectedCategory}|${this.selectedPromotionId}`;
+          const rawPage = Math.trunc(Number(params['page'] || 1));
+          const safeRawPage = Number.isFinite(rawPage) ? Math.max(1, rawPage) : 1;
+          const filtersChanged = !!this.lastFilterKey && this.lastFilterKey !== nextFilterKey;
+          this.lastFilterKey = nextFilterKey;
+
+          if (filtersChanged) {
+            this.currentPage = 1;
+            if (safeRawPage > 1) {
+              // limpiar page del URL para evitar caer en paginas sin resultados
+              this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: { page: null },
+                queryParamsHandling: 'merge',
+                replaceUrl: true,
+              });
+            }
+          } else {
+            this.currentPage = safeRawPage;
+          }
+
+          this.skeletonCards = Array.from({ length: this.effectivePageSize }, (_, i) => i);
           this.applyFilters();
+          // applyFilters() ya recalcula paginacion
 
           const searchKey = `${this.searchTerm}|${this.selectedCategory}|${this.selectedPromotionId}`;
           const trimmed = String(this.searchTerm || '').trim();
@@ -125,7 +167,7 @@ export class CatalogComponent implements OnInit {
     this.isMobileMenuOpen = false; // Close menu on selection
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { category: category !== 'todos' ? category : null },
+      queryParams: { category: category !== 'todos' ? category : null, page: null },
       queryParamsHandling: 'merge',
     });
   }
@@ -198,5 +240,44 @@ export class CatalogComponent implements OnInit {
     }
 
     this.filteredProducts = result;
+    // si el filtro reduce items, asegurar pagina valida
+    this.updatePagination();
+  }
+
+  get paginatedProducts(): Product[] {
+    const total = (this.filteredProducts || []).length;
+    if (!total) return [];
+    const size = this.effectivePageSize;
+    const start = (this.currentPage - 1) * size;
+    return (this.filteredProducts || []).slice(start, start + size);
+  }
+
+  setPage(page: number): void {
+    const next = Math.max(1, Math.min(this.totalPages || 1, Math.trunc(Number(page || 1))));
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { page: next > 1 ? next : null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  private updatePagination(): void {
+    const total = (this.filteredProducts || []).length;
+    const size = this.effectivePageSize;
+    this.totalPages = Math.max(1, Math.ceil(total / size));
+
+    if (!Number.isFinite(this.currentPage) || this.currentPage < 1) this.currentPage = 1;
+    if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
+
+    // Construir rango de paginas (max 7)
+    const windowSize = 7;
+    const half = Math.floor(windowSize / 2);
+    let start = Math.max(1, this.currentPage - half);
+    let end = Math.min(this.totalPages, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+
+    const arr: number[] = [];
+    for (let p = start; p <= end; p++) arr.push(p);
+    this.pages = arr;
   }
 }

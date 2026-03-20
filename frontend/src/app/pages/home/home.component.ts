@@ -87,7 +87,7 @@ export class HomeComponent implements OnInit {
   }
 
   filterByPromotions(): void {
-    this.router.navigate(['/catalog'], { queryParams: { promo: 'true' } });
+    this.router.navigate(['/promotions']);
   }
 
   getCategoryParams(cat: any): any {
@@ -105,9 +105,9 @@ export class HomeComponent implements OnInit {
 
     // SEO & JSON-LD
     this.seo.set({
-      title: 'Perfumissimo | Perfumes Originales en Bogotá y Colombia',
-      description: 'Compra los mejores perfumes originales en Bogotá y Colombia. Fragancias de lujo para hombre, mujer y unisex con envíos rápidos. ¡Descubre Perfumissimo!',
-      keywords: 'perfumes, perfumes originales, perfumes bogota, perfumeria de lujo, fragancias originales, perfumes colombia'
+      title: 'Perfumissimo | Perfumería Árabe',
+      description: 'Perfumería árabe y perfumes originales en Bogotá y Colombia. Fragancias para hombre, mujer y unisex con envíos rápidos. Descubre Perfumissimo.',
+      keywords: 'perfumería árabe, perfumes árabes, perfumes originales, oud, perfumes bogota, fragancias originales, perfumes colombia'
     });
 
     this.seo.setJsonLd({

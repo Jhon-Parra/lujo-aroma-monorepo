@@ -1,11 +1,15 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row min-h-[60vh]">
     <!-- Mobile Search & Filter Actions (Sticky) -->
-    <div class="md:hidden sticky top-0 z-40 -mx-4 px-4 py-4 bg-white/80 backdrop-blur-md border-b border-[#ecece5] mb-6 flex items-center justify-between">
+    <div
+        class="md:hidden sticky top-0 z-40 -mx-4 px-4 py-4 bg-white/80 backdrop-blur-md border-b border-[#ecece5] mb-6 flex items-center justify-between">
         <h3 class="font-serif text-lg text-charcoal">Nuestra Colección</h3>
-        
-        <button (click)="toggleMobileMenu()" class="flex items-center gap-2 px-4 py-2 bg-gold text-white rounded-full shadow-md active:scale-95 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-filter-left" viewBox="0 0 16 16">
-                <path d="M2 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+
+        <button (click)="toggleMobileMenu()"
+            class="flex items-center gap-2 px-4 py-2 bg-gold text-white rounded-full shadow-md active:scale-95 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-filter-left"
+                viewBox="0 0 16 16">
+                <path
+                    d="M2 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm0-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z" />
             </svg>
             <span class="text-[10px] uppercase tracking-widest font-bold">Filtrar</span>
         </button>
@@ -14,56 +18,83 @@
     <!-- Mobile Drawer (Off-canvas) -->
     <div *ngIf="isMobileMenuOpen" class="fixed inset-0 z-[60] md:hidden">
         <!-- Backdrop -->
-        <div (click)="toggleMobileMenu()" class="absolute inset-0 bg-charcoal/40 backdrop-blur-sm transition-opacity duration-300"></div>
-        
+        <div (click)="toggleMobileMenu()"
+            class="absolute inset-0 bg-charcoal/40 backdrop-blur-sm transition-opacity duration-300"></div>
+
         <!-- Drawer -->
         <div class="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col animate-slide-in-left">
             <div class="p-6 border-b border-[#ecece5] flex items-center justify-between bg-cream/30">
                 <h3 class="font-serif text-xl text-charcoal">Colección</h3>
                 <button (click)="toggleMobileMenu()" class="p-2 text-soft-charcoal hover:text-charcoal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                        class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path
+                            d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
                     </svg>
                 </button>
             </div>
-            
+
             <div class="flex-1 overflow-y-auto p-6">
                 <ul class="space-y-6 text-sm tracking-[0.15em] text-soft-charcoal uppercase font-medium">
                     <li>
-                        <button (click)="filterCategory('todos')" 
+                        <button (click)="filterCategory('todos'); toggleMobileMenu()"
                             [class.text-gold]="selectedCategory === 'todos'"
                             class="w-full text-left flex items-center justify-between group">
                             <span>Todos los Perfumes</span>
                             <span *ngIf="selectedCategory === 'todos'" class="w-1.5 h-1.5 rounded-full bg-gold"></span>
                         </button>
                     </li>
+
                     <ng-container *ngIf="categories.length; else fallbackMobileDrawer">
                         <li *ngFor="let c of categories">
-                            <button (click)="filterCategory(c.slug)" 
+                            <button (click)="filterCategory(c.slug); toggleMobileMenu()"
                                 [class.text-gold]="selectedCategory === c.slug"
                                 class="w-full text-left flex items-center justify-between group">
                                 <span>{{ c.nombre }}</span>
-                                <span *ngIf="selectedCategory === c.slug" class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+                                <span *ngIf="selectedCategory === c.slug"
+                                    class="w-1.5 h-1.5 rounded-full bg-gold"></span>
                             </button>
                         </li>
                     </ng-container>
+
                     <ng-template #fallbackMobileDrawer>
-                        <li><button (click)="filterCategory('mujer')" [class.text-gold]="selectedCategory === 'mujer'" class="w-full text-left flex items-center justify-between"><span>Para Mujer</span></button></li>
-                        <li><button (click)="filterCategory('hombre')" [class.text-gold]="selectedCategory === 'hombre'" class="w-full text-left flex items-center justify-between"><span>Para Hombre</span></button></li>
-                        <li><button (click)="filterCategory('unisex')" [class.text-gold]="selectedCategory === 'unisex'" class="w-full text-left flex items-center justify-between"><span>Unisex</span></button></li>
+                        <li>
+                            <button (click)="filterCategory('mujer'); toggleMobileMenu()"
+                                [class.text-gold]="selectedCategory === 'mujer'"
+                                class="w-full text-left flex items-center justify-between">
+                                <span>Para Mujer</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button (click)="filterCategory('hombre'); toggleMobileMenu()"
+                                [class.text-gold]="selectedCategory === 'hombre'"
+                                class="w-full text-left flex items-center justify-between">
+                                <span>Para Hombre</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button (click)="filterCategory('unisex'); toggleMobileMenu()"
+                                [class.text-gold]="selectedCategory === 'unisex'"
+                                class="w-full text-left flex items-center justify-between">
+                                <span>Unisex</span>
+                            </button>
+                        </li>
                     </ng-template>
                 </ul>
             </div>
-            
-            <div class="p-6 border-t border-[#ecece5] bg-cream/10 text-[10px] text-center text-sage tracking-widest uppercase font-bold">
+
+            <div
+                class="p-6 border-t border-[#ecece5] bg-cream/10 text-[10px] text-center text-sage tracking-widest uppercase font-bold">
                 Perfumissimo · Bogotá, CO
             </div>
         </div>
     </div>
 
     <!-- Sidebar (Desktop) -->
-    <aside class="hidden md:block w-64 md:pr-8 mb-8 md:mb-0 border-r border-[#ecece5] h-fit md:sticky md:top-28 md:max-h-[85vh] overflow-y-auto no-scrollbar animate-fade-in-left">
+    <aside
+        class="hidden md:block w-64 md:pr-8 mb-8 md:mb-0 border-r border-[#ecece5] h-fit md:sticky md:top-28 md:max-h-[85vh] overflow-y-auto no-scrollbar animate-fade-in-left">
         <h3 class="font-serif text-xl text-charcoal mb-4">Colección</h3>
+
         <ul class="space-y-4 text-sm tracking-widest text-soft-charcoal uppercase">
             <li>
                 <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
@@ -73,6 +104,7 @@
                     <span>Ver Todo</span>
                 </label>
             </li>
+
             <ng-container *ngIf="categories.length; else fallbackCategories">
                 <li *ngFor="let c of categories">
                     <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
@@ -83,6 +115,7 @@
                     </label>
                 </li>
             </ng-container>
+
             <ng-template #fallbackCategories>
                 <li>
                     <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
@@ -113,32 +146,80 @@
     </aside>
 
     <!-- Product Grid -->
-    <main class="flex-1 md:pl-8">
-        <h2 class="font-serif text-3xl text-charcoal mb-8 tracking-widest uppercase">Catálogo</h2>
+    <main class="flex-1 md:pl-8 min-w-0">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <h2 class="font-serif text-3xl text-charcoal tracking-widest uppercase">
+                Catálogo ({{ filteredProducts.length }} items)
+            </h2>
 
-        <div *ngIf="loading" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-8 md:gap-y-12">
-            <app-skeleton-card *ngFor="let i of [1,2,3,4,5,6,7,8]"></app-skeleton-card>
+            <p class="text-xs uppercase tracking-[0.18em] text-soft-charcoal">
+                {{ selectedCategory === 'todos' ? 'Toda la colección' : selectedCategory }}
+            </p>
         </div>
 
+        <!-- Loading -->
+        <div *ngIf="loading" class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div *ngFor="let i of skeletonCards" class="w-full max-w-[280px] mx-auto">
+                <app-skeleton-card></app-skeleton-card>
+            </div>
+        </div>
+
+        <!-- Error -->
         <div *ngIf="error" class="text-red-500 text-center py-10">
             {{ error }}
         </div>
 
-        <div *ngIf="!loading && !error"
-            class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8 md:gap-x-8 md:gap-y-12">
-            <app-product-card *ngFor="let product of filteredProducts" [product]="product"></app-product-card>
+        <!-- Products -->
+        <div *ngIf="!loading && !error && filteredProducts.length > 0"
+            class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 items-start">
+            <div *ngFor="let product of paginatedProducts" class="w-full max-w-[280px] mx-auto">
+                <app-product-card [product]="product"></app-product-card>
+            </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div *ngIf="!loading && !error && totalPages > 1"
+            class="mt-16 flex items-center justify-center space-x-2 flex-wrap">
+            <button (click)="setPage(currentPage - 1)" [disabled]="currentPage === 1"
+                class="pagination-btn p-2 rounded-full border border-[#ecece5] text-soft-charcoal hover:bg-cream/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                    class="bi bi-chevron-left" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd"
+                        d="M11.354 1.354a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z" />
+                </svg>
+            </button>
+
+            <ng-container *ngFor="let page of pages">
+                <button (click)="setPage(page)"
+                    [ngClass]="currentPage === page 
+                        ? 'pagination-page-active w-10 h-10 rounded-full bg-gold text-white shadow-lg' 
+                        : 'pagination-btn w-10 h-10 rounded-full border border-[#ecece5] text-soft-charcoal hover:border-gold hover:text-gold transition-all'"
+                    class="font-medium text-sm">
+                    {{ page }}
+                </button>
+            </ng-container>
+
+            <button (click)="setPage(currentPage + 1)" [disabled]="currentPage === totalPages"
+                class="pagination-btn p-2 rounded-full border border-[#ecece5] text-soft-charcoal hover:bg-cream/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                    class="bi bi-chevron-right" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd"
+                        d="M4.646 1.354a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                </svg>
+            </button>
         </div>
 
         <!-- Empty State -->
-        <div *ngIf="!loading && filteredProducts.length === 0"
+        <div *ngIf="!loading && !error && filteredProducts.length === 0"
             class="text-center py-24 border border-[#ecece5] bg-[#f9f9f6] rounded-md">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-sage mb-4" fill="none"
                 viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                     d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
             </svg>
-            <p class="text-soft-charcoal tracking-widest text-sm uppercase">No se encontraron fragancias para esta
-                categoría.</p>
+            <p class="text-soft-charcoal tracking-widest text-sm uppercase">
+                No se encontraron fragancias para esta categoría.
+            </p>
         </div>
     </main>
 </div>

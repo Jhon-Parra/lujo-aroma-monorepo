@@ -207,6 +207,24 @@ export class NavbarComponent implements OnInit, OnDestroy {
     return items.reduce((sum, item) => sum + (this.getCartItemUnitPrice(item) * item.quantity), 0);
   }
 
+  updateCartQuantity(item: CartItem, delta: number): void {
+    if (!item?.product?.id) return;
+    const current = Math.max(0, Number(item.quantity || 0));
+    const next = Math.max(0, Math.min(99, current + delta));
+    this.cartService.updateQuantity(item.product.id, next);
+  }
+
+  removeCartItem(item: CartItem): void {
+    if (!item?.product?.id) return;
+    this.cartService.removeFromCart(item.product.id);
+  }
+
+  clearCart(): void {
+    const ok = window.confirm('¿Vaciar el carrito?');
+    if (!ok) return;
+    this.cartService.clearCart();
+  }
+
   logout() {
     this.authService.logout();
     this.mobileMenuOpen = false;
@@ -239,7 +257,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   filterByPromotions() {
-    this.router.navigate(['/catalog'], { queryParams: { promo: 'true' } });
+    this.router.navigate(['/promotions']);
     this.mobileMenuOpen = false;
     this.mobileSearchOpen = false;
   }

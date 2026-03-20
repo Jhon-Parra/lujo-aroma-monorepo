@@ -11,6 +11,7 @@ import { Subscription } from 'rxjs';
 import { API_CONFIG } from './core/config/api-config';
 import { SeoService } from './core/services/seo/seo.service';
 import { PromotionService, Promotion } from './core/services/promotion/promotion.service';
+import { ConfigService } from './core/services/config.service';
 
 @Component({
   selector: 'app-root',
@@ -28,6 +29,7 @@ export class AppComponent implements OnInit, OnDestroy {
   private promoSub?: Subscription;
 
   constructor(
+    private configService: ConfigService,
     private settingsService: SettingsService,
     private promotionService: PromotionService,
     private router: Router,
@@ -36,6 +38,9 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Asegura config en background (si ya esta cacheado, es instantaneo)
+    this.configService.loadConfig().catch(() => {});
+
     this.seoService.setJsonLd({
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
@@ -104,6 +109,33 @@ export class AppComponent implements OnInit, OnDestroy {
     });
 
     this.loadActivePromotions();
+
+    this.warmRouteChunks();
+  }
+
+  private warmRouteChunks(): void {
+    try {
+      const nav: any = navigator as any;
+      const conn = nav?.connection;
+      if (conn?.saveData) return;
+      const effective = String(conn?.effectiveType || '').toLowerCase();
+      if (effective && (effective.includes('2g') || effective.includes('slow-2g'))) return;
+    } catch {
+      // ignore
+    }
+
+    const warm = () => {
+      // Rutas mas comunes para evitar "loading" al primer click.
+      void import('./pages/store/catalog/catalog.component');
+      void import('./pages/store/promotions/promotions.component');
+    };
+
+    const w: any = window as any;
+    if (typeof w.requestIdleCallback === 'function') {
+      w.requestIdleCallback(warm, { timeout: 2500 });
+    } else {
+      setTimeout(warm, 900);
+    }
   }
 
   loadActivePromotions(): void {
@@ -124,7 +156,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   filterByPromotions(): void {
-    this.router.navigate(['/catalog'], { queryParams: { promo: 'true' } });
+    this.router.navigate(['/promotions']);
   }
 
   ngOnDestroy(): void {

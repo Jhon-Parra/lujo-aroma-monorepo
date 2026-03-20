@@ -103,7 +103,18 @@ export class EmailsComponent implements OnInit {
     const key = String(status || '').toUpperCase();
     this.selectedEmailStatus = key;
     const template = this.emailTemplates[key];
-    this.templateDraft = template ? { ...template } : null;
+    if (!template) {
+      this.templateDraft = null;
+      return;
+    }
+
+    // Para no llenar la UI con un HTML enorme por defecto,
+    // dejamos el HTML vacio a menos que exista una plantilla personalizada.
+    const isDefault = template.source === 'default' || !template.source;
+    this.templateDraft = {
+      ...template,
+      body_html: isDefault ? '' : (template.body_html || '')
+    };
   }
 
   saveEmailTemplate(): void {
@@ -113,7 +124,8 @@ export class EmailsComponent implements OnInit {
 
     const payload = {
       subject: this.templateDraft.subject || '',
-      body_text: this.templateDraft.body_text || ''
+      body_text: this.templateDraft.body_text || '',
+      body_html: (this.templateDraft.body_html || '').trim()
     };
 
     this.emailTemplatesService.updateOrderTemplate(this.selectedEmailStatus, payload).subscribe({

@@ -37,7 +37,7 @@ export class EmailTemplatesService {
     return this.http.get<{ templates: OrderEmailTemplate[] }>(`${this.apiUrl}/orders`, { withCredentials: true });
   }
 
-  updateOrderTemplate(status: string, payload: { subject: string; body_text: string }): Observable<OrderEmailTemplate> {
+  updateOrderTemplate(status: string, payload: { subject: string; body_text: string; body_html?: string }): Observable<OrderEmailTemplate> {
     return this.http.put<OrderEmailTemplate>(`${this.apiUrl}/orders/${encodeURIComponent(status)}`, payload, { withCredentials: true });
   }
 

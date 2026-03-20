@@ -384,13 +384,21 @@
         </div>
     </section>
 
-    <!-- Social Media Feed - Subtle -->
+    <!-- Social Media Feed - Premium Restoration -->
     <section class="w-full bg-[#FAFAF9] py-24 pb-32">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <i class="bi bi-instagram text-4xl text-gold mb-6 inline-block"></i>
-                <h2 class="font-serif text-3xl text-charcoal mb-2 uppercase tracking-widest">SÍGUENOS EN &#64;perfumissimo.col</h2>
-                <div class="h-0.5 w-24 bg-gold mx-auto"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="mb-16">
+                <!-- Icono de Instagram Dorado -->
+                <i class="bi bi-instagram text-5xl text-gold mb-8 inline-block animate-fade-in"></i>
+                
+                <!-- Titulo con estilo Serif y subrayado elegante -->
+                <h2 class="font-serif text-2xl md:text-4xl text-charcoal flex flex-col md:flex-row items-center justify-center gap-x-4 uppercase tracking-[0.15em] mb-4">
+                    <span>SÍGUENOS EN</span>
+                    <a [href]="instagramUrl" target="_blank" class="relative group inline-block text-charcoal hover:text-gold transition-colors duration-300">
+                        &#64;PERFUMISSIMO.COL
+                        <span class="absolute -bottom-2 left-0 w-full h-[3px] bg-gold scale-x-100 group-hover:scale-x-110 transition-transform duration-500"></span>
+                    </a>
+                </h2>
             </div>
             
             <ng-container *ngIf="settings?.show_instagram_section">

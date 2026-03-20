@@ -395,13 +395,7 @@
                             <span>Subtotal</span>
                             <span>{{ cartTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
                         </div>
-                        <div *ngIf="cartRecoveryDiscountAmount > 0" class="flex justify-between text-sm text-green-700">
-                            <span>Descuento recuperación</span>
-                            <span>-{{ cartRecoveryDiscountAmount | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
-                        </div>
-                        <div *ngIf="cartRecoveryDiscountAmount > 0" class="text-[10px] text-green-700 uppercase tracking-widest font-bold">
-                            Descuento aplicado
-                        </div>
+                        <!-- REMOVED: Cart recovery discount row -->
                         <div class="flex justify-between text-sm text-gray-500">
                             <span>Envío</span>
                             <span class="text-green-600 font-medium">GRATIS</span>
@@ -433,9 +427,7 @@
                             <span>TOTAL</span>
                             <span>{{ grandTotal | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
                         </div>
-                        <div *ngIf="cartRecoveryExpiredNotice" class="mt-2 text-[11px] uppercase tracking-widest font-bold text-amber-700">
-                            {{ cartRecoveryExpiredMessage }}
-                        </div>
+                        <!-- REMOVED: Recovery expiry notice -->
                     </div>
 
                     <!-- CTA Button -->
@@ -465,21 +457,7 @@
         </div>
     </div>
 
-    <div *ngIf="showCartRecovery" class="cart-recovery-overlay">
-        <div class="cart-recovery-modal">
-            <button class="cart-recovery-close" type="button" (click)="closeCartRecovery()">×</button>
-            <div class="cart-recovery-badge">{{ cartRecoveryDiscountPct }}% OFF</div>
-            <h3 class="cart-recovery-title">Oferta especial por tiempo limitado</h3>
-            <p class="cart-recovery-message">{{ cartRecoveryMessage }}</p>
-            <div class="cart-recovery-timer">
-                <span>Finaliza en</span>
-                <strong>{{ cartRecoveryCountdownLabel }}</strong>
-            </div>
-            <button class="cart-recovery-action" type="button" (click)="onCartRecoveryAction()">
-                {{ cartRecoveryButtonText }}
-            </button>
-        </div>
-    </div>
+    <!-- REMOVED: Cart Recovery Modal -->
 
     <div *ngIf="showClearCartConfirm" class="cart-recovery-overlay">
         <div class="cart-recovery-modal clear-cart-modal">

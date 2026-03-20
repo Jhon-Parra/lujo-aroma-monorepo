@@ -37,7 +37,9 @@ export class HomeComponent implements OnInit {
   }
 
   products: Product[] = [];
+  bestsellers: Product[] = [];
   loading = true;
+  loadingBestsellers = true;
   error = '';
   settings: Settings | null = null;
   promotions: Promotion[] = [];
@@ -57,6 +59,15 @@ export class HomeComponent implements OnInit {
 
   recoQuery = '';
 
+  categories = [
+    { name: 'Ver Todo', slug: 'all', image: 'assets/images/home_category_all_v2_1774016212167.png', icon: 'bi-grid-3x3-gap' },
+    { name: 'Arabe', slug: 'arabe', image: 'assets/images/home_category_arabe_v2_1774016227682.png', icon: 'bi-stars' },
+    { name: 'Caballero', slug: 'hombre', image: 'assets/images/home_category_caballero_v3_1774016267276.png', icon: 'bi-gender-male' },
+    { name: 'Dama', slug: 'mujer', image: 'assets/images/home_category_dama_v3_1774016281790.png', icon: 'bi-gender-female' },
+    { name: 'Kits de perfumes', slug: 'kits', image: 'assets/images/home_category_kits_v3_1774016299370.png', icon: 'bi-box-seam' },
+    { name: 'Unisex', slug: 'unisex', image: 'assets/images/home_category_unisex_v2_1774016243719.png', icon: 'bi-gender-ambiguous' }
+  ];
+
   constructor(
     private productService: ProductService,
     private settingsService: SettingsService,
@@ -73,6 +84,18 @@ export class HomeComponent implements OnInit {
   goToRecommenderFree(): void {
     const q = String(this.recoQuery || '').trim();
     this.router.navigate(['/recommender'], { queryParams: q ? { mode: 'free', q } : { mode: 'free' } });
+  }
+
+  filterByPromotions(): void {
+    this.router.navigate(['/catalog'], { queryParams: { promo: 'true' } });
+  }
+
+  getCategoryParams(cat: any): any {
+    if (cat.slug === 'all') return {};
+    if (['hombre', 'mujer', 'unisex'].includes(cat.slug)) {
+      return { category: cat.slug };
+    }
+    return { q: cat.slug };
   }
 
   ngOnInit(): void {
@@ -110,33 +133,28 @@ export class HomeComponent implements OnInit {
       error: (err) => console.error('Error cargando configuración', err)
     });
 
-    // Load Products
+    // Load Newest Products
     this.productService.getNewestProducts(8).subscribe({
       next: (apiProducts) => {
-        this.products = apiProducts.map(ap => ({
-          id: ap.id || '',
-          name: ap.name || ap.nombre,
-          notes: ap.notes || ap.notas_olfativas || ap.descripcion,
-          price: ap.price ? Number(ap.price) : (ap.precio_con_descuento ? Number(ap.precio_con_descuento) : (typeof ap.precio === 'string' ? parseFloat(ap.precio) : ap.precio)),
-          imageUrl: ap.imageUrl || ap.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
-          soldCount: (ap.soldCount || ap.unidades_vendidas || 0).toString(),
-          isNew: !!(ap.isNew ?? ap.es_nuevo),
-          genero: ap.genero,
-          categoria_nombre: (ap as any).categoria_nombre ?? null,
-          categoria_slug: (ap as any).categoria_slug ?? null,
-          precio: (() => {
-            const original = (ap as any).precio_original ?? ap.precio;
-            return typeof original === 'string' ? parseFloat(original) : original;
-          })(),
-          precio_con_descuento: ap.precio_con_descuento !== null && ap.precio_con_descuento !== undefined ? Number(ap.precio_con_descuento) : null,
-          tiene_promocion: ap.tiene_promocion || false
-        }));
+        this.products = this.mapApiProducts(apiProducts);
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error fetching products', err);
-        this.error = 'No se pudieron cargar los productos. Asegúrese de que el backend esté en ejecución.';
+        console.error('Error fetching newest products', err);
+        this.error = 'No se pudieron cargar los productos nuevos.';
         this.loading = false;
+      }
+    });
+
+    // Load Bestsellers
+    this.productService.getBestsellers(4).subscribe({
+      next: (apiProducts) => {
+        this.bestsellers = this.mapApiProducts(apiProducts);
+        this.loadingBestsellers = false;
+      },
+      error: (err) => {
+        console.error('Error fetching bestsellers', err);
+        this.loadingBestsellers = false;
       }
     });
 
@@ -384,5 +402,26 @@ export class HomeComponent implements OnInit {
     if (!url) return '';
     if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/')) return url;
     return `${API_CONFIG.serverUrl}${url}`;
+  }
+
+  private mapApiProducts(apiProducts: any[]): Product[] {
+    return apiProducts.map(ap => ({
+      id: ap.id || '',
+      name: ap.name || ap.nombre,
+      notes: ap.notes || ap.notas_olfativas || ap.descripcion,
+      price: ap.price ? Number(ap.price) : (ap.precio_con_descuento ? Number(ap.precio_con_descuento) : (typeof ap.precio === 'string' ? parseFloat(ap.precio) : ap.precio)),
+      imageUrl: ap.imageUrl || ap.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
+      soldCount: (ap.soldCount || ap.unidades_vendidas || 0).toString(),
+      isNew: !!(ap.isNew ?? ap.es_nuevo),
+      genero: ap.genero,
+      categoria_nombre: (ap as any).categoria_nombre ?? null,
+      categoria_slug: (ap as any).categoria_slug ?? null,
+      precio: (() => {
+        const original = (ap as any).precio_original ?? ap.precio;
+        return typeof original === 'string' ? parseFloat(original) : original;
+      })(),
+      precio_con_descuento: ap.precio_con_descuento !== null && ap.precio_con_descuento !== undefined ? Number(ap.precio_con_descuento) : null,
+      tiene_promocion: ap.tiene_promocion || false
+    }));
   }
 }

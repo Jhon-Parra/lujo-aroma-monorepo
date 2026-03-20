@@ -163,8 +163,8 @@
           Aún no hay reseñas para este producto.
         </div>
 
-        <div *ngIf="!reviewsLoading && reviews && reviews.length" class="mt-6 space-y-4">
-          <div *ngFor="let r of reviews" class="border border-[#ecece5] rounded-lg p-4 bg-cream">
+        <div *ngIf="!reviewsLoading" class="mt-6 space-y-4">
+          <div *ngFor="let r of (showAllReviews ? reviews : reviews.slice(0, 2))" class="border border-[#ecece5] rounded-lg p-4 bg-cream">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <div class="text-sm font-bold text-charcoal">{{ r.nombre }} {{ r.apellido }}</div>
@@ -185,6 +185,14 @@
             </div>
             <div *ngIf="r.comentario" class="text-sm text-soft-charcoal mt-2 leading-relaxed">{{ r.comentario }}</div>
             <div class="text-xs text-gray-500 mt-3">{{ r.creado_en | date:'mediumDate' }}</div>
+          </div>
+
+          <!-- Ver más button -->
+          <div *ngIf="reviews && reviews.length > 2" class="text-center mt-6">
+            <button (click)="toggleShowAllReviews()" 
+              class="text-xs font-bold uppercase tracking-widest text-gold hover:text-charcoal transition-colors border-b border-gold hover:border-charcoal pb-0.5">
+              {{ showAllReviews ? 'Ver menos reseñas' : 'Ver más reseñas (' + (reviews.length - 2) + '+)' }}
+            </button>
           </div>
         </div>
       </div>

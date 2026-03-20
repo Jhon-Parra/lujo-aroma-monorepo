@@ -82,6 +82,10 @@ export class ProductService {
     return this.http.get<Product[]>(`${this.publicUrl}/newest?limit=${encodeURIComponent(String(limit))}`);
   }
 
+  getBestsellers(limit = 4): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.publicUrl}/bestsellers?limit=${encodeURIComponent(String(limit))}`);
+  }
+
   getProduct(id: string): Observable<Product> {
     return this.http.get<Product>(`${this.publicUrl}/${id}`);
   }

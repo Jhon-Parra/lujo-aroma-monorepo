@@ -34,6 +34,8 @@ export class ProductDetailComponent implements OnDestroy {
 
   relatedLoading = false;
   related: CardProduct[] = [];
+  
+  showAllReviews = false;
 
   quantity = 1;
   galleryImages: string[] = [];
@@ -464,6 +466,10 @@ export class ProductDetailComponent implements OnDestroy {
   buyNow(): void {
     this.addToCart();
     this.router.navigate(['/checkout']);
+  }
+
+  toggleShowAllReviews(): void {
+    this.showAllReviews = !this.showAllReviews;
   }
 
   /** Generates a WhatsApp share URL for the current product */

@@ -152,7 +152,11 @@ export class CatalogComponent implements OnInit {
     let result = this.products;
 
     if (this.selectedPromotionId) {
-      result = result.filter(p => (p as any).promo_id === this.selectedPromotionId);
+      if (this.selectedPromotionId === 'true') {
+        result = result.filter(p => p.tiene_promocion);
+      } else {
+        result = result.filter(p => (p as any).promo_id === this.selectedPromotionId);
+      }
     }
 
     if (this.selectedCategory && this.selectedCategory !== 'todos') {

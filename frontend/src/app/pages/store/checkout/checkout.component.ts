@@ -43,7 +43,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     errorMsg = '';
     private attemptedRefresh = false;
 
-    cartRecoveryEnabled = false;
+    cartRecoveryEnabled = false; // DESACTIVADO: Removed per user request
     cartRecoveryMessage = '¡Espera! No te vayas todavía. Completa tu compra ahora y obtén un 10% de descuento exclusivo por tiempo limitado.';
     cartRecoveryDiscountPct = 10;
     cartRecoveryCountdownSeconds = 120;
@@ -221,7 +221,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             this.loadWompiData();
         }
 
-        this.setupExitIntent();
+        // this.setupExitIntent(); // REMOVED: No more popups on exit intent
 
         this.cartRecoveryApplied = this.getRecoveryApplied();
         this.scheduleRecoveryExpiryCheck();
@@ -521,7 +521,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         const er = this.empaqueRegalo ? Math.max(0, Number(this.empaqueRegaloPrecio || 0)) : 0;
         this.extrasTotal = ep + pl + er;
         const pct = Math.max(0, Math.min(80, Number(this.cartRecoveryDiscountPct || 0)));
-        this.cartRecoveryDiscountAmount = this.cartRecoveryApplied ? Math.round((this.cartTotal * (pct / 100)) * 100) / 100 : 0;
+        this.cartRecoveryDiscountAmount = 0; // REMOVED: Loyalty/Recovery discounts disabled
         this.grandTotal = Math.max(0, this.cartTotal - this.cartRecoveryDiscountAmount) + this.extrasTotal;
     }
 

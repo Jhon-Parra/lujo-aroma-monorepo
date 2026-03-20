@@ -1,55 +1,146 @@
+/* Premium Animations */
 .animate-fade-in-up {
-    animation: fadeInUp 0.8s ease-out forwards;
+    animation: fadeInUp 1s cubic-bezier(0.21, 0.45, 0.32, 0.9) forwards;
     opacity: 0;
+}
+
+.animate-fade-in-left {
+    animation: fadeInLeft 1s cubic-bezier(0.21, 0.45, 0.32, 0.9) forwards;
+    opacity: 0;
+}
+
+.animate-fade-in-right {
+    animation: fadeInRight 1s cubic-bezier(0.21, 0.45, 0.32, 0.9) forwards;
+    opacity: 0;
+}
+
+.animate-slow-zoom {
+    animation: slowZoom 20s ease-in-out infinite alternate;
 }
 
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(30px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-.btn-primary-enhanced {
-    @apply relative overflow-hidden transition-all duration-300;
-}
-
-.btn-primary-enhanced:hover {
-    @apply transform -translate-y-0.5 shadow-lg;
-    box-shadow: 0 10px 20px -5px rgba(194, 168, 120, 0.4);
-}
-
-.btn-primary-enhanced:active {
-    @apply transform translate-y-0 shadow-md;
-}
-
-.review-card-premium {
-    @apply transition-all duration-300;
-}
-
-.review-card-premium:hover {
-    @apply transform -translate-y-1;
-}
-
-.animate-fade-in {
-    animation: fadeIn 1s ease-out forwards;
-}
-
-@keyframes fadeIn {
+@keyframes fadeInLeft {
     from {
         opacity: 0;
+        transform: translateX(-30px);
     }
-
     to {
-        opacity: 0.6;
+        opacity: 1;
+        transform: translateX(0);
     }
 }
 
-.animate-fade-in:hover {
-    opacity: 1 !important;
+@keyframes fadeInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slowZoom {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+}
+
+/* Glassmorphism Classes */
+.glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-dark {
+    background: rgba(18, 18, 18, 0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Premium Buttons */
+.btn-premium {
+    @apply relative overflow-hidden transition-all duration-500 active:scale-95;
+    background: linear-gradient(45deg, #B59A68, #D4AF37);
+    box-shadow: 0 4px 15px rgba(181, 154, 104, 0.3);
+}
+
+.btn-premium::after {
+    content: '';
+    @apply absolute inset-0 bg-white/20 transform -translate-x-full transition-transform duration-700 skew-x-12;
+}
+
+.btn-premium:hover::after {
+    @apply translate-x-full;
+}
+
+.btn-premium:hover {
+    box-shadow: 0 8px 25px rgba(181, 154, 104, 0.5);
+}
+
+/* Category Cards Hover State */
+.category-card:hover .category-overlay {
+    opacity: 1;
+}
+
+.category-card:hover img {
+    transform: scale(1.1);
+}
+
+/* Scroll Indicator */
+.mouse-scroll {
+    width: 20px;
+    height: 35px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    position: relative;
+}
+
+.mouse-scroll::after {
+    content: '';
+    width: 2px;
+    height: 6px;
+    background: white;
+    position: absolute;
+    left: 50%;
+    top: 6px;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    animation: scrollWheel 2s infinite;
+}
+
+@keyframes scrollWheel {
+    0% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(15px); }
+}
+
+/* Custom Scrollbar for subtle feel */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #FAFAF9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #dcdcd4;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #B59A68;
 }

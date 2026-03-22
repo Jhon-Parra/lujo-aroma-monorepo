@@ -92,10 +92,9 @@ export class HomeComponent implements OnInit {
 
   getCategoryParams(cat: any): any {
     if (cat.slug === 'all') return {};
-    if (['hombre', 'mujer', 'unisex'].includes(cat.slug)) {
-      return { category: cat.slug };
-    }
-    return { q: cat.slug };
+    // Todas las tarjetas de categoria deben navegar como filtro de categoria.
+    // (Antes algunas usaban q=slug, lo cual no activaba el paginado de categorias)
+    return { category: cat.slug };
   }
 
   ngOnInit(): void {

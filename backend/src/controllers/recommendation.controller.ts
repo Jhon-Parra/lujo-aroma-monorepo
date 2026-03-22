@@ -49,6 +49,36 @@ const detectCategoriesSchema = async (): Promise<boolean> => {
     }
 };
 
+// Detecta si productos.id es BINARY (UUID) o VARCHAR
+let productIdIsBinary: boolean | null = null;
+const detectProductIdType = async (): Promise<boolean> => {
+    if (productIdIsBinary !== null) return productIdIsBinary;
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT DATA_TYPE FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND LOWER(table_name) = 'productos'
+               AND LOWER(column_name) = 'id'
+             LIMIT 1`
+        );
+        const dtype = String(rows?.[0]?.DATA_TYPE || '').toLowerCase();
+        productIdIsBinary = dtype === 'binary' || dtype === 'varbinary';
+    } catch {
+        productIdIsBinary = false;
+    }
+    return productIdIsBinary;
+};
+
+const productIdReadExpr = async (): Promise<string> => {
+    const binary = await detectProductIdType();
+    return binary ? 'BIN_TO_UUID(p.id)' : 'p.id';
+};
+
+const productIdWhereExpr = async (): Promise<string> => {
+    const binary = await detectProductIdType();
+    return binary ? 'UUID_TO_BIN(?)' : '?';
+};
+
 let recoEventsReady: boolean | null = null;
 const detectRecoEventsSchema = async (): Promise<boolean> => {
     if (recoEventsReady !== null) return recoEventsReady;
@@ -84,6 +114,37 @@ const tokenize = (raw: any): string[] => {
 };
 
 const unique = (arr: string[]) => Array.from(new Set(arr));
+
+// ── Normalizacion de genero / filtros ────────────────────────────────────────
+const normalizeGenero = (raw: any): string | null => {
+    const g = String(raw || '').trim().toLowerCase();
+    if (!g) return null;
+    if (g === 'unisex' || g === 'uni-sex' || g === 'mix' || g === 'mixto') return 'unisex';
+    if (g === 'hombre' || g === 'caballero' || g === 'masculino') return 'hombre';
+    if (g === 'mujer' || g === 'dama' || g === 'femenino') return 'mujer';
+    return g;
+};
+
+const generoAliases = (preferGenero?: string | null): string[] => {
+    const g = normalizeGenero(preferGenero);
+    if (!g) return [];
+    if (g === 'hombre') return ['hombre', 'caballero', 'masculino'];
+    if (g === 'mujer') return ['mujer', 'dama', 'femenino'];
+    if (g === 'unisex') return ['unisex', 'mix', 'mixto'];
+    return [g];
+};
+
+const inferPreferGeneroFromText = (text: string): string | null => {
+    const t = normalizeText(text);
+    if (!t) return null;
+    const hasH = /(\bhombre\b|\bcaballero\b|\bmasculin\w*\b)/.test(t);
+    const hasM = /(\bmujer\b|\bdama\b|\bfemenin\w*\b)/.test(t);
+    const hasU = /(\bunisex\b|\bmixt\w*\b)/.test(t);
+    if (hasH && !hasM) return 'hombre';
+    if (hasM && !hasH) return 'mujer';
+    if (hasU && !hasH && !hasM) return 'unisex';
+    return null;
+};
 
 const buildKeywordHintsFromQuiz = (answers: any): string[] => {
     const a = answers || {};
@@ -129,8 +190,12 @@ const computeHeuristicScore = (p: ProductRow, tokens: string[], preferGenero?: s
     const vend = Number(p.unidades_vendidas || 0);
     if (Number.isFinite(vend) && vend > 0) score += Math.min(4, vend / 50);
 
-    if (preferGenero && p.genero && String(p.genero).toLowerCase() === String(preferGenero).toLowerCase()) {
-        score += 2.5;
+    const pref = normalizeGenero(preferGenero);
+    const pg = normalizeGenero(p.genero);
+    if (pref && pg) {
+        if (pg === pref) score += 2.8;
+        else if (pg === 'unisex') score += 0.6;
+        else score -= 1.2;
     }
 
     return score;
@@ -141,29 +206,59 @@ const selectCandidates = async (opts: { preferGenero?: string | null }): Promise
     const join = hasCategories ? 'LEFT JOIN categorias c ON c.slug = p.genero' : '';
     const categorySelect = hasCategories ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
 
+    const idRead = await productIdReadExpr();
+
     const whereParts: string[] = ['p.stock > 0'];
     const params: any[] = [];
-    if (opts.preferGenero && String(opts.preferGenero).trim().toLowerCase() !== 'unisex') {
-        const gen = String(opts.preferGenero).trim().toLowerCase();
-        // Incluir el género preferido + unisex + nulos para asegurar candidatos
-        whereParts.push('(p.genero = ? OR p.genero = "unisex" OR p.genero IS NULL)');
-        params.push(gen);
+    const pref = normalizeGenero(opts.preferGenero);
+    if (pref && pref !== 'unisex') {
+        const aliases = generoAliases(pref);
+        // Incluir genero preferido (con aliases) + unisex + nulos como fallback
+        const placeholders = aliases.map(() => '?').join(', ');
+        whereParts.push(`(LOWER(p.genero) IN (${placeholders}) OR LOWER(p.genero) IN ('unisex','mix','mixto') OR p.genero IS NULL)`);
+        params.push(...aliases);
     }
     const whereSql = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '';
 
-    const [rows] = await pool.query<ProductRow[]>(
-        `SELECT p.id, p.nombre AS name, p.nombre, p.genero, p.descripcion AS description, p.descripcion,
-                p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
+    const baseSelect =
+        `SELECT ${idRead} AS id, p.nombre AS name, p.nombre, p.genero, p.descripcion AS description, p.descripcion,
+                p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock,
                 p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url${categorySelect}
          FROM productos p
          ${join}
-         ${whereSql}
+         ${whereSql}`;
+
+    // Mezclar candidatos: top vendidos + mas nuevos (evita siempre los mismos 6)
+    const [soldRows] = await pool.query<ProductRow[]>(
+        `${baseSelect}
          ORDER BY COALESCE(p.unidades_vendidas, 0) DESC, p.creado_en DESC
-         LIMIT 120`,
+         LIMIT 140`,
         params
     );
 
-    return rows || [];
+    const [newRows] = await pool.query<ProductRow[]>(
+        `${baseSelect}
+         ORDER BY p.creado_en DESC
+         LIMIT 140`,
+        params
+    );
+
+    const out: ProductRow[] = [];
+    const seen = new Set<string>();
+    for (const r of (soldRows || [])) {
+        const id = String((r as any)?.id || '').trim();
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        out.push(r);
+    }
+    for (const r of (newRows || [])) {
+        const id = String((r as any)?.id || '').trim();
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        out.push(r);
+    }
+
+    return out;
 };
 
 const safeParseJsonObject = (raw: string): any | null => {
@@ -193,7 +288,8 @@ const runAiRanking = async (payload: {
     const system =
         'Eres un asesor experto en perfumeria de lujo para e-commerce. Devuelve SOLO JSON valido, sin markdown. ' +
         'No inventes productos; solo puedes recomendar IDs presentes en candidates. ' +
-        'Maximo 6 recomendaciones. reasons deben ser cortas y concretas.';
+        'Maximo 6 recomendaciones. reasons deben ser cortas, concretas y en tono positivo (no uses negaciones tipo "no es" / "no cumple"). ' +
+        'Si el usuario indica hombre/mujer, prioriza ese genero y evita recomendar genero opuesto (usa unisex solo si hace falta).';
 
     const candidatesLite = payload.candidates.slice(0, 25).map((p) => ({
         id: p.id,
@@ -222,7 +318,8 @@ const runAiRanking = async (payload: {
         '- reasons: 2 a 4 bullets cortos (sin emojis)\n' +
         '- short_explanation: max 140 caracteres\n' +
         '- solo IDs existentes\n' +
-        '- no repitas perfumes\n';
+        '- no repitas perfumes\n' +
+        '- evita razones negativas; si no hay match perfecto, explica por que es la mejor opcion disponible\n';
 
     const resp = await openai.chat.completions.create({
         model: 'llama-3.1-8b-instant',
@@ -315,9 +412,12 @@ export const recommendFromQuiz = async (req: Request, res: Response): Promise<vo
     try {
         const session_id = String(req.body?.session_id || '').trim() || undefined;
         const answers = req.body?.answers || {};
-        const preferGenero = String(answers?.for_who || '').trim().toLowerCase() || null;
+        const preferGenero = normalizeGenero(String(answers?.for_who || '').trim()) || null;
 
-        const candidates = await selectCandidates({ preferGenero });
+        let candidates = await selectCandidates({ preferGenero });
+        if (!candidates.length && preferGenero && preferGenero !== 'unisex') {
+            candidates = await selectCandidates({});
+        }
         const baseTokens = unique([
             ...tokenize(req.body?.free_text || ''),
             ...buildKeywordHintsFromQuiz(answers)
@@ -334,20 +434,40 @@ export const recommendFromQuiz = async (req: Request, res: Response): Promise<vo
         const userText = `Respuestas quiz: ${JSON.stringify(answers)}`;
         const ai = await runAiRanking({ mode: 'quiz', user_text: userText, quiz_answers: answers, candidates: top });
 
-        let reco: RecoItem[];
-        if (ai && ai.length) {
-            reco = ai;
+        const fallbackReco: RecoItem[] = scored.slice(0, 6).map((x, idx) => ({
+            id: x.p.id,
+            rank: idx + 1,
+            reasons: ['Compatible con tus preferencias', 'Basado en notas y descripcion'],
+            short_explanation: 'Seleccionado por afinidad con tu perfil',
+            score: x.s
+        }));
+
+        let reco: RecoItem[] = (ai && ai.length) ? ai : fallbackReco;
+
+        // Validar IDs: el modelo a veces devuelve IDs invalidos.
+        const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
+        if (!valid.length) {
+            reco = fallbackReco;
         } else {
-            reco = scored.slice(0, 6).map((x, idx) => ({
-                id: x.p.id,
-                rank: idx + 1,
-                reasons: ['Compatible con tus preferencias', 'Basado en notas y descripcion'],
-                short_explanation: 'Seleccionado por afinidad con tu perfil',
-                score: x.s
-            }));
+            // Completar hasta 6 con fallback si hace falta
+            const seen = new Set(valid.map((x) => String(x.id)));
+            const fill = fallbackReco.filter((x) => !seen.has(String(x.id)));
+            reco = valid.concat(fill).slice(0, 6);
         }
 
         recordEvent(req, 'quiz_submit', { answers, tokens: baseTokens.slice(0, 30), candidates: top.length }, session_id);
+
+        // Enforce preferGenero: priorizar coincidencias vs unisex
+        if (preferGenero && preferGenero !== 'unisex') {
+            const withGenero = reco.map((it) => ({
+                it,
+                g: normalizeGenero(candidatesById.get(it.id)?.genero)
+            }));
+            const preferred = withGenero.filter((x) => x.g === preferGenero).map((x) => x.it);
+            const unisex = withGenero.filter((x) => x.g === 'unisex' || x.g == null).map((x) => x.it);
+            const other = withGenero.filter((x) => x.g && x.g !== preferGenero && x.g !== 'unisex').map((x) => x.it);
+            reco = preferred.concat(unisex, other).slice(0, 6);
+        }
 
         res.status(200).json({
             mode: 'quiz',
@@ -362,11 +482,15 @@ export const recommendFromFreeText = async (req: Request, res: Response): Promis
     try {
         const session_id = String(req.body?.session_id || '').trim() || undefined;
         const query = String(req.body?.query || '').trim();
+        const preferGenero = inferPreferGeneroFromText(query);
 
         const tokens = unique(tokenize(query));
-        const candidates = await selectCandidates({});
+        let candidates = await selectCandidates({ preferGenero });
+        if (!candidates.length && preferGenero && preferGenero !== 'unisex') {
+            candidates = await selectCandidates({});
+        }
         const scored = candidates
-            .map((p) => ({ p, s: computeHeuristicScore(p, tokens) }))
+            .map((p) => ({ p, s: computeHeuristicScore(p, tokens, preferGenero) }))
             .sort((a, b) => b.s - a.s)
             .slice(0, 50);
 
@@ -374,15 +498,35 @@ export const recommendFromFreeText = async (req: Request, res: Response): Promis
         const candidatesById = new Map(top.map((p) => [p.id, p] as const));
 
         const ai = await runAiRanking({ mode: 'free', user_text: query, candidates: top });
-        const reco: RecoItem[] = (ai && ai.length)
-            ? ai
-            : scored.slice(0, 6).map((x, idx) => ({
-                id: x.p.id,
-                rank: idx + 1,
-                reasons: ['Coincide con tu busqueda', 'Basado en notas y descripcion'],
-                short_explanation: 'Seleccionado por afinidad con tu descripcion',
-                score: x.s
+        const fallbackReco: RecoItem[] = scored.slice(0, 6).map((x, idx) => ({
+            id: x.p.id,
+            rank: idx + 1,
+            reasons: ['Coincide con tu busqueda', 'Basado en notas y descripcion'],
+            short_explanation: 'Seleccionado por afinidad con tu descripcion',
+            score: x.s
+        }));
+
+        let reco: RecoItem[] = (ai && ai.length) ? ai : fallbackReco;
+
+        const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
+        if (!valid.length) {
+            reco = fallbackReco;
+        } else {
+            const seen = new Set(valid.map((x) => String(x.id)));
+            const fill = fallbackReco.filter((x) => !seen.has(String(x.id)));
+            reco = valid.concat(fill).slice(0, 6);
+        }
+
+        if (preferGenero && preferGenero !== 'unisex') {
+            const withGenero = reco.map((it) => ({
+                it,
+                g: normalizeGenero(candidatesById.get(it.id)?.genero)
             }));
+            const preferred = withGenero.filter((x) => x.g === preferGenero).map((x) => x.it);
+            const unisex = withGenero.filter((x) => x.g === 'unisex' || x.g == null).map((x) => x.it);
+            const other = withGenero.filter((x) => x.g && x.g !== preferGenero && x.g !== 'unisex').map((x) => x.it);
+            reco = preferred.concat(unisex, other).slice(0, 6);
+        }
 
         recordEvent(req, 'free_query', { query, tokens: tokens.slice(0, 40), candidates: top.length }, session_id);
 
@@ -407,13 +551,15 @@ export const recommendSimilar = async (req: Request, res: Response): Promise<voi
         const hasCategories = await detectCategoriesSchema();
         const join = hasCategories ? 'LEFT JOIN categorias c ON c.slug = p.genero' : '';
         const categorySelect = hasCategories ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
+        const idRead = await productIdReadExpr();
+        const idWhere = await productIdWhereExpr();
         const [rows] = await pool.query<ProductRow[]>(
-            `SELECT p.id, p.nombre AS name, p.nombre, p.genero, p.descripcion AS description, p.descripcion,
+            `SELECT ${idRead} AS id, p.nombre AS name, p.nombre, p.genero, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url${categorySelect}
              FROM productos p
              ${join}
-             WHERE p.id = ?
+             WHERE p.id = ${idWhere}
              LIMIT 1`,
             [productId]
         );
@@ -435,15 +581,23 @@ export const recommendSimilar = async (req: Request, res: Response): Promise<voi
         const candidatesById = new Map(top.map((p) => [p.id, p] as const));
 
         const ai = await runAiRanking({ mode: 'similar', user_text: 'Perfumes similares', base_product: base, candidates: top });
-        const reco: RecoItem[] = (ai && ai.length)
-            ? ai
-            : scored.slice(0, 6).map((x, idx) => ({
-                id: x.p.id,
-                rank: idx + 1,
-                reasons: ['Similar por notas/estilo', 'Misma categoria o perfil cercano'],
-                short_explanation: 'Alternativa similar',
-                score: x.s
-            }));
+        const fallbackReco: RecoItem[] = scored.slice(0, 6).map((x, idx) => ({
+            id: x.p.id,
+            rank: idx + 1,
+            reasons: ['Similar por notas/estilo', 'Misma categoria o perfil cercano'],
+            short_explanation: 'Alternativa similar',
+            score: x.s
+        }));
+
+        let reco: RecoItem[] = (ai && ai.length) ? ai : fallbackReco;
+        const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
+        if (!valid.length) {
+            reco = fallbackReco;
+        } else {
+            const seen = new Set(valid.map((x) => String(x.id)));
+            const fill = fallbackReco.filter((x) => !seen.has(String(x.id)));
+            reco = valid.concat(fill).slice(0, 6);
+        }
 
         recordEvent(req, 'similar', { base_product_id: base.id, candidates: top.length }, session_id);
 

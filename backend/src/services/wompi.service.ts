@@ -78,6 +78,28 @@ const parseWompiErrorDetail = (body: string): string => {
     }
 };
 
+const deepFindStringByKey = (root: any, keys: string[]): string => {
+    const wanted = new Set(keys.map(k => String(k).toLowerCase()));
+    const visited = new Set<any>();
+    const stack: any[] = [root];
+
+    while (stack.length) {
+        const cur = stack.pop();
+        if (!cur || typeof cur !== 'object') continue;
+        if (visited.has(cur)) continue;
+        visited.add(cur);
+
+        for (const [k, v] of Object.entries(cur)) {
+            if (typeof v === 'string') {
+                if (wanted.has(String(k).toLowerCase()) && v.trim()) return v.trim();
+            } else if (v && typeof v === 'object') {
+                stack.push(v);
+            }
+        }
+    }
+    return '';
+};
+
 const baseUrlForEnv = (env: WompiEnv): string => {
     return env === 'production' ? 'https://production.wompi.co/v1' : 'https://sandbox.wompi.co/v1';
 };
@@ -433,22 +455,16 @@ export const WompiService = {
         }
 
         const txId = String(json?.data?.id || '').trim();
-        const asyncUrlCandidates = [
-            json?.data?.payment_method?.extra?.async_payment_url,
-            json?.data?.payment_method?.extra?.asyncPaymentUrl,
-            json?.data?.payment_method?.extra?.url,
-            json?.data?.payment_method?.async_payment_url,
-            json?.data?.async_payment_url,
-            json?.data?.asyncPaymentUrl
-        ];
-        let asyncUrl = String(asyncUrlCandidates.find((v: any) => typeof v === 'string' && v.trim()) || '').trim();
+        let asyncUrl = deepFindStringByKey(json?.data, ['async_payment_url', 'asyncPaymentUrl']);
 
         // Fallback: fetch transaction details to find async_payment_url.
+        let fallbackErr = '';
         if (txId && !asyncUrl) {
             try {
                 const tx = await this.getTransaction(txId);
                 asyncUrl = String((tx as any)?.async_payment_url || '').trim();
-            } catch {
+            } catch (e: any) {
+                fallbackErr = String(e?.message || e || '');
                 // ignore; we'll throw below with diagnostic
             }
         }
@@ -456,7 +472,8 @@ export const WompiService = {
         if (!txId || !asyncUrl) {
             const snippet = raw ? raw.slice(0, 300) : '';
             const missing = !txId ? 'transaction id' : 'async_payment_url';
-            throw new Error(`Respuesta Wompi invalida: falta ${missing}${txId ? ` (txId=${txId})` : ''}${snippet ? ` | ${snippet}` : ''}`);
+            const extra = fallbackErr ? ` | fallback=${fallbackErr}` : '';
+            throw new Error(`Respuesta Wompi invalida: falta ${missing}${txId ? ` (txId=${txId})` : ''}${extra}${snippet ? ` | ${snippet}` : ''}`);
         }
 
         return { transaction_id: txId, async_payment_url: asyncUrl, status: json?.data?.status };
@@ -610,7 +627,7 @@ export const WompiService = {
         const tid = String(json?.data?.id || '').trim();
         const status = String(json?.data?.status || '').trim();
         const ref = String(json?.data?.reference || '').trim();
-        const asyncUrl = String(json?.data?.payment_method?.extra?.async_payment_url || '').trim();
+        const asyncUrl = deepFindStringByKey(json?.data, ['async_payment_url', 'asyncPaymentUrl']);
         if (!tid || !status || !ref) {
             throw new Error('Respuesta Wompi invalida en getTransaction');
         }

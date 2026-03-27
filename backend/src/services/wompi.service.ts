@@ -181,12 +181,13 @@ export const WompiService = {
     },
 
     async getPseBanks(): Promise<WompiPseBank[]> {
-        const cfg = await requirePrivateKey();
+        // Wompi PSE banks endpoint uses the PUBLIC key.
+        const cfg = await resolveConfig();
         const url = `${cfg.baseUrl}/pse/financial_institutions`;
         const resp = await fetch(url, {
             method: 'GET',
             headers: {
-                Authorization: `Bearer ${cfg.apiKey}`
+                Authorization: `Bearer ${cfg.publicKey}`
             }
         });
         if (!resp.ok) {

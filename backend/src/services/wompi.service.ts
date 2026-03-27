@@ -153,8 +153,13 @@ export const WompiService = {
         const url = `${cfg.baseUrl}/merchants/${encodeURIComponent(cfg.publicKey)}`;
         const resp = await fetch(url, { method: 'GET' });
         if (!resp.ok) {
-            const text = await resp.text().catch(() => '');
-            throw new Error(`Wompi merchant error (${resp.status}): ${text}`);
+            const body = await resp.text().catch(() => '');
+            let detail = body;
+            try {
+                const json = JSON.parse(body);
+                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
+            } catch { /* use raw body */ }
+            throw new Error(`Wompi merchant error (${resp.status}): ${detail}`);
         }
         const json = (await resp.json()) as WompiMerchantResponse;
         const token = String(json?.data?.presigned_acceptance?.acceptance_token || '').trim();
@@ -175,8 +180,13 @@ export const WompiService = {
             }
         });
         if (!resp.ok) {
-            const text = await resp.text().catch(() => '');
-            throw new Error(`Wompi banks error (${resp.status}): ${text}`);
+            const body = await resp.text().catch(() => '');
+            let detail = body;
+            try {
+                const json = JSON.parse(body);
+                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
+            } catch { /* use raw body */ }
+            throw new Error(`Wompi banks error (${resp.status}): ${detail}`);
         }
         const json = (await resp.json()) as WompiPseBanksResponse;
         const banks = Array.isArray(json?.data) ? json.data : [];
@@ -227,8 +237,13 @@ export const WompiService = {
         });
 
         if (!resp.ok) {
-            const text = await resp.text().catch(() => '');
-            throw new Error(`Wompi create transaction error (${resp.status}): ${text}`);
+            const body = await resp.text().catch(() => '');
+            let detail = body;
+            try {
+                const json = JSON.parse(body);
+                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
+            } catch { /* use raw body */ }
+            throw new Error(`Wompi error (${resp.status}): ${detail}`);
         }
 
         const json = (await resp.json()) as WompiCreateTransactionResponse;
@@ -275,8 +290,13 @@ export const WompiService = {
         });
 
         if (!resp.ok) {
-            const text = await resp.text().catch(() => '');
-            throw new Error(`Wompi create transaction error (${resp.status}): ${text}`);
+            const body = await resp.text().catch(() => '');
+            let detail = body;
+            try {
+                const json = JSON.parse(body);
+                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
+            } catch { /* use raw body */ }
+            throw new Error(`Wompi error (${resp.status}): ${detail}`);
         }
 
         const json = (await resp.json()) as WompiCreateTransactionResponse;
@@ -324,8 +344,13 @@ export const WompiService = {
         });
 
         if (!resp.ok) {
-            const text = await resp.text().catch(() => '');
-            throw new Error(`Wompi create transaction error (${resp.status}): ${text}`);
+            const body = await resp.text().catch(() => '');
+            let detail = body;
+            try {
+                const json = JSON.parse(body);
+                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
+            } catch { /* use raw body */ }
+            throw new Error(`Wompi error (${resp.status}): ${detail}`);
         }
 
         const json = (await resp.json()) as WompiCreateTransactionResponse;
@@ -349,8 +374,13 @@ export const WompiService = {
             headers: { Authorization: `Bearer ${cfg.apiKey}` }
         });
         if (!resp.ok) {
-            const text = await resp.text().catch(() => '');
-            throw new Error(`Wompi get transaction error (${resp.status}): ${text}`);
+            const body = await resp.text().catch(() => '');
+            let detail = body;
+            try {
+                const json = JSON.parse(body);
+                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
+            } catch { /* use raw body */ }
+            throw new Error(`Wompi get transaction error (${resp.status}): ${detail}`);
         }
         const json = (await resp.json()) as WompiGetTransactionResponse;
         const tid = String(json?.data?.id || '').trim();

@@ -47,23 +47,25 @@
         <div class="text-[10px] uppercase tracking-widest text-gray-400">Pregunta {{ step + 1 }} / 5</div>
 
         <div class="mt-4" *ngIf="step === 0">
-          <div class="text-sm font-bold text-charcoal mb-3">¿Para quién es el perfume?</div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button type="button" (click)="answers.for_who='hombre'; next()" class="reco-pill">Hombre</button>
-            <button type="button" (click)="answers.for_who='mujer'; next()" class="reco-pill">Mujer</button>
-            <button type="button" (click)="answers.for_who='unisex'; next()" class="reco-pill">Unisex</button>
+          <div class="text-sm font-bold text-charcoal mb-3">¿Qué tipo de perfumes buscas?</div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            <button type="button" (click)="answers.for_who='hombre'; next()" class="reco-pill px-2" [class.active]="answers.for_who === 'hombre'">Caballero</button>
+            <button type="button" (click)="answers.for_who='mujer'; next()" class="reco-pill px-2" [class.active]="answers.for_who === 'mujer'">Dama</button>
+            <button type="button" (click)="answers.for_who='unisex'; next()" class="reco-pill px-2" [class.active]="answers.for_who === 'unisex'">Unisex</button>
+            <button type="button" (click)="answers.for_who='arabe'; next()" class="reco-pill px-2" [class.active]="answers.for_who === 'arabe'">Árabes</button>
+            <button type="button" (click)="answers.for_who='kits'; next()" class="reco-pill px-2" [class.active]="answers.for_who === 'kits'">Kits</button>
           </div>
         </div>
 
         <div class="mt-4" *ngIf="step === 1">
           <div class="text-sm font-bold text-charcoal mb-3">¿Qué tipo de aroma prefieres?</div>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <button type="button" (click)="answers.aroma='dulce'; next()" class="reco-pill">Dulce</button>
-            <button type="button" (click)="answers.aroma='fresco'; next()" class="reco-pill">Fresco</button>
-            <button type="button" (click)="answers.aroma='amaderado'; next()" class="reco-pill">Amaderado</button>
-            <button type="button" (click)="answers.aroma='floral'; next()" class="reco-pill">Floral</button>
-            <button type="button" (click)="answers.aroma='citrico'; next()" class="reco-pill">Cítrico</button>
-            <button type="button" (click)="answers.aroma='oriental'; next()" class="reco-pill">Oriental</button>
+            <button type="button" (click)="answers.aroma='dulce'; next()" class="reco-pill" [class.active]="answers.aroma === 'dulce'">Dulce</button>
+            <button type="button" (click)="answers.aroma='fresco'; next()" class="reco-pill" [class.active]="answers.aroma === 'fresco'">Fresco</button>
+            <button type="button" (click)="answers.aroma='amaderado'; next()" class="reco-pill" [class.active]="answers.aroma === 'amaderado'">Amaderado</button>
+            <button type="button" (click)="answers.aroma='floral'; next()" class="reco-pill" [class.active]="answers.aroma === 'floral'">Floral</button>
+            <button type="button" (click)="answers.aroma='citrico'; next()" class="reco-pill" [class.active]="answers.aroma === 'citrico'">Cítrico</button>
+            <button type="button" (click)="answers.aroma='oriental'; next()" class="reco-pill" [class.active]="answers.aroma === 'oriental'">Oriental</button>
           </div>
           <div class="mt-6 flex justify-between">
             <button type="button" (click)="back()" class="reco-link">Atrás</button>
@@ -73,11 +75,11 @@
         <div class="mt-4" *ngIf="step === 2">
           <div class="text-sm font-bold text-charcoal mb-3">¿En qué ocasión lo usarás?</div>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <button type="button" (click)="answers.occasion='diario'; next()" class="reco-pill">Diario</button>
-            <button type="button" (click)="answers.occasion='trabajo'; next()" class="reco-pill">Trabajo</button>
-            <button type="button" (click)="answers.occasion='fiesta'; next()" class="reco-pill">Fiesta</button>
-            <button type="button" (click)="answers.occasion='citas'; next()" class="reco-pill">Citas</button>
-            <button type="button" (click)="answers.occasion='eventos'; next()" class="reco-pill">Eventos</button>
+            <button type="button" (click)="answers.occasion='diario'; next()" class="reco-pill" [class.active]="answers.occasion === 'diario'">Diario</button>
+            <button type="button" (click)="answers.occasion='trabajo'; next()" class="reco-pill" [class.active]="answers.occasion === 'trabajo'">Trabajo</button>
+            <button type="button" (click)="answers.occasion='fiesta'; next()" class="reco-pill" [class.active]="answers.occasion === 'fiesta'">Fiesta</button>
+            <button type="button" (click)="answers.occasion='citas'; next()" class="reco-pill" [class.active]="answers.occasion === 'citas'">Citas</button>
+            <button type="button" (click)="answers.occasion='eventos'; next()" class="reco-pill" [class.active]="answers.occasion === 'eventos'">Eventos</button>
           </div>
           <div class="mt-6 flex justify-between">
             <button type="button" (click)="back()" class="reco-link">Atrás</button>
@@ -87,9 +89,9 @@
         <div class="mt-4" *ngIf="step === 3">
           <div class="text-sm font-bold text-charcoal mb-3">¿Qué intensidad prefieres?</div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button type="button" (click)="answers.intensity='suave'; next()" class="reco-pill">Suave</button>
-            <button type="button" (click)="answers.intensity='moderada'; next()" class="reco-pill">Moderada</button>
-            <button type="button" (click)="answers.intensity='fuerte'; next()" class="reco-pill">Fuerte</button>
+            <button type="button" (click)="answers.intensity='suave'; next()" class="reco-pill" [class.active]="answers.intensity === 'suave'">Suave</button>
+            <button type="button" (click)="answers.intensity='moderada'; next()" class="reco-pill" [class.active]="answers.intensity === 'moderada'">Moderada</button>
+            <button type="button" (click)="answers.intensity='fuerte'; next()" class="reco-pill" [class.active]="answers.intensity === 'fuerte'">Fuerte</button>
           </div>
           <div class="mt-6 flex justify-between">
             <button type="button" (click)="back()" class="reco-link">Atrás</button>
@@ -99,9 +101,9 @@
         <div class="mt-4" *ngIf="step === 4">
           <div class="text-sm font-bold text-charcoal mb-3">¿Qué clima predomina donde vives?</div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button type="button" (click)="answers.climate='calido'" class="reco-pill">Cálido</button>
-            <button type="button" (click)="answers.climate='templado'" class="reco-pill">Templado</button>
-            <button type="button" (click)="answers.climate='frio'" class="reco-pill">Frío</button>
+            <button type="button" (click)="answers.climate='calido'" class="reco-pill" [class.active]="answers.climate === 'calido'">Cálido</button>
+            <button type="button" (click)="answers.climate='templado'" class="reco-pill" [class.active]="answers.climate === 'templado'">Templado</button>
+            <button type="button" (click)="answers.climate='frio'" class="reco-pill" [class.active]="answers.climate === 'frio'">Frío</button>
           </div>
 
           <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">

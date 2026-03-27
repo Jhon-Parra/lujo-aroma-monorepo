@@ -44,6 +44,105 @@ export class CatalogComponent implements OnInit {
 
 
   categories: Category[] = [];
+  private searchIndexCache = new Map<string, string>();
+
+  private normalizeSlug(raw: any): string {
+    const v = String(raw ?? '').trim().toLowerCase();
+    if (!v || v === 'null' || v === 'undefined') return 'todos';
+    return v;
+  }
+
+  private normalizeText(raw: any): string {
+    const s = String(raw ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+    return s
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
+      .replace(/\s+/g, ' ');
+  }
+
+  private getSearchIndex(p: Product): string {
+    const id = String((p as any)?.id || '');
+    if (id && this.searchIndexCache.has(id)) return this.searchIndexCache.get(id) as string;
+
+    const anyP: any = p as any;
+    const blob = [
+      anyP?.name,
+      anyP?.nombre,
+      anyP?.notes,
+      anyP?.notas_olfativas,
+      anyP?.descripcion,
+      anyP?.categoria_nombre,
+      anyP?.categoria_slug,
+      anyP?.genero,
+    ].filter(Boolean).join(' ');
+
+    const idx = this.normalizeText(blob);
+    if (id) this.searchIndexCache.set(id, idx);
+    return idx;
+  }
+
+  private levenshteinWithin(a: string, b: string, maxDist: number): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    const la = a.length;
+    const lb = b.length;
+    if (Math.abs(la - lb) > maxDist) return false;
+
+    // DP with early exit.
+    const prev = new Array<number>(lb + 1);
+    const curr = new Array<number>(lb + 1);
+    for (let j = 0; j <= lb; j++) prev[j] = j;
+
+    for (let i = 1; i <= la; i++) {
+      curr[0] = i;
+      let rowMin = curr[0];
+      const ca = a.charCodeAt(i - 1);
+      for (let j = 1; j <= lb; j++) {
+        const cost = ca === b.charCodeAt(j - 1) ? 0 : 1;
+        const del = prev[j] + 1;
+        const ins = curr[j - 1] + 1;
+        const sub = prev[j - 1] + cost;
+        const v = Math.min(del, ins, sub);
+        curr[j] = v;
+        if (v < rowMin) rowMin = v;
+      }
+      if (rowMin > maxDist) return false;
+      for (let j = 0; j <= lb; j++) prev[j] = curr[j];
+    }
+
+    return prev[lb] <= maxDist;
+  }
+
+  private fuzzyTokenMatch(token: string, words: string[]): boolean {
+    // Keep fuzzy matching conservative to avoid false positives.
+    if (!token) return true;
+    if (/^\d+$/.test(token)) return words.includes(token);
+    if (token.length < 4) return words.some(w => w.startsWith(token));
+
+    const maxDist = token.length <= 6 ? 1 : 2;
+    const first = token.charAt(0);
+    for (const w of words) {
+      if (!w) continue;
+      if (w === token) return true;
+      if (w.startsWith(token) || token.startsWith(w)) return true;
+      if (w.charAt(0) !== first) continue;
+      if (this.levenshteinWithin(token, w, maxDist)) return true;
+    }
+    return false;
+  }
+
+  private matchesQuery(p: Product, query: string, tokens: string[]): boolean {
+    const hay = this.getSearchIndex(p);
+    if (!hay) return false;
+    if (hay.includes(query)) return true;
+
+    // Require all tokens to match (either exact in blob or fuzzy in name tokens).
+    const nameWords = this.normalizeText((p as any)?.name || (p as any)?.nombre || '').split(' ').filter(Boolean);
+    return tokens.every(t => hay.includes(t) || this.fuzzyTokenMatch(t, nameWords));
+  }
 
   constructor(
     private productService: ProductService,
@@ -62,7 +161,23 @@ export class CatalogComponent implements OnInit {
 
     this.categoryService.getPublicCategories().subscribe({
       next: (rows) => {
-        this.categories = (rows || []).slice().sort((a, b) => String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es'));
+        const seen = new Set<string>();
+        this.categories = (rows || [])
+          .map((c) => {
+            const slug = this.normalizeSlug((c as any)?.slug);
+            return {
+              ...c,
+              slug,
+            } as Category;
+          })
+          .filter((c) => {
+            if (!c?.slug || c.slug === 'todos') return false;
+            if (seen.has(c.slug)) return false;
+            seen.add(c.slug);
+            return true;
+          })
+          .slice()
+          .sort((a, b) => String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es'));
       },
       error: () => {
         this.categories = [];
@@ -92,9 +207,12 @@ export class CatalogComponent implements OnInit {
           tiene_promocion: ap.tiene_promocion || false
         }));
 
+        // New catalog dataset -> reset cached indexes.
+        this.searchIndexCache.clear();
+
         this.route.queryParams.subscribe(params => {
           this.searchTerm = params['q'] || '';
-          this.selectedCategory = params['category'] || 'todos';
+          this.selectedCategory = this.normalizeSlug(params['category']);
           this.selectedPromotionId = params['promo'] || '';
 
           // si cambian filtros, resetear pagina
@@ -165,9 +283,10 @@ export class CatalogComponent implements OnInit {
 
   filterCategory(category: string) {
     this.isMobileMenuOpen = false; // Close menu on selection
+    const normalized = this.normalizeSlug(category);
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { category: category !== 'todos' ? category : null, page: null },
+      queryParams: { category: normalized !== 'todos' ? normalized : null, page: null },
       queryParamsHandling: 'merge',
     });
   }
@@ -232,11 +351,11 @@ export class CatalogComponent implements OnInit {
     }
 
     if (this.searchTerm) {
-      const term = this.searchTerm.trim().toLowerCase();
-      result = result.filter(p =>
-        p.name.toLowerCase().includes(term) ||
-        p.notes.toLowerCase().includes(term)
-      );
+      const query = this.normalizeText(this.searchTerm);
+      const tokens = query.split(' ').filter(Boolean);
+      if (query && tokens.length) {
+        result = result.filter(p => this.matchesQuery(p, query, tokens));
+      }
     }
 
     this.filteredProducts = result;

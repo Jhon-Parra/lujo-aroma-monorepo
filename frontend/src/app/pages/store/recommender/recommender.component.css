@@ -18,6 +18,13 @@
   transform: translateY(-1px);
 }
 
+.reco-pill.active {
+  background: #2d4c3b;
+  color: #ffffff;
+  border-color: #2d4c3b;
+  box-shadow: 0 8px 20px rgba(45, 76, 59, 0.2);
+}
+
 .reco-link {
   font-size: 12px;
   font-weight: 800;

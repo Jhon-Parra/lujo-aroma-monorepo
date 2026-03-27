@@ -37,7 +37,7 @@
             <div class="flex-1 overflow-y-auto p-6">
                 <ul class="space-y-6 text-sm tracking-[0.15em] text-soft-charcoal uppercase font-medium">
                     <li>
-                        <button (click)="filterCategory('todos'); toggleMobileMenu()"
+                        <button (click)="filterCategory('todos')"
                             [class.text-gold]="selectedCategory === 'todos'"
                             class="w-full text-left flex items-center justify-between group">
                             <span>Todos los Perfumes</span>
@@ -47,7 +47,7 @@
 
                     <ng-container *ngIf="categories.length; else fallbackMobileDrawer">
                         <li *ngFor="let c of categories">
-                            <button (click)="filterCategory(c.slug); toggleMobileMenu()"
+                            <button (click)="filterCategory(c.slug)"
                                 [class.text-gold]="selectedCategory === c.slug"
                                 class="w-full text-left flex items-center justify-between group">
                                 <span>{{ c.nombre }}</span>
@@ -59,21 +59,21 @@
 
                     <ng-template #fallbackMobileDrawer>
                         <li>
-                            <button (click)="filterCategory('mujer'); toggleMobileMenu()"
+                            <button (click)="filterCategory('mujer')"
                                 [class.text-gold]="selectedCategory === 'mujer'"
                                 class="w-full text-left flex items-center justify-between">
                                 <span>Para Mujer</span>
                             </button>
                         </li>
                         <li>
-                            <button (click)="filterCategory('hombre'); toggleMobileMenu()"
+                            <button (click)="filterCategory('hombre')"
                                 [class.text-gold]="selectedCategory === 'hombre'"
                                 class="w-full text-left flex items-center justify-between">
                                 <span>Para Hombre</span>
                             </button>
                         </li>
                         <li>
-                            <button (click)="filterCategory('unisex'); toggleMobileMenu()"
+                            <button (click)="filterCategory('unisex')"
                                 [class.text-gold]="selectedCategory === 'unisex'"
                                 class="w-full text-left flex items-center justify-between">
                                 <span>Unisex</span>
@@ -153,7 +153,7 @@
             </h2>
 
             <p class="text-xs uppercase tracking-[0.18em] text-soft-charcoal">
-                {{ selectedCategory === 'todos' ? 'Toda la colección' : selectedCategory }}
+                {{ getCategoryLabel(selectedCategory) }}
             </p>
         </div>
 

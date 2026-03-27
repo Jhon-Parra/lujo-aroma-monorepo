@@ -150,6 +150,10 @@ const buildKeywordHintsFromQuiz = (answers: any): string[] => {
     const a = answers || {};
     const hints: string[] = [];
 
+    const for_who = String(a.for_who || '').toLowerCase();
+    if (for_who === 'arabe') hints.push('arabe', 'oud', 'especias', 'oriental', 'lujo');
+    if (for_who === 'kits') hints.push('kit', 'set', 'regalo', 'coleccion', 'miniaturas');
+
     const aroma = String(a.aroma || '').toLowerCase();
     if (aroma === 'dulce') hints.push('vainilla', 'ambar', 'caramelo', 'gourmand', 'tonka');
     if (aroma === 'fresco') hints.push('fresco', 'limpio', 'acuatico', 'verde', 'aromatico');

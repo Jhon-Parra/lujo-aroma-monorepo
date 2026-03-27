@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { API_CONFIG } from '../../config/api-config';
 
 export type QuizAnswers = {
-  for_who?: 'hombre' | 'mujer' | 'unisex';
+  for_who?: 'hombre' | 'mujer' | 'unisex' | 'arabe' | 'kits';
   aroma?: 'dulce' | 'fresco' | 'amaderado' | 'floral' | 'citrico' | 'oriental';
   occasion?: 'diario' | 'trabajo' | 'fiesta' | 'citas' | 'eventos';
   intensity?: 'suave' | 'moderada' | 'fuerte';

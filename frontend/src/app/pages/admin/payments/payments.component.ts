@@ -6,7 +6,8 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { SettingsService, Settings } from '../../../core/services/settings/settings.service';
 import { LowStockBellComponent } from '../../../shared/components/low-stock-bell/low-stock-bell.component';
-import { WompiService } from '../../../core/services/payment/wompi.service';
+import { WompiDiagnostics, WompiService } from '../../../core/services/payment/wompi.service';
+import { API_CONFIG } from '../../../core/config/api-config';
 
 @Component({
   selector: 'app-payments-admin',
@@ -31,6 +32,11 @@ export class PaymentsAdminComponent implements OnInit {
     wompi_env: 'sandbox',
     wompi_public_key: ''
   };
+
+  wompiWebhookUrl = `${API_CONFIG.baseUrl}/payments/wompi/webhook`;
+  wompiDiagLoading = false;
+  wompiDiagError = '';
+  wompiDiag: WompiDiagnostics | null = null;
 
   constructor(
     private authService: AuthService,
@@ -74,6 +80,33 @@ export class PaymentsAdminComponent implements OnInit {
         });
       },
       error: (err) => console.error('Error cargando ajustes de pagos', err)
+    });
+  }
+
+  copy(text: string): void {
+    const v = String(text || '').trim();
+    if (!v) return;
+    try {
+      navigator.clipboard?.writeText(v);
+    } catch {
+      // ignore
+    }
+  }
+
+  runWompiDiagnostics(): void {
+    if (this.wompiDiagLoading) return;
+    this.wompiDiagLoading = true;
+    this.wompiDiagError = '';
+    this.wompiDiag = null;
+    this.wompiService.getDiagnostics().subscribe({
+      next: (d) => {
+        this.wompiDiagLoading = false;
+        this.wompiDiag = d;
+      },
+      error: (err) => {
+        this.wompiDiagLoading = false;
+        this.wompiDiagError = err?.error?.error || err?.error?.message || 'No se pudo correr el diagnostico de Wompi.';
+      }
     });
   }
 

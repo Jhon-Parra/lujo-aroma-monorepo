@@ -179,6 +179,58 @@
         <div class="mt-4 text-xs text-soft-charcoal bg-cream border border-[#ecece5] rounded-md p-4">
           Seguridad: la llave privada se guarda <b>cifrada</b> en Supabase y solo el backend puede descifrarla con `SETTINGS_ENCRYPTION_KEY`.
         </div>
+
+        <details class="mt-6 border border-[#ecece5] rounded-md bg-white">
+          <summary class="cursor-pointer select-none px-4 py-3 text-xs font-bold uppercase tracking-widest text-soft-charcoal">
+            Configuraciones avanzadas para programadores
+          </summary>
+          <div class="px-4 pb-4 pt-2 space-y-4">
+            <div class="text-xs text-soft-charcoal">
+              URL de Eventos (Webhook recomendado):
+            </div>
+            <div class="flex flex-col md:flex-row gap-2">
+              <input type="text" [value]="wompiWebhookUrl" readonly
+                class="flex-1 border border-[#ecece5] rounded-md px-3 py-2 text-sm bg-gray-50" />
+              <button type="button" (click)="copy(wompiWebhookUrl)"
+                class="border border-charcoal bg-white text-charcoal px-4 py-2 text-xs tracking-widest uppercase font-bold hover:bg-charcoal hover:text-white transition-colors">
+                Copiar
+              </button>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button type="button" (click)="runWompiDiagnostics()" [disabled]="wompiDiagLoading"
+                class="bg-charcoal text-white px-4 py-2 text-xs tracking-widest uppercase font-bold hover:bg-gold transition-colors disabled:opacity-50">
+                {{ wompiDiagLoading ? 'Probando...' : 'Probar configuracion' }}
+              </button>
+              <a routerLink="/admin/orders" class="text-xs font-bold uppercase tracking-widest text-gold">
+                Ver pedidos (tracking)
+              </a>
+            </div>
+
+            <div *ngIf="wompiDiagError" class="text-xs text-red-600">
+              {{ wompiDiagError }}
+            </div>
+
+            <div *ngIf="wompiDiag" class="text-xs text-soft-charcoal bg-cream border border-[#ecece5] rounded-md p-4">
+              <div><b>Entorno:</b> {{ wompiDiag.env }} · <b>Fuente:</b> {{ wompiDiag.source }}</div>
+              <div><b>Base URL:</b> {{ wompiDiag.base_url }}</div>
+              <div *ngIf="wompiDiag.env_vars_present"><b>Env vars:</b>
+                {{ wompiDiag.env_vars_present.WOMPI_PUBLIC_KEY ? 'WOMPI_PUBLIC_KEY ' : '' }}
+                {{ wompiDiag.env_vars_present.WOMPIPUBLICKEY ? 'WOMPIPUBLICKEY ' : '' }}
+                {{ wompiDiag.env_vars_present.WOMPI_PRIVATE_KEY ? 'WOMPI_PRIVATE_KEY ' : '' }}
+                {{ wompiDiag.env_vars_present.WOMPIPRIVATEKEY ? 'WOMPIPRIVATEKEY ' : '' }}
+                {{ wompiDiag.env_vars_present.WOMPI_ENV ? 'WOMPI_ENV ' : '' }}
+                {{ wompiDiag.env_vars_present.WOMPIENV ? 'WOMPIENV' : '' }}
+              </div>
+              <div><b>Llave publica:</b> {{ wompiDiag.public_key_kind }} (len {{ wompiDiag.public_key_len }})</div>
+              <div><b>Llave privada:</b> {{ wompiDiag.has_private_key ? (wompiDiag.api_key_kind + ' (len ' + wompiDiag.api_key_len + ')') : 'No configurada' }}</div>
+              <div class="mt-2"><b>Probe bancos PSE:</b> {{ wompiDiag.probes.pse_banks.ok ? 'OK' : 'FALLO' }} ({{ wompiDiag.probes.pse_banks.status }})</div>
+              <div *ngIf="!wompiDiag.probes.pse_banks.ok && wompiDiag.probes.pse_banks.detail">{{ wompiDiag.probes.pse_banks.detail }}</div>
+              <div class="mt-2"><b>Probe llave privada:</b> {{ wompiDiag.probes.private_key_auth.ok ? 'OK' : 'FALLO' }} ({{ wompiDiag.probes.private_key_auth.status }})</div>
+              <div *ngIf="!wompiDiag.probes.private_key_auth.ok && wompiDiag.probes.private_key_auth.detail">{{ wompiDiag.probes.private_key_auth.detail }}</div>
+            </div>
+          </div>
+        </details>
       </section>
     </div>
   </main>

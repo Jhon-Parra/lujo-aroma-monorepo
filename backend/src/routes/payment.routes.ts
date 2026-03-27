@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { verifyToken } from '../middleware/auth.middleware';
+import { verifyToken, requirePermission } from '../middleware/auth.middleware';
 import { WompiController } from '../controllers/wompi.controller';
 import { createOrderLimiter } from '../middleware/security.middleware';
 
@@ -9,6 +9,9 @@ const router = Router();
 router.get('/wompi/config', WompiController.getConfig);
 router.get('/wompi/merchant', WompiController.getMerchant);
 router.get('/wompi/pse/banks', WompiController.getPseBanks);
+
+// Diagnostico (admin)
+router.get('/wompi/diag', verifyToken, requirePermission('admin.settings'), WompiController.getDiagnostics);
 
 // Checkout (requiere sesion)
 router.post('/wompi/pse/checkout', createOrderLimiter, verifyToken, WompiController.createPseCheckout);

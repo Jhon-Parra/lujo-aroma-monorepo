@@ -19,6 +19,30 @@ export type WompiClientConfig = {
   has_private_key?: boolean;
 };
 
+export type WompiDiagnostics = {
+  version?: string;
+  env: 'sandbox' | 'production';
+  base_url: string;
+  source: 'env' | 'db';
+  env_vars_present?: {
+    WOMPI_ENV?: boolean;
+    WOMPIENV?: boolean;
+    WOMPI_PUBLIC_KEY?: boolean;
+    WOMPIPUBLICKEY?: boolean;
+    WOMPI_PRIVATE_KEY?: boolean;
+    WOMPIPRIVATEKEY?: boolean;
+  };
+  public_key_kind: string | null;
+  public_key_len: number;
+  has_private_key: boolean;
+  api_key_kind: string | null;
+  api_key_len: number;
+  probes: {
+    pse_banks: { ok: boolean; status: number; detail?: string };
+    private_key_auth: { ok: boolean; status: number; detail?: string };
+  };
+};
+
 export type WompiPseBank = {
   financial_institution_code: string;
   financial_institution_name: string;
@@ -93,6 +117,10 @@ export class WompiService {
 
   getConfig(): Observable<WompiClientConfig> {
     return this.http.get<WompiClientConfig>(`${this.apiUrl}/config`);
+  }
+
+  getDiagnostics(): Observable<WompiDiagnostics> {
+    return this.http.get<WompiDiagnostics>(`${this.apiUrl}/diag`, { withCredentials: true });
   }
 
   getPseBanks(): Observable<{ data: WompiPseBank[] }> {

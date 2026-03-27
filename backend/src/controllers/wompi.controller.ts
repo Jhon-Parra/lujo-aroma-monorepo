@@ -61,6 +61,21 @@ export class WompiController {
         }
     }
 
+    static async getDiagnostics(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const diag = await WompiService.getDiagnostics();
+            res.status(200).json({
+                version: WOMPI_API_VERSION,
+                ...diag
+            });
+        } catch (e: any) {
+            res.status(500).json({
+                version: WOMPI_API_VERSION,
+                error: e?.message || 'No se pudo obtener diagnostico Wompi'
+            });
+        }
+    }
+
     static async getPseBanks(req: AuthRequest, res: Response): Promise<void> {
         try {
             const banks = await WompiService.getPseBanks();
@@ -76,6 +91,10 @@ export class WompiController {
             const email = String(req.user?.email || '').trim();
             if (!user_id) {
                 res.status(401).json({ message: 'Usuario no autenticado' });
+                return;
+            }
+            if (!email || !email.includes('@')) {
+                res.status(400).json({ message: 'Email del usuario requerido para Wompi' });
                 return;
             }
 
@@ -196,6 +215,10 @@ export class WompiController {
                 res.status(401).json({ message: 'Usuario no autenticado' });
                 return;
             }
+            if (!email || !email.includes('@')) {
+                res.status(400).json({ message: 'Email del usuario requerido para Wompi' });
+                return;
+            }
 
             const { shipping_address, items, acceptance_token, phone_number, phone: phoneRaw, telefono, nombre_cliente, metodo_pago, canal_pago, envio_prioritario, perfume_lujo } = req.body;
 
@@ -246,6 +269,7 @@ export class WompiController {
                     reference: created.orderId,
                     customer_email: email,
                     acceptance_token: accToken,
+                    redirect_url: redirectUrl,
                     phone_number: phoneDigits,
                     payment_description: `Pedido Perfumissimo ${created.orderId}`
                 });
@@ -278,6 +302,10 @@ export class WompiController {
             const email = String(req.user?.email || '').trim();
             if (!user_id) {
                 res.status(401).json({ message: 'Usuario no autenticado' });
+                return;
+            }
+            if (!email || !email.includes('@')) {
+                res.status(400).json({ message: 'Email del usuario requerido para Wompi' });
                 return;
             }
 

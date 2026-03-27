@@ -45,6 +45,31 @@ type WompiGetTransactionResponse = {
     };
 };
 
+const parseWompiErrorDetail = (body: string): string => {
+    const raw = String(body || '').trim();
+    if (!raw) return '';
+    try {
+        const json = JSON.parse(raw);
+        const err = (json as any)?.error;
+        if (!err) return raw;
+
+        const parts = [err?.type, err?.reason, err?.message]
+            .filter(Boolean)
+            .map((v: any) => String(v));
+
+        const extras: string[] = [];
+        if (err?.messages) extras.push(JSON.stringify(err.messages));
+        if (err?.details) extras.push(JSON.stringify(err.details));
+        if (err?.data) extras.push(JSON.stringify(err.data));
+
+        const main = parts.join(' | ') || raw;
+        const extra = extras.filter(Boolean).join(' | ');
+        return extra ? `${main} | ${extra}` : main;
+    } catch {
+        return raw;
+    }
+};
+
 const baseUrlForEnv = (env: WompiEnv): string => {
     return env === 'production' ? 'https://production.wompi.co/v1' : 'https://sandbox.wompi.co/v1';
 };
@@ -63,7 +88,20 @@ const normalizeEnv = (raw: any): WompiEnv => {
 const getEnvVar = (name: string): string => {
     const underscored = name.toUpperCase();
     const clean = name.replace(/_/g, '').toUpperCase();
-    return String(process.env[underscored] || process.env[clean] || '').trim();
+    // Hostinger and some panels might add _ENC or other suffixes
+    const variants = [
+        underscored,
+        clean,
+        `${underscored}_ENC`,
+        `${clean}_ENC`,
+        `${underscored}ENC`,
+        `${clean}ENC`
+    ];
+    for (const v of variants) {
+        const val = String(process.env[v] || '').trim();
+        if (val) return val;
+    }
+    return '';
 };
 
 const resolveConfig = async (): Promise<WompiRuntimeConfig> => {
@@ -146,6 +184,26 @@ const requirePrivateKey = async (): Promise<WompiRuntimeConfig> => {
     return cfg;
 };
 
+const keyKind = (k: string): string | null => {
+    const v = String(k || '').trim();
+    if (!v) return null;
+    if (v.startsWith('pub_test_')) return 'pub_test';
+    if (v.startsWith('pub_prod_')) return 'pub_prod';
+    if (v.startsWith('prv_test_')) return 'prv_test';
+    if (v.startsWith('prv_prod_')) return 'prv_prod';
+    return 'unknown';
+};
+
+const fetchWithTimeout = async (url: string, init: any, timeoutMs: number): Promise<Response> => {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), Math.max(200, timeoutMs || 0));
+    try {
+        return await fetch(url, { ...init, signal: controller.signal });
+    } finally {
+        clearTimeout(t);
+    }
+};
+
 export const WompiService = {
     async getClientConfig(): Promise<{ env: WompiEnv; public_key: string; base_url: string }> {
         const cfg = await resolveConfig();
@@ -164,11 +222,7 @@ export const WompiService = {
         const resp = await fetch(url, { method: 'GET' });
         if (!resp.ok) {
             const body = await resp.text().catch(() => '');
-            let detail = body;
-            try {
-                const json = JSON.parse(body);
-                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
-            } catch { /* use raw body */ }
+            const detail = parseWompiErrorDetail(body) || body;
             throw new Error(`Wompi merchant error (${resp.status}): ${detail}`);
         }
         const json = (await resp.json()) as WompiMerchantResponse;
@@ -192,11 +246,7 @@ export const WompiService = {
         });
         if (!resp.ok) {
             const body = await resp.text().catch(() => '');
-            let detail = body;
-            try {
-                const json = JSON.parse(body);
-                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
-            } catch { /* use raw body */ }
+            const detail = parseWompiErrorDetail(body) || body;
             throw new Error(`Wompi banks error (${resp.status}): ${detail}`);
         }
         const json = (await resp.json()) as WompiPseBanksResponse;
@@ -204,6 +254,98 @@ export const WompiService = {
         return banks
             .filter((b) => b && b.financial_institution_code && b.financial_institution_name)
             .sort((a, b) => a.financial_institution_name.localeCompare(b.financial_institution_name, 'es'));
+    },
+
+    async getDiagnostics(): Promise<any> {
+        const cfg = await resolveConfig();
+
+        // Detect whether config comes from env vars (including the Hostinger no-underscore variants)
+        const fromProcess = !!getEnvVar('WOMPI_PUBLIC_KEY');
+
+        const envVars = {
+            WOMPI_ENV: !!process.env.WOMPI_ENV,
+            WOMPI_PUBLIC_KEY: !!process.env.WOMPI_PUBLIC_KEY,
+            WOMPI_PRIVATE_KEY: !!process.env.WOMPI_PRIVATE_KEY,
+            WOMPI_PRIVATE_KEY_ENC: !!process.env.WOMPI_PRIVATE_KEY_ENC,
+            variants_found: [] as string[]
+        };
+
+        const allPossible = [
+            'WOMPI_ENV', 'WOMPIENV',
+            'WOMPI_PUBLIC_KEY', 'WOMPIPUBLICKEY',
+            'WOMPI_PRIVATE_KEY', 'WOMPIPRIVATEKEY',
+            'WOMPI_PRIVATE_KEY_ENC', 'WOMPIPRIVATEKEYENC'
+        ];
+        allPossible.forEach(k => { if (process.env[k]) envVars.variants_found.push(k); });
+        const publicKind = keyKind(cfg.publicKey);
+        const apiKind = keyKind(cfg.apiKey);
+
+        const banksProbe = { ok: false, status: 0, detail: '' };
+        try {
+            const url = `${cfg.baseUrl}/pse/financial_institutions`;
+            const resp = await fetchWithTimeout(url, {
+                method: 'GET',
+                headers: { Authorization: `Bearer ${cfg.publicKey}` }
+            }, 7000);
+            banksProbe.status = resp.status;
+            if (resp.ok) {
+                banksProbe.ok = true;
+            } else {
+                const body = await resp.text().catch(() => '');
+                let detail = body;
+                try {
+                    const json = JSON.parse(body);
+                    detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
+                } catch { /* raw */ }
+                banksProbe.detail = String(detail || '').slice(0, 300);
+            }
+        } catch (e: any) {
+            banksProbe.detail = String(e?.message || e || '').slice(0, 300);
+        }
+
+        const privateProbe = { ok: false, status: 0, detail: '' };
+        if (cfg.hasPrivateKey) {
+            try {
+                const url = `${cfg.baseUrl}/transactions`;
+                const resp = await fetchWithTimeout(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${cfg.apiKey}`
+                    },
+                    body: JSON.stringify({})
+                }, 7000);
+                privateProbe.status = resp.status;
+                if (resp.status === 401) {
+                    privateProbe.ok = false;
+                    const body = await resp.text().catch(() => '');
+                    privateProbe.detail = String(body || 'INVALID_ACCESS_TOKEN').slice(0, 300);
+                } else {
+                    // Any non-401 response indicates the key was accepted (even if request is invalid).
+                    privateProbe.ok = true;
+                }
+            } catch (e: any) {
+                privateProbe.detail = String(e?.message || e || '').slice(0, 300);
+            }
+        } else {
+            privateProbe.detail = 'WOMPI_PRIVATE_KEY no configurado';
+        }
+
+        return {
+            env: cfg.env,
+            base_url: cfg.baseUrl,
+            source: fromProcess ? 'env' : 'db',
+            env_vars_present: envVars,
+            public_key_kind: publicKind,
+            public_key_len: (cfg.publicKey || '').length,
+            has_private_key: !!cfg.hasPrivateKey,
+            api_key_kind: apiKind,
+            api_key_len: (cfg.apiKey || '').length,
+            probes: {
+                pse_banks: banksProbe,
+                private_key_auth: privateProbe
+            }
+        };
     },
 
     async createPseTransaction(input: {
@@ -249,11 +391,7 @@ export const WompiService = {
 
         if (!resp.ok) {
             const body = await resp.text().catch(() => '');
-            let detail = body;
-            try {
-                const json = JSON.parse(body);
-                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
-            } catch { /* use raw body */ }
+            const detail = parseWompiErrorDetail(body) || body;
             throw new Error(`Wompi error (${resp.status}): ${detail}`);
         }
 
@@ -272,6 +410,7 @@ export const WompiService = {
         reference: string;
         customer_email: string;
         acceptance_token: string;
+        redirect_url: string;
         phone_number: string;
         payment_description: string;
     }): Promise<{ transaction_id: string; status?: string }> {
@@ -282,9 +421,9 @@ export const WompiService = {
             amount_in_cents: input.amount_in_cents,
             currency: 'COP',
             acceptance_token: input.acceptance_token,
-            reference: `${input.reference}-${Date.now()}`,
-            customer_email: input.customer_email || 'correo@ejemplo.com',
-            redirect_url: `${cfg.baseUrl.replace(/\/v1$/, '')}/order-success/${input.reference}`, // Fallback redirect
+            reference: input.reference,
+            customer_email: input.customer_email,
+            redirect_url: input.redirect_url,
             payment_method: {
                 type: 'NEQUI',
                 phone_number: input.phone_number,
@@ -316,14 +455,9 @@ export const WompiService = {
                 url,
                 ref: body.reference,
                 hasKey: !!cfg.apiKey,
-                keyPrefix: cfg.apiKey?.substring(0, 9),
                 errorBody: bodyText.substring(0, 500)
             });
-            let detail = bodyText;
-            try {
-                const json = JSON.parse(bodyText);
-                detail = json?.error?.type || json?.error?.reason || json?.error?.message || bodyText;
-            } catch { /* use raw body */ }
+            const detail = parseWompiErrorDetail(bodyText) || bodyText;
             throw new Error(`Wompi error (${resp.status}): ${detail}`);
         }
 
@@ -373,11 +507,7 @@ export const WompiService = {
 
         if (!resp.ok) {
             const body = await resp.text().catch(() => '');
-            let detail = body;
-            try {
-                const json = JSON.parse(body);
-                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
-            } catch { /* use raw body */ }
+            const detail = parseWompiErrorDetail(body) || body;
             throw new Error(`Wompi error (${resp.status}): ${detail}`);
         }
 
@@ -403,11 +533,7 @@ export const WompiService = {
         });
         if (!resp.ok) {
             const body = await resp.text().catch(() => '');
-            let detail = body;
-            try {
-                const json = JSON.parse(body);
-                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
-            } catch { /* use raw body */ }
+            const detail = parseWompiErrorDetail(body) || body;
             throw new Error(`Wompi get transaction error (${resp.status}): ${detail}`);
         }
         const json = (await resp.json()) as WompiGetTransactionResponse;

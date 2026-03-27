@@ -420,15 +420,31 @@ export class WompiController {
             const prevStatus = await OrderModel.getOrderStatus(orderId);
             const status = String(tx.status || '').toUpperCase();
             if (status === 'APPROVED') {
+                await OrderModel.updatePaymentInfo(orderId, { estado_pago: 'APROBADO', referencia_pago: tx.id, fecha_pago: new Date() });
                 if (prevStatus !== 'PAGADO') {
-                    await OrderModel.updateOrderStatus(orderId, 'PAGADO');
+                    if (String(prevStatus || '').toUpperCase() === 'CANCELADO') {
+                        await OrderModel.reinstateCancelledOrderPaid(orderId);
+                    } else {
+                        await OrderModel.updateOrderStatus(orderId, 'PAGADO');
+                    }
                     notifyOrderStatusChanged(orderId, 'PAGADO').catch((e) => console.error('Order status email error (wompi webhook):', e));
                 }
-            } else if (status === 'DECLINED' || status === 'VOIDED' || status === 'ERROR') {
-                if (prevStatus !== 'CANCELADO') {
+            } else if (status === 'DECLINED') {
+                await OrderModel.updatePaymentInfo(orderId, { estado_pago: 'RECHAZADO', referencia_pago: tx.id, fecha_pago: null });
+                const prev = String(prevStatus || '').toUpperCase();
+                if (!['PAGADO', 'ENVIADO', 'ENTREGADO', 'CANCELADO'].includes(prev)) {
                     await OrderModel.cancelAndRestock(orderId);
                     notifyOrderStatusChanged(orderId, 'CANCELADO').catch((e) => console.error('Order status email error (wompi webhook):', e));
                 }
+            } else if (status === 'VOIDED') {
+                await OrderModel.updatePaymentInfo(orderId, { estado_pago: 'CANCELADO', referencia_pago: tx.id, fecha_pago: null });
+                const prev = String(prevStatus || '').toUpperCase();
+                if (!['PAGADO', 'ENVIADO', 'ENTREGADO', 'CANCELADO'].includes(prev)) {
+                    await OrderModel.cancelAndRestock(orderId);
+                    notifyOrderStatusChanged(orderId, 'CANCELADO').catch((e) => console.error('Order status email error (wompi webhook):', e));
+                }
+            } else if (status === 'ERROR') {
+                await OrderModel.updatePaymentInfo(orderId, { estado_pago: 'PENDIENTE', referencia_pago: tx.id, fecha_pago: null });
             }
 
             res.status(200).json({ ok: true });
@@ -473,17 +489,32 @@ export class WompiController {
 
             const status = String(tx.status || '').toUpperCase();
             if (status === 'APPROVED') {
+                await OrderModel.updatePaymentInfo(orderId, { estado_pago: 'APROBADO', referencia_pago: tx.id, fecha_pago: new Date() });
                 const prev = await OrderModel.getOrderStatus(orderId);
                 if (prev !== 'PAGADO') {
-                    await OrderModel.updateOrderStatus(orderId, 'PAGADO');
+                    if (String(prev || '').toUpperCase() === 'CANCELADO') {
+                        await OrderModel.reinstateCancelledOrderPaid(orderId);
+                    } else {
+                        await OrderModel.updateOrderStatus(orderId, 'PAGADO');
+                    }
                     notifyOrderStatusChanged(orderId, 'PAGADO').catch((e) => console.error('Order status email error (wompi sync):', e));
                 }
-            } else if (status === 'DECLINED' || status === 'VOIDED' || status === 'ERROR') {
-                const prev = await OrderModel.getOrderStatus(orderId);
-                if (prev !== 'CANCELADO') {
+            } else if (status === 'DECLINED') {
+                await OrderModel.updatePaymentInfo(orderId, { estado_pago: 'RECHAZADO', referencia_pago: tx.id, fecha_pago: null });
+                const prev = String((await OrderModel.getOrderStatus(orderId)) || '').toUpperCase();
+                if (!['PAGADO', 'ENVIADO', 'ENTREGADO', 'CANCELADO'].includes(prev)) {
                     await OrderModel.cancelAndRestock(orderId);
                     notifyOrderStatusChanged(orderId, 'CANCELADO').catch((e) => console.error('Order status email error (wompi sync):', e));
                 }
+            } else if (status === 'VOIDED') {
+                await OrderModel.updatePaymentInfo(orderId, { estado_pago: 'CANCELADO', referencia_pago: tx.id, fecha_pago: null });
+                const prev = String((await OrderModel.getOrderStatus(orderId)) || '').toUpperCase();
+                if (!['PAGADO', 'ENVIADO', 'ENTREGADO', 'CANCELADO'].includes(prev)) {
+                    await OrderModel.cancelAndRestock(orderId);
+                    notifyOrderStatusChanged(orderId, 'CANCELADO').catch((e) => console.error('Order status email error (wompi sync):', e));
+                }
+            } else if (status === 'ERROR') {
+                await OrderModel.updatePaymentInfo(orderId, { estado_pago: 'PENDIENTE', referencia_pago: tx.id, fecha_pago: null });
             }
 
             res.status(200).json({

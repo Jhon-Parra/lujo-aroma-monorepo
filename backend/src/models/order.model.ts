@@ -58,6 +58,35 @@ type OrderAddonCols = {
     cart_recovery_discount_amount: boolean;
 };
 
+type PaymentCols = {
+    estado_pago: boolean;
+    referencia_pago: boolean;
+    fecha_pago: boolean;
+};
+
+let _paymentCols: PaymentCols | null = null;
+const detectPaymentColumns = async (): Promise<PaymentCols> => {
+    if (_paymentCols) return _paymentCols;
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT column_name FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND lower(table_name) = 'ordenes'
+               AND column_name IN ('estado_pago','referencia_pago','fecha_pago')`
+        );
+        const cols = new Set((rows || []).map((r: any) => String(r.COLUMN_NAME || r.column_name || r.Column_Name).toLowerCase()));
+        _paymentCols = {
+            estado_pago: cols.has('estado_pago'),
+            referencia_pago: cols.has('referencia_pago'),
+            fecha_pago: cols.has('fecha_pago')
+        };
+        return _paymentCols;
+    } catch {
+        _paymentCols = { estado_pago: false, referencia_pago: false, fecha_pago: false };
+        return _paymentCols;
+    }
+};
+
 export type CreateOrderResult = {
     orderId: string;
     subtotal_productos: number;
@@ -458,6 +487,95 @@ export class OrderModel {
             `UPDATE ordenes SET codigo_transaccion = ?, actualizado_en = NOW() WHERE id = ${expr}`,
             [transactionCode, val]
         );
+    }
+
+    static async updatePaymentInfo(orderId: string, data: { estado_pago?: string; referencia_pago?: string | null; fecha_pago?: Date | null }): Promise<void> {
+        const cols = await detectPaymentColumns();
+        const sets: string[] = [];
+        const params: any[] = [];
+
+        if (cols.estado_pago && data.estado_pago !== undefined) {
+            sets.push('estado_pago = ?');
+            params.push(data.estado_pago);
+        }
+        if (cols.referencia_pago && data.referencia_pago !== undefined) {
+            sets.push('referencia_pago = ?');
+            params.push(data.referencia_pago);
+        }
+        if (cols.fecha_pago && data.fecha_pago !== undefined) {
+            sets.push('fecha_pago = ?');
+            params.push(data.fecha_pago);
+        }
+
+        if (!sets.length) return;
+
+        const { expr, val } = await idToSql(orderId);
+        sets.push('actualizado_en = NOW()');
+        await pool.query(
+            `UPDATE ordenes SET ${sets.join(', ')} WHERE id = ${expr}`,
+            [...params, val]
+        );
+    }
+
+    static async reinstateCancelledOrderPaid(orderId: string): Promise<void> {
+        const connection = await pool.getConnection();
+        const binary = await detectIdType();
+        const idExpr = binary ? 'UUID_TO_BIN(?)' : '?';
+        const productoIdRead = binary ? 'BIN_TO_UUID(producto_id)' : 'producto_id';
+
+        try {
+            await connection.query('BEGIN');
+
+            const [resOrder] = await connection.query(
+                `SELECT estado FROM ordenes WHERE id = ${idExpr} FOR UPDATE`,
+                [orderId]
+            );
+            const current = String((resOrder as any)?.[0]?.estado || '').toUpperCase();
+            if (current !== 'CANCELADO') {
+                await connection.query('COMMIT');
+                return;
+            }
+
+            const [resItems] = await connection.query(
+                `SELECT ${productoIdRead} AS producto_id, cantidad FROM detalleordenes WHERE orden_id = ${idExpr}`,
+                [orderId]
+            );
+
+            for (const it of (resItems as any[] || [])) {
+                const pid = String(it?.producto_id || '').trim();
+                const qty = Number(it?.cantidad || 0);
+                if (!pid || !Number.isFinite(qty) || qty <= 0) continue;
+
+                const [stockResult] = await connection.query(
+                    binary
+                        ? 'UPDATE productos SET stock = stock - ? WHERE id = UUID_TO_BIN(?) AND stock >= ?'
+                        : 'UPDATE productos SET stock = stock - ? WHERE id = ? AND stock >= ?',
+                    [qty, pid, qty]
+                );
+
+                if ((stockResult as any)?.affectedRows === 0) {
+                    throw new Error('Stock insuficiente para reactivar el pedido pagado');
+                }
+            }
+
+            await connection.query(
+                `UPDATE ordenes SET estado = ?, actualizado_en = NOW() WHERE id = ${idExpr}`,
+                ['PAGADO', orderId]
+            );
+
+            await connection.query(
+                `INSERT INTO historial_pedido (id, orden_id, estado_anterior, estado_nuevo, observacion)
+                 VALUES (${idExpr}, ${idExpr}, ?, ?, ?)`,
+                [uuidv4(), orderId, 'CANCELADO', 'PAGADO', 'Pago aprobado en Wompi (reconciliado)']
+            );
+
+            await connection.query('COMMIT');
+        } catch (e) {
+            await connection.query('ROLLBACK');
+            throw e;
+        } finally {
+            connection.release();
+        }
     }
 
     static async cancelAndRestock(orderId: string): Promise<void> {

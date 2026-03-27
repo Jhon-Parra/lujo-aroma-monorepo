@@ -21,27 +21,40 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div class="flex items-center gap-4">
             <div class="w-14 h-14 rounded-full flex items-center justify-center"
-              [ngClass]="order.codigo_transaccion && order.estado === 'PENDIENTE' ? 'bg-amber-100' : 'bg-green-100'">
-              <svg *ngIf="order.codigo_transaccion && order.estado === 'PENDIENTE'" class="w-8 h-8 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              [ngClass]="order.estado === 'CANCELADO' ? 'bg-red-100' : (order.codigo_transaccion && order.estado === 'PENDIENTE' ? 'bg-amber-100' : 'bg-green-100')">
+              <svg *ngIf="order.estado === 'CANCELADO'" class="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <svg *ngIf="order.estado !== 'CANCELADO' && order.codigo_transaccion && order.estado === 'PENDIENTE'" class="w-8 h-8 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
               </svg>
-              <svg *ngIf="!(order.codigo_transaccion && order.estado === 'PENDIENTE')" class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg *ngIf="order.estado !== 'CANCELADO' && !(order.codigo_transaccion && order.estado === 'PENDIENTE')" class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div>
               <h1 class="text-3xl font-serif font-bold text-charcoal">
-                <ng-container *ngIf="order.codigo_transaccion && order.estado === 'PENDIENTE'; else confirmed">
-                  Pago en verificación
+                <ng-container *ngIf="order.estado === 'CANCELADO'; else notCancelled">
+                  Pedido cancelado
                 </ng-container>
-                <ng-template #confirmed>¡Pedido Confirmado!</ng-template>
+                <ng-template #notCancelled>
+                  <ng-container *ngIf="order.codigo_transaccion && order.estado === 'PENDIENTE'; else confirmed">
+                  Pago en verificación
+                  </ng-container>
+                  <ng-template #confirmed>¡Pedido Confirmado!</ng-template>
+                </ng-template>
               </h1>
               <p class="text-sm text-gray-500 mt-1">
-                <ng-container *ngIf="order.codigo_transaccion && order.estado === 'PENDIENTE'; else registered">
-                  Gracias, {{ getUserName() }}. Estamos confirmando tu pago. Puede tardar unos minutos.
+                <ng-container *ngIf="order.estado === 'CANCELADO'; else notCancelledMsg">
+                  Si el pago fue aprobado en tu app, pulsa "Actualizar estado". Si no, puedes intentar de nuevo.
                 </ng-container>
-                <ng-template #registered>Gracias, {{ getUserName() }}. Tu pedido fue registrado.</ng-template>
+                <ng-template #notCancelledMsg>
+                  <ng-container *ngIf="order.codigo_transaccion && order.estado === 'PENDIENTE'; else registered">
+                  Gracias, {{ getUserName() }}. Estamos confirmando tu pago. Puede tardar unos minutos.
+                  </ng-container>
+                  <ng-template #registered>Gracias, {{ getUserName() }}. Tu pedido fue registrado.</ng-template>
+                </ng-template>
               </p>
             </div>
           </div>
@@ -64,7 +77,7 @@
             Imprimir
           </button>
 
-          <button *ngIf="order.codigo_transaccion && order.estado === 'PENDIENTE'" type="button" (click)="syncPayment()" [disabled]="syncingPayment"
+          <button *ngIf="order.codigo_transaccion && (order.estado === 'PENDIENTE' || order.estado === 'CANCELADO')" type="button" (click)="syncPayment()" [disabled]="syncingPayment"
             class="border border-charcoal bg-white text-charcoal px-6 py-3 font-bold text-xs tracking-widest uppercase hover:bg-charcoal hover:text-white transition-colors disabled:opacity-50">
             {{ syncingPayment ? 'Sincronizando...' : 'Actualizar estado' }}
           </button>

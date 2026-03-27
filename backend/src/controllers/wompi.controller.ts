@@ -19,7 +19,8 @@ export class WompiController {
             res.status(200).json({
                 ...cfg,
                 has_private_key: hasPrivateKey,
-                configured: true
+                configured: true,
+                version: '1.2.1-debug'
             });
         } catch (e: any) {
             const msg = String(e?.message || '');
@@ -32,6 +33,7 @@ export class WompiController {
                     public_key: null,
                     base_url: 'https://sandbox.wompi.co/v1',
                     has_private_key: false,
+                    version: '1.2.1-debug',
                     message: 'Wompi no está configurado aún. Configura las llaves en el panel de administrador.'
                 });
                 return;

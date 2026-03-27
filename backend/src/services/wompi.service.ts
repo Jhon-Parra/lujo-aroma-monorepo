@@ -60,13 +60,19 @@ const normalizeEnv = (raw: any): WompiEnv => {
     return v === 'production' ? 'production' : 'sandbox';
 };
 
+const getEnvVar = (name: string): string => {
+    const underscored = name.toUpperCase();
+    const clean = name.replace(/_/g, '').toUpperCase();
+    return String(process.env[underscored] || process.env[clean] || '').trim();
+};
+
 const resolveConfig = async (): Promise<WompiRuntimeConfig> => {
     const now = Date.now();
     if (cachedCfg && now - cachedAt < CACHE_MS) return cachedCfg;
 
-    const envFromProcess = normalizeEnv(process.env.WOMPI_ENV || 'sandbox');
-    const publicFromProcess = String(process.env.WOMPI_PUBLIC_KEY || '').trim();
-    const privateFromProcess = String(process.env.WOMPI_PRIVATE_KEY || '').trim();
+    const envFromProcess = normalizeEnv(getEnvVar('WOMPI_ENV') || 'sandbox');
+    const publicFromProcess = getEnvVar('WOMPI_PUBLIC_KEY');
+    const privateFromProcess = getEnvVar('WOMPI_PRIVATE_KEY');
     if (publicFromProcess) {
         const apiKey = privateFromProcess || publicFromProcess;
         cachedCfg = {

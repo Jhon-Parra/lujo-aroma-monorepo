@@ -900,19 +900,23 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         }
 
         const mm = String(this.cardExpMonth || '').replace(/\D/g, '');
-        const yy = String(this.cardExpYear || '').replace(/\D/g, '');
+        const yyRaw = String(this.cardExpYear || '').replace(/\D/g, '');
         const monthN = Number(mm);
-        const yearN = Number(yy);
+        const yearN = Number(yyRaw);
         if (!Number.isFinite(monthN) || monthN < 1 || monthN > 12) {
             this.errorMsg = 'Mes de vencimiento inválido.';
             this.isPlacingOrder = false;
             return;
         }
-        if (!Number.isFinite(yearN) || yy.length < 2) {
-            this.errorMsg = 'Año de vencimiento inválido.';
+        if (!Number.isFinite(yearN) || (yyRaw.length !== 2 && yyRaw.length !== 4)) {
+            this.errorMsg = 'Ano de vencimiento invalido. Usa 2 digitos (ej: 26) o 4 (ej: 2026).';
             this.isPlacingOrder = false;
             return;
         }
+
+        const yy = yyRaw.length === 4
+            ? yyRaw.slice(-2)
+            : yyRaw.padStart(2, '0').slice(-2);
 
         const cvc = String(this.cardCvc || '').replace(/\D/g, '');
         if (cvc.length < 3 || cvc.length > 4) {
@@ -926,7 +930,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.tokenizeCard({
             number,
             exp_month: mm.padStart(2, '0'),
-            exp_year: yy.length === 2 ? `20${yy}` : yy,
+            // Wompi card tokenization expects exp_year as 2 digits (YY)
+            exp_year: yy,
             cvc,
             card_holder: holder
         }).then((token) => {
@@ -990,6 +995,19 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
             // INPUT_VALIDATION_ERROR: extraer errores por campo
             if (type === 'INPUT_VALIDATION_ERROR' && err?.messages && typeof err.messages === 'object') {
+                const translateMsg = (m: string): string => {
+                    let msg = String(m || '');
+                    if (msg.includes('debe coincidir con el patron "^\\d{2}$"')) return 'debe tener exactamente 2 digitos (ej: 26)';
+                    if (msg.includes('debe coincidir con el patron "^\\d{4}$"')) return 'debe tener exactamente 4 digitos (ej: 2026)';
+                    if (msg.includes('no debe contener menos de')) {
+                        const num = msg.match(/\d+/);
+                        return `debe tener al menos ${num ? num[0] : 'varios'} caracteres`;
+                    }
+                    if (msg.includes('no es una fecha valida')) return 'no es una fecha valida';
+                    if (msg.includes('es obligatorio')) return 'es requerido';
+                    return msg;
+                };
+
                 const FIELD_LABELS: Record<string, string> = {
                     number: 'Numero de tarjeta',
                     exp_month: 'Mes de vencimiento',
@@ -1001,7 +1019,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 for (const [field, msgs] of Object.entries(err.messages)) {
                     const label = FIELD_LABELS[field] || field.replace(/_/g, ' ');
                     const list = Array.isArray(msgs) ? msgs : [msgs];
-                    list.forEach((m: any) => lines.push(`• ${label}: ${m}`));
+                    list.forEach((m: any) => lines.push(`• ${label}: ${translateMsg(m)}`));
                 }
                 throw new Error(lines.length ? lines.join('\n') : type);
             }

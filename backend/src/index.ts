@@ -128,6 +128,16 @@ app.use((req, res, next) => {
         return;
     }
 
+    // Webhooks de pasarelas de pago (server-to-server) normalmente NO envian Origin.
+    // Estos endpoints no usan cookies/sesion, asi que no requieren mitigacion CSRF.
+    const webhookPaths = new Set([
+        '/api/payments/wompi/webhook'
+    ]);
+    if (webhookPaths.has(String(req.path || ''))) {
+        next();
+        return;
+    }
+
     const method = String(req.method || '').toUpperCase();
     const isSafeMethod = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
     if (isSafeMethod) {

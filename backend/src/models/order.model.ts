@@ -71,8 +71,9 @@ export type CreateOrderResult = {
 };
 
 // Mapa de transiciones válidas de estado
-// Cuando el cliente paga vía Wompi, el estado inicial siempre es PAGADO.
-// Flujo: PAGADO → ENVIADO → ENTREGADO  |  cualquier estado → CANCELADO (antes de ENTREGADO)
+// En pagos asincrónicos (PSE/Nequi) el estado inicial debe ser PENDIENTE y se confirma
+// a PAGADO cuando Wompi aprueba la transacción (webhook o sync manual).
+// Flujo típico: PENDIENTE → PAGADO → ENVIADO → ENTREGADO  |  cualquier estado → CANCELADO (antes de ENTREGADO)
 const VALID_TRANSITIONS: Record<string, string[]> = {
     PAGADO:    ['ENVIADO', 'CANCELADO'],
     ENVIADO:   ['ENTREGADO', 'CANCELADO'],
@@ -256,9 +257,11 @@ export class OrderModel {
             const addonCols = await detectOrderAddonColumns();
             const idExpr = binary ? 'UUID_TO_BIN(?)' : '?';
 
+            const initialEstado = 'PENDIENTE';
+
             const cols: string[] = ['id', 'usuario_id', 'total', 'direccion_envio', 'estado', 'codigo_transaccion', 'telefono', 'nombre_cliente', 'metodo_pago', 'canal_pago'];
             const vals: any[] = [
-                orderId, orderData.user_id, total, orderData.shipping_address, 'PAGADO',
+                orderId, orderData.user_id, total, orderData.shipping_address, initialEstado,
                 orderData.transaction_code || null,
                 orderData.telefono || null,
                 orderData.nombre_cliente || null,
@@ -325,8 +328,8 @@ export class OrderModel {
             // Historial: estado inicial
             await connection.query(
                 `INSERT INTO historial_pedido (id, orden_id, estado_anterior, estado_nuevo, observacion)
-                 VALUES (${binary ? 'UUID_TO_BIN(?)' : '?'}, ${binary ? 'UUID_TO_BIN(?)' : '?'}, NULL, 'PAGADO', 'Pedido creado y pago confirmado via Wompi')`,
-                [uuidv4(), orderId]
+                 VALUES (${binary ? 'UUID_TO_BIN(?)' : '?'}, ${binary ? 'UUID_TO_BIN(?)' : '?'}, NULL, ?, ?)`,
+                [uuidv4(), orderId, initialEstado, 'Pedido creado. Pago pendiente de confirmacion']
             );
 
             await connection.query('COMMIT');

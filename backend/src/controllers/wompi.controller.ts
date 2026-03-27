@@ -202,7 +202,7 @@ export class WompiController {
             }
         } catch (error: any) {
             const detail = error?.message || String(error);
-            const status = /WOMPI_(PUBLIC_KEY|PRIVATE_KEY| API key)/i.test(detail) ? 400 : 500;
+            const status = /^WOMPI_/i.test(detail) ? 400 : 500;
             res.status(status).json({ message: 'Error creando checkout PSE', detail });
         }
     }
@@ -291,7 +291,7 @@ export class WompiController {
             }
         } catch (error: any) {
             const detail = error?.message || String(error);
-            const status = /WOMPI_(PUBLIC_KEY|PRIVATE_KEY| API key)/i.test(detail) ? 400 : 500;
+            const status = /^WOMPI_/i.test(detail) ? 400 : 500;
             res.status(status).json({ message: 'Error creando checkout Nequi', detail });
         }
     }
@@ -391,7 +391,7 @@ export class WompiController {
             }
         } catch (error: any) {
             const detail = error?.message || String(error);
-            const status = /WOMPI_(PUBLIC_KEY|PRIVATE_KEY| API key)/i.test(detail) ? 400 : 500;
+            const status = /^WOMPI_/i.test(detail) ? 400 : 500;
             res.status(status).json({ message: 'Error creando checkout tarjeta', detail });
         }
     }

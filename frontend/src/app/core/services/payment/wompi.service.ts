@@ -31,6 +31,7 @@ export type WompiDiagnostics = {
     WOMPIPUBLICKEY?: boolean;
     WOMPI_PRIVATE_KEY?: boolean;
     WOMPIPRIVATEKEY?: boolean;
+    WOMPI_INTEGRITY_SECRET?: boolean;
   };
   public_key_kind: string | null;
   public_key_len: number;

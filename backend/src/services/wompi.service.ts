@@ -1,5 +1,6 @@
 import { pool } from '../config/database';
 import { decryptString } from '../utils/encryption.util';
+import crypto from 'crypto';
 
 type WompiEnv = 'sandbox' | 'production';
 
@@ -174,6 +175,17 @@ const resolveConfig = async (): Promise<WompiRuntimeConfig> => {
     }
 };
 
+const computeIntegritySignature = (reference: string, amountInCents: number, currency: string, secret: string): string => {
+    // Wompi integrity signature (sha256): reference + amount_in_cents + currency + integrity_secret
+    const payload = `${reference}${amountInCents}${currency}${secret}`;
+    return crypto.createHash('sha256').update(payload, 'utf8').digest('hex');
+};
+
+const getIntegritySecret = (): string => {
+    // Not stored in DB currently; must be provided via env.
+    return getEnvVar('WOMPI_INTEGRITY_SECRET');
+};
+
 const requirePrivateKey = async (): Promise<WompiRuntimeConfig> => {
     const cfg = await resolveConfig();
     if (!cfg.hasPrivateKey) {
@@ -267,6 +279,7 @@ export const WompiService = {
             WOMPI_PUBLIC_KEY: !!process.env.WOMPI_PUBLIC_KEY,
             WOMPI_PRIVATE_KEY: !!process.env.WOMPI_PRIVATE_KEY,
             WOMPI_PRIVATE_KEY_ENC: !!process.env.WOMPI_PRIVATE_KEY_ENC,
+            WOMPI_INTEGRITY_SECRET: !!process.env.WOMPI_INTEGRITY_SECRET,
             variants_found: [] as string[]
         };
 
@@ -275,6 +288,8 @@ export const WompiService = {
             'WOMPI_PUBLIC_KEY', 'WOMPIPUBLICKEY',
             'WOMPI_PRIVATE_KEY', 'WOMPIPRIVATEKEY',
             'WOMPI_PRIVATE_KEY_ENC', 'WOMPIPRIVATEKEYENC'
+            ,
+            'WOMPI_INTEGRITY_SECRET', 'WOMPIINTEGRITYSECRET'
         ];
         allPossible.forEach(k => { if (process.env[k]) envVars.variants_found.push(k); });
         const publicKind = keyKind(cfg.publicKey);
@@ -362,6 +377,11 @@ export const WompiService = {
     }): Promise<{ transaction_id: string; async_payment_url: string; status?: string }> {
         const cfg = await requirePrivateKey();
 
+        const integritySecret = getIntegritySecret();
+        if (!integritySecret) {
+            throw new Error('WOMPI_INTEGRITY_SECRET no esta configurado');
+        }
+
         const url = `${cfg.baseUrl}/transactions`;
         const body = {
             amount_in_cents: input.amount_in_cents,
@@ -370,6 +390,7 @@ export const WompiService = {
             reference: input.reference,
             customer_email: input.customer_email,
             redirect_url: input.redirect_url,
+            signature: computeIntegritySignature(input.reference, input.amount_in_cents, 'COP', integritySecret),
             payment_method: {
                 type: 'PSE',
                 user_type: input.user_type,
@@ -416,6 +437,11 @@ export const WompiService = {
     }): Promise<{ transaction_id: string; status?: string }> {
         const cfg = await requirePrivateKey();
 
+        const integritySecret = getIntegritySecret();
+        if (!integritySecret) {
+            throw new Error('WOMPI_INTEGRITY_SECRET no esta configurado');
+        }
+
         const url = `${cfg.baseUrl}/transactions`;
         const body = {
             amount_in_cents: input.amount_in_cents,
@@ -424,6 +450,7 @@ export const WompiService = {
             reference: input.reference,
             customer_email: input.customer_email,
             redirect_url: input.redirect_url,
+            signature: computeIntegritySignature(input.reference, input.amount_in_cents, 'COP', integritySecret),
             payment_method: {
                 type: 'NEQUI',
                 phone_number: input.phone_number,
@@ -481,6 +508,11 @@ export const WompiService = {
     }): Promise<{ transaction_id: string; status?: string }> {
         const cfg = await requirePrivateKey();
 
+        const integritySecret = getIntegritySecret();
+        if (!integritySecret) {
+            throw new Error('WOMPI_INTEGRITY_SECRET no esta configurado');
+        }
+
         const url = `${cfg.baseUrl}/transactions`;
         const body = {
             amount_in_cents: input.amount_in_cents,
@@ -489,6 +521,7 @@ export const WompiService = {
             reference: input.reference,
             customer_email: input.customer_email,
             redirect_url: input.redirect_url,
+            signature: computeIntegritySignature(input.reference, input.amount_in_cents, 'COP', integritySecret),
             payment_method: {
                 type: 'CARD',
                 installments: input.installments,

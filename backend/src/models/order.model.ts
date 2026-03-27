@@ -170,13 +170,26 @@ const getAddonConfig = async (): Promise<AddonConfig> => {
     const supported = await detectAddonConfigColumns();
     if (!supported) return { envio_prioritario_precio: 0, perfume_lujo_precio: 0, empaque_regalo_precio: 0, supported: false };
     try {
-        const [rows] = await pool.query<any[]>(
-            `SELECT
-               COALESCE(envio_prioritario_precio, 0) AS envio_prioritario_precio,
-               COALESCE(perfume_lujo_precio, 0) AS perfume_lujo_precio,
-               COALESCE(empaque_regalo_precio, 0) AS empaque_regalo_precio
-             FROM configuracionglobal WHERE id = 1`
+        // Detectar qué columnas de precio existen para no fallar si alguna falta
+        const [existCols] = await pool.query<any[]>(
+            `SELECT column_name FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND lower(table_name) = 'configuracionglobal'
+               AND column_name IN ('envio_prioritario_precio','perfume_lujo_precio','empaque_regalo_precio')`
         );
+        const existSet = new Set((existCols || []).map((r: any) =>
+            String(r.COLUMN_NAME || r.column_name || '').toLowerCase()
+        ));
+
+        const selectParts: string[] = [];
+        if (existSet.has('envio_prioritario_precio')) selectParts.push('COALESCE(envio_prioritario_precio, 0) AS envio_prioritario_precio');
+        else selectParts.push('0 AS envio_prioritario_precio');
+        if (existSet.has('perfume_lujo_precio')) selectParts.push('COALESCE(perfume_lujo_precio, 0) AS perfume_lujo_precio');
+        else selectParts.push('0 AS perfume_lujo_precio');
+        if (existSet.has('empaque_regalo_precio')) selectParts.push('COALESCE(empaque_regalo_precio, 0) AS empaque_regalo_precio');
+        else selectParts.push('0 AS empaque_regalo_precio');
+
+        const [rows] = await pool.query<any[]>(`SELECT ${selectParts.join(', ')} FROM configuracionglobal WHERE id = 1`);
         const r = rows?.[0] || {};
         const ep = Number(r.envio_prioritario_precio || 0);
         const pl = Number(r.perfume_lujo_precio || 0);

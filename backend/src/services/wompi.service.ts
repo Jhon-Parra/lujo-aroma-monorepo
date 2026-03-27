@@ -136,6 +136,16 @@ const resolveConfig = async (): Promise<WompiRuntimeConfig> => {
     }
 };
 
+const requirePrivateKey = async (): Promise<WompiRuntimeConfig> => {
+    const cfg = await resolveConfig();
+    if (!cfg.hasPrivateKey) {
+        // La llave privada es requerida para endpoints autenticados (transactions/banks).
+        // La llave publica solo sirve para tokenizacion client-side y merchant info.
+        throw new Error('WOMPI_PRIVATE_KEY no esta configurado');
+    }
+    return cfg;
+};
+
 export const WompiService = {
     async getClientConfig(): Promise<{ env: WompiEnv; public_key: string; base_url: string }> {
         const cfg = await resolveConfig();
@@ -171,7 +181,7 @@ export const WompiService = {
     },
 
     async getPseBanks(): Promise<WompiPseBank[]> {
-        const cfg = await resolveConfig();
+        const cfg = await requirePrivateKey();
         const url = `${cfg.baseUrl}/pse/financial_institutions`;
         const resp = await fetch(url, {
             method: 'GET',
@@ -207,7 +217,7 @@ export const WompiService = {
         financial_institution_code: string;
         payment_description: string;
     }): Promise<{ transaction_id: string; async_payment_url: string; status?: string }> {
-        const cfg = await resolveConfig();
+        const cfg = await requirePrivateKey();
 
         const url = `${cfg.baseUrl}/transactions`;
         const body = {
@@ -264,7 +274,7 @@ export const WompiService = {
         phone_number: string;
         payment_description: string;
     }): Promise<{ transaction_id: string; status?: string }> {
-        const cfg = await resolveConfig();
+        const cfg = await requirePrivateKey();
 
         const url = `${cfg.baseUrl}/transactions`;
         const body = {
@@ -317,7 +327,7 @@ export const WompiService = {
         token: string;
         installments: number;
     }): Promise<{ transaction_id: string; status?: string }> {
-        const cfg = await resolveConfig();
+        const cfg = await requirePrivateKey();
 
         const url = `${cfg.baseUrl}/transactions`;
         const body = {
@@ -364,7 +374,7 @@ export const WompiService = {
 
     async getTransaction(transactionId: string): Promise<{ id: string; status: string; reference: string }>
     {
-        const cfg = await resolveConfig();
+        const cfg = await requirePrivateKey();
         const id = String(transactionId || '').trim();
         if (!id) throw new Error('transaction id requerido');
 

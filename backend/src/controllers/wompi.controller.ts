@@ -80,6 +80,11 @@ export class WompiController {
                 shipping_address,
                 items,
                 acceptance_token,
+                phone,
+                telefono,
+                nombre_cliente,
+                metodo_pago,
+                canal_pago,
                 envio_prioritario,
                 perfume_lujo,
                 user_type,
@@ -130,6 +135,10 @@ export class WompiController {
                 shipping_address: shipping,
                 items,
                 transaction_code: undefined,
+                telefono: String(telefono || phone || '').trim() || undefined,
+                nombre_cliente: String(nombre_cliente || '').trim() || undefined,
+                metodo_pago: String(metodo_pago || 'WOMPI_PSE').trim(),
+                canal_pago: String(canal_pago || 'Wompi').trim(),
                 envio_prioritario: !!envio_prioritario,
                 perfume_lujo: !!perfume_lujo
             });
@@ -170,7 +179,9 @@ export class WompiController {
                 throw e;
             }
         } catch (error: any) {
-            res.status(500).json({ message: 'Error creando checkout PSE', detail: error?.message || String(error) });
+            const detail = error?.message || String(error);
+            const status = /WOMPI_(PUBLIC_KEY|PRIVATE_KEY| API key)/i.test(detail) ? 400 : 500;
+            res.status(status).json({ message: 'Error creando checkout PSE', detail });
         }
     }
 
@@ -183,7 +194,7 @@ export class WompiController {
                 return;
             }
 
-            const { shipping_address, items, acceptance_token, phone_number, envio_prioritario, perfume_lujo } = req.body;
+            const { shipping_address, items, acceptance_token, phone_number, phone: phoneRaw, telefono, nombre_cliente, metodo_pago, canal_pago, envio_prioritario, perfume_lujo } = req.body;
 
             const shipping = String(shipping_address || '').trim();
             if (!shipping) {
@@ -203,8 +214,8 @@ export class WompiController {
             }
 
             const rawPhone = String(phone_number || '').trim();
-            const phone = rawPhone.replace(/\D/g, '');
-            if (!phone || phone.length < 10) {
+            const phoneDigits = rawPhone.replace(/\D/g, '');
+            if (!phoneDigits || phoneDigits.length < 10) {
                 res.status(400).json({ message: 'Número de teléfono Nequi inválido' });
                 return;
             }
@@ -214,6 +225,10 @@ export class WompiController {
                 shipping_address: shipping,
                 items,
                 transaction_code: undefined,
+                telefono: String(telefono || phoneRaw || '').trim() || undefined,
+                nombre_cliente: String(nombre_cliente || '').trim() || undefined,
+                metodo_pago: String(metodo_pago || 'WOMPI_NEQUI').trim(),
+                canal_pago: String(canal_pago || 'Wompi').trim(),
                 envio_prioritario: !!envio_prioritario,
                 perfume_lujo: !!perfume_lujo
             });
@@ -228,7 +243,7 @@ export class WompiController {
                     reference: created.orderId,
                     customer_email: email,
                     acceptance_token: accToken,
-                    phone_number: phone,
+                    phone_number: phoneDigits,
                     payment_description: `Pedido Perfumissimo ${created.orderId}`
                 });
 
@@ -248,7 +263,9 @@ export class WompiController {
                 throw e;
             }
         } catch (error: any) {
-            res.status(500).json({ message: 'Error creando checkout Nequi', detail: error?.message || String(error) });
+            const detail = error?.message || String(error);
+            const status = /WOMPI_(PUBLIC_KEY|PRIVATE_KEY| API key)/i.test(detail) ? 400 : 500;
+            res.status(status).json({ message: 'Error creando checkout Nequi', detail });
         }
     }
 
@@ -261,7 +278,7 @@ export class WompiController {
                 return;
             }
 
-            const { shipping_address, items, acceptance_token, token, installments, envio_prioritario, perfume_lujo } = req.body;
+            const { shipping_address, items, acceptance_token, token, installments, phone, telefono, nombre_cliente, metodo_pago, canal_pago, envio_prioritario, perfume_lujo } = req.body;
 
             const shipping = String(shipping_address || '').trim();
             if (!shipping) {
@@ -293,6 +310,10 @@ export class WompiController {
                 shipping_address: shipping,
                 items,
                 transaction_code: undefined,
+                telefono: String(telefono || phone || '').trim() || undefined,
+                nombre_cliente: String(nombre_cliente || '').trim() || undefined,
+                metodo_pago: String(metodo_pago || 'WOMPI_CARD').trim(),
+                canal_pago: String(canal_pago || 'Wompi').trim(),
                 envio_prioritario: !!envio_prioritario,
                 perfume_lujo: !!perfume_lujo
             });
@@ -338,7 +359,9 @@ export class WompiController {
                 throw e;
             }
         } catch (error: any) {
-            res.status(500).json({ message: 'Error creando checkout tarjeta', detail: error?.message || String(error) });
+            const detail = error?.message || String(error);
+            const status = /WOMPI_(PUBLIC_KEY|PRIVATE_KEY| API key)/i.test(detail) ? 400 : 500;
+            res.status(status).json({ message: 'Error creando checkout tarjeta', detail });
         }
     }
 

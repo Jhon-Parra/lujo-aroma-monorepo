@@ -41,7 +41,7 @@ const normalizeOrderStateExpr = (colExpr: string): string => {
 
 export const getDashboardSummary = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-        const okStates = ['PAGADO', 'PROCESANDO', 'ENVIADO', 'ENTREGADO'];
+        const okStates = ['PAGADO', 'ENVIADO', 'ENTREGADO'];
         const normalizedStateExpr = normalizeOrderStateExpr('estado');
 
         const monthsBackParsed = z.coerce.number().int().min(1).max(24).catch(12).parse((req.query as any)?.months_back);
@@ -50,7 +50,7 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
         const [revRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
              FROM ordenes
-             WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)`,
+             WHERE ${normalizedStateExpr} IN (?, ?, ?)`,
             okStates
         );
 
@@ -105,8 +105,8 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
                     COALESCE(SUM(o.total), 0) AS revenue,
                     CAST(COUNT(*) AS SIGNED) AS orders_count
                 FROM ordenes o
-                WHERE ${normalizeOrderStateExpr('o.estado')} IN (?, ?, ?, ?)
-                  AND o.creado_en >= DATE_FORMAT(NOW() - INTERVAL (? - 1) MONTH, '%Y-%m-01')
+                 WHERE ${normalizeOrderStateExpr('o.estado')} IN (?, ?, ?)
+                   AND o.creado_en >= DATE_FORMAT(NOW() - INTERVAL (? - 1) MONTH, '%Y-%m-01')
                 GROUP BY 1
             )
             SELECT
@@ -174,10 +174,10 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
              FROM detalleordenes d
              JOIN ordenes o ON o.id = d.orden_id
              JOIN productos p ON p.id = d.producto_id
-             WHERE ${normalizeOrderStateExpr('o.estado')} IN (?, ?, ?, ?)
-             GROUP BY p.id, p.nombre, p.imagen_url
-             ORDER BY unidades DESC, ingresos DESC
-             LIMIT 5`,
+              WHERE ${normalizeOrderStateExpr('o.estado')} IN (?, ?, ?)
+              GROUP BY p.id, p.nombre, p.imagen_url
+              ORDER BY unidades DESC, ingresos DESC
+              LIMIT 5`,
             okStates
         );
 

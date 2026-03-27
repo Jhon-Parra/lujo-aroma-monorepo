@@ -16,14 +16,14 @@ const parseOrderJson = (val: any, fallback: any = []): any => {
 
 const statusLabel = (estado: string): string => {
     const labels: Record<string, string> = {
-        PENDIENTE: 'Pendiente',
         PAGADO: 'Pagado',
-        PROCESANDO: 'Procesando',
         ENVIADO: 'Enviado',
         ENTREGADO: 'Entregado',
         CANCELADO: 'Cancelado'
     };
-    return labels[estado] || estado;
+    const key = String(estado || '').toUpperCase();
+    if (key === 'PENDIENTE' || key === 'PROCESANDO') return 'Pagado';
+    return labels[key] || estado;
 };
 
 const formatMoneyCop = (value: any): string => {

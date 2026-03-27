@@ -242,13 +242,13 @@ export class MyOrdersComponent implements OnInit {
 
     getStatusClass(estado: string): string {
         const classes: Record<string, string> = {
-            'PENDIENTE': 'bg-yellow-100 text-yellow-800',
             'PAGADO': 'bg-green-100 text-green-800',
-            'PROCESANDO': 'bg-sky-100 text-sky-800',
             'ENVIADO': 'bg-blue-100 text-blue-800',
             'CANCELADO': 'bg-red-100 text-red-800',
             'ENTREGADO': 'bg-purple-100 text-purple-800'
         };
-        return classes[estado] || 'bg-gray-100 text-gray-600';
+        const key = String(estado || '').trim().toUpperCase();
+        const normalized = (key === 'PENDIENTE' || key === 'PROCESANDO' || !key) ? 'PAGADO' : key;
+        return classes[normalized] || 'bg-gray-100 text-gray-600';
     }
 }

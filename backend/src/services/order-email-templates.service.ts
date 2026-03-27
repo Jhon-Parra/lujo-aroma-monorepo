@@ -1,9 +1,7 @@
 import { pool } from '../config/database';
 
 export const ORDER_EMAIL_STATUSES = [
-    'PENDIENTE',
     'PAGADO',
-    'PROCESANDO',
     'ENVIADO',
     'ENTREGADO',
     'CANCELADO'
@@ -20,20 +18,10 @@ export type OrderEmailTemplate = {
 };
 
 const STATUS_COPY: Record<OrderEmailStatus, { headline: string; message: string; subject: string }> = {
-    PENDIENTE: {
-        headline: 'Gracias por tu compra',
-        message: 'Hemos recibido tu pedido correctamente. A continuacion te presentamos el resumen de tu orden.',
-        subject: 'Tu compra ha sido realizada exitosamente (Pedido #{{order_short_id}})'
-    },
     PAGADO: {
         headline: 'Pago confirmado',
         message: 'Tu pago ha sido confirmado y comenzamos a preparar tu pedido.',
         subject: 'Pago confirmado para tu pedido #{{order_short_id}}'
-    },
-    PROCESANDO: {
-        headline: 'Pedido en preparacion',
-        message: 'Tu pedido se encuentra en proceso de alistamiento.',
-        subject: 'Tu pedido #{{order_short_id}} esta en proceso'
     },
     ENVIADO: {
         headline: 'Pedido enviado',

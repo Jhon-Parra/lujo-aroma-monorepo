@@ -3,7 +3,7 @@ import { pool } from '../config/database';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { z } from 'zod';
 
-const okStates = ['PAGADO', 'PROCESANDO', 'ENVIADO', 'ENTREGADO'];
+const okStates = ['PAGADO', 'ENVIADO', 'ENTREGADO'];
 
 type AlertConfig = {
     sales_delta_pct: number;
@@ -408,7 +408,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
                     COALESCE(SUM(o.total), 0) AS total_spent
              FROM ordenes o
              JOIN usuarios u ON u.id = o.usuario_id
-             WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
+             WHERE ${normalizedStateExpr} IN (?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL ? DAY)
              GROUP BY u.id, u.nombre, u.apellido, u.email
              ORDER BY total_spent DESC
@@ -418,7 +418,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
 
         // 7. Sales by Category (Refactored to avoid ROW_NUMBER)
         const salesParams: any[] = [...okStates, days];
-        let salesWhere = `${normalizedStateExpr} IN (?, ?, ?, ?) AND o.creado_en >= DATE_SUB(NOW(), INTERVAL ? DAY)`;
+        let salesWhere = `${normalizedStateExpr} IN (?, ?, ?) AND o.creado_en >= DATE_SUB(NOW(), INTERVAL ? DAY)`;
         if (categoryFilter) {
             salesWhere += ` AND p.genero = ?`;
             salesParams.push(categoryFilter);
@@ -477,18 +477,18 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const [salesCurrentRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
              FROM ordenes o
-             WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
+             WHERE ${normalizedStateExpr} IN (?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY)`,
-            [...okStates]
+             [...okStates]
         );
 
         const [salesPrevRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
              FROM ordenes o
-             WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
+             WHERE ${normalizedStateExpr} IN (?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
                AND o.creado_en < DATE_SUB(NOW(), INTERVAL 7 DAY)`,
-            [...okStates]
+             [...okStates]
         );
 
         const currentSales = toNumber(salesCurrentRows?.[0]?.total);
@@ -544,7 +544,7 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
              FROM detalleordenes d
              JOIN ordenes o ON o.id = d.orden_id
              JOIN productos p ON p.id = d.producto_id
-             WHERE ${normalizedStateExpr} IN (?, ?, ?, ?)
+             WHERE ${normalizedStateExpr} IN (?, ?, ?)
                AND o.creado_en >= DATE_SUB(NOW(), INTERVAL 14 DAY)
              GROUP BY d.producto_id, p.nombre
               HAVING SUM(CASE WHEN o.creado_en >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN d.cantidad ELSE 0 END) >= ?

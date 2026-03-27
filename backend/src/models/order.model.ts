@@ -100,15 +100,15 @@ export type CreateOrderResult = {
 };
 
 // Mapa de transiciones válidas de estado
-// En pagos asincrónicos (PSE/Nequi) el estado inicial debe ser PENDIENTE y se confirma
-// a PAGADO cuando Wompi aprueba la transacción (webhook o sync manual).
-// Flujo típico: PENDIENTE → PAGADO → ENVIADO → ENTREGADO  |  cualquier estado → CANCELADO (antes de ENTREGADO)
+// Solo manejamos estados de cumplimiento/logística: PAGADO → ENVIADO → ENTREGADO | CANCELADO.
+// El estado del pago (en verificación/aprobado/rechazado) se refleja en `estado_pago` cuando existe.
 const VALID_TRANSITIONS: Record<string, string[]> = {
     PAGADO:    ['ENVIADO', 'CANCELADO'],
     ENVIADO:   ['ENTREGADO', 'CANCELADO'],
     ENTREGADO: [],   // terminal
     CANCELADO: [],   // terminal
     // Compatibilidad con pedidos legacy que puedan tener estos estados:
+    // legacy (no usar en flujo nuevo)
     PENDIENTE:  ['PAGADO', 'ENVIADO', 'CANCELADO'],
     PROCESANDO: ['ENVIADO', 'CANCELADO'],
 };
@@ -284,9 +284,10 @@ export class OrderModel {
             );
 
             const addonCols = await detectOrderAddonColumns();
+            const paymentCols = await detectPaymentColumns();
             const idExpr = binary ? 'UUID_TO_BIN(?)' : '?';
 
-            const initialEstado = 'PENDIENTE';
+            const initialEstado = 'PAGADO';
 
             const cols: string[] = ['id', 'usuario_id', 'total', 'direccion_envio', 'estado', 'codigo_transaccion', 'telefono', 'nombre_cliente', 'metodo_pago', 'canal_pago'];
             const vals: any[] = [
@@ -297,6 +298,9 @@ export class OrderModel {
                 orderData.metodo_pago || null,
                 orderData.canal_pago || null,
             ];
+
+            // Estado del pago (si la columna existe): inicia como PENDIENTE hasta confirmación Wompi.
+            if (paymentCols.estado_pago) { cols.push('estado_pago'); vals.push('PENDIENTE'); }
 
             if (addonCols.subtotal_productos) { cols.push('subtotal_productos'); vals.push(subtotal_productos); }
             if (addonCols.envio_prioritario) { cols.push('envio_prioritario'); vals.push(envio_prioritario); }
@@ -358,7 +362,7 @@ export class OrderModel {
             await connection.query(
                 `INSERT INTO historial_pedido (id, orden_id, estado_anterior, estado_nuevo, observacion)
                  VALUES (${binary ? 'UUID_TO_BIN(?)' : '?'}, ${binary ? 'UUID_TO_BIN(?)' : '?'}, NULL, ?, ?)`,
-                [uuidv4(), orderId, initialEstado, 'Pedido creado. Pago pendiente de confirmacion']
+                [uuidv4(), orderId, initialEstado, 'Pedido creado. Pago en verificacion.']
             );
 
             await connection.query('COMMIT');

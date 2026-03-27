@@ -64,7 +64,8 @@ export interface Order {
   costo_envio_prioritario?: number;
   perfume_lujo?: boolean;
   costo_perfume_lujo?: number;
-  estado: 'PENDIENTE' | 'PAGADO' | 'PROCESANDO' | 'ENVIADO' | 'CANCELADO' | 'ENTREGADO';
+  // Estado logístico (mostramos solo: PAGADO/ENVIADO/ENTREGADO/CANCELADO)
+  estado: string;
   direccion_envio: string;
   codigo_transaccion?: string;
   creado_en: string;
@@ -104,8 +105,16 @@ export interface RegisterShippingDto {
 }
 
 // ─── Función normalizadora de órdenes ─────────────────────────────────────────
+const normalizeEstado = (raw: any): string => {
+  const v = String(raw || '').trim().toUpperCase();
+  if (v === 'PENDIENTE' || v === 'PROCESANDO') return 'PAGADO';
+  if (!v) return 'PAGADO';
+  return v;
+};
+
 const normalizeOrder = (o: Order): Order => ({
   ...o,
+  estado: normalizeEstado((o as any)?.estado),
   items: Array.isArray(o.items) ? o.items.filter(i => i != null) : [],
   historial: Array.isArray(o.historial) ? o.historial : []
 });
@@ -191,31 +200,29 @@ export class OrderService {
   // ── Utilidades de etiquetas/colores ────────────────────────────────────────
   getStatusLabel(estado: string): string {
     const labels: Record<string, string> = {
-      PENDIENTE: 'Pendiente',
       PAGADO: 'Pagado',
-      PROCESANDO: 'Procesando',
       ENVIADO: 'Enviado',
       CANCELADO: 'Cancelado',
       ENTREGADO: 'Entregado'
     };
-    return labels[estado] || estado;
+    const key = normalizeEstado(estado);
+    return labels[key] || key;
   }
 
   getStatusColor(estado: string): string {
     const colors: Record<string, string> = {
-      PENDIENTE: '#f59e0b',
       PAGADO: '#10b981',
-      PROCESANDO: '#0ea5e9',
       ENVIADO: '#3b82f6',
       CANCELADO: '#ef4444',
       ENTREGADO: '#8b5cf6'
     };
-    return colors[estado] || '#6b7280';
+    const key = normalizeEstado(estado);
+    return colors[key] || '#10b981';
   }
 
   /** Retorna true si la transición de estado es válida
    * Flujo principal: PAGADO → ENVIADO → ENTREGADO  |  PAGADO/ENVIADO → CANCELADO
-   * Se mantienen PENDIENTE y PROCESANDO para compatibilidad con pedidos legacy.
+   * Si llegan estados legacy (PENDIENTE/PROCESANDO) se tratan como PAGADO en UI.
    */
   static isValidTransition(actual: string, nuevo: string): boolean {
     const transitions: Record<string, string[]> = {
@@ -224,7 +231,7 @@ export class OrderService {
       ENTREGADO:  [],
       CANCELADO:  [],
       // legacy
-      PENDIENTE:  ['PAGADO', 'ENVIADO', 'CANCELADO'],
+      PENDIENTE:  ['ENVIADO', 'CANCELADO'],
       PROCESANDO: ['ENVIADO', 'CANCELADO'],
     };
     return (transitions[actual] || []).includes(nuevo);

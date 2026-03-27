@@ -6,7 +6,7 @@ import { OrderService, Order, RegisterShippingDto } from '../../../core/services
 import { AuthService } from '../../../core/services/auth.service';
 import { LowStockBellComponent } from '../../../shared/components/low-stock-bell/low-stock-bell.component';
 
-type OrderStatus = 'PENDIENTE' | 'PAGADO' | 'PROCESANDO' | 'ENVIADO' | 'ENTREGADO' | 'CANCELADO';
+type OrderStatus = 'PAGADO' | 'ENVIADO' | 'ENTREGADO' | 'CANCELADO';
 
 @Component({
   selector: 'app-orders',
@@ -62,7 +62,7 @@ export class OrdersComponent implements OnInit {
     this.route.queryParams.subscribe((params) => {
       const status = (params['status'] || '').toString().trim().toUpperCase();
       const q = (params['q'] || '').toString();
-      const allowed = new Set(['', 'PAGADO', 'ENVIADO', 'ENTREGADO', 'CANCELADO', 'PENDIENTE', 'PROCESANDO']);
+      const allowed = new Set(['', 'PAGADO', 'ENVIADO', 'ENTREGADO', 'CANCELADO']);
       this.statusFilter = (allowed.has(status) ? status : '') as any;
       this.query = q;
       this.load();
@@ -199,9 +199,7 @@ export class OrdersComponent implements OnInit {
 
   getStatusClass(estado: string): string {
     const classes: Record<string, string> = {
-      PENDIENTE: 'bg-yellow-100 text-yellow-800',
       PAGADO: 'bg-green-100 text-green-800',
-      PROCESANDO: 'bg-sky-100 text-sky-800',
       ENVIADO: 'bg-blue-100 text-blue-800',
       CANCELADO: 'bg-red-100 text-red-800',
       ENTREGADO: 'bg-purple-100 text-purple-800'

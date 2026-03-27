@@ -167,7 +167,7 @@ export class OrderController {
             const { estado, observacion } = req.body;
             const adminId = req.user?.id;
 
-            const validStates = ['PENDIENTE', 'PAGADO', 'PROCESANDO', 'ENVIADO', 'CANCELADO', 'ENTREGADO'];
+            const validStates = ['PAGADO', 'ENVIADO', 'ENTREGADO', 'CANCELADO'];
             if (!validStates.includes(estado)) {
                 res.status(400).json({ message: `Estado inválido. Valores permitidos: ${validStates.join(', ')}` });
                 return;

@@ -28,16 +28,14 @@ export class EmailsComponent implements OnInit {
   };
 
   emailStatuses = [
-    { key: 'PENDIENTE', label: 'Pendiente' },
     { key: 'PAGADO', label: 'Pagado' },
-    { key: 'PROCESANDO', label: 'Procesando' },
     { key: 'ENVIADO', label: 'Enviado' },
     { key: 'ENTREGADO', label: 'Entregado' },
     { key: 'CANCELADO', label: 'Cancelado' }
   ];
 
   emailTemplates: Record<string, OrderEmailTemplate> = {};
-  selectedEmailStatus = 'PENDIENTE';
+  selectedEmailStatus = 'PAGADO';
   templateDraft: OrderEmailTemplate | null = null;
   templatesLoading = false;
   templatesSaving = false;

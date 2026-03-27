@@ -964,9 +964,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                     this.isPlacingOrder = false;
                 }
             });
-        }).catch((e) => {
+        }).catch((e: any) => {
             console.error('Error tokenizando tarjeta:', e);
-            this.errorMsg = 'No se pudo validar la tarjeta. Revisa los datos e intenta de nuevo.';
+            const msg = e?.message || String(e);
+            this.errorMsg = msg.includes('Http') ? 'No se pudo validar la tarjeta. Revisa los datos e intenta de nuevo.' : msg;
             this.isPlacingOrder = false;
         });
     }
@@ -984,7 +985,27 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
         const json = await resp.json().catch(() => ({} as any));
         if (!resp.ok) {
-            throw new Error((json as any)?.error?.type || `HTTP ${resp.status}`);
+            const err = (json as any)?.error;
+            const type = String(err?.type || '').trim();
+
+            // INPUT_VALIDATION_ERROR: extraer errores por campo
+            if (type === 'INPUT_VALIDATION_ERROR' && err?.messages && typeof err.messages === 'object') {
+                const FIELD_LABELS: Record<string, string> = {
+                    number: 'Numero de tarjeta',
+                    exp_month: 'Mes de vencimiento',
+                    exp_year: 'Ano de vencimiento',
+                    cvc: 'CVC/CVV',
+                    card_holder: 'Nombre del titular'
+                };
+                const lines: string[] = [];
+                for (const [field, msgs] of Object.entries(err.messages)) {
+                    const label = FIELD_LABELS[field] || field.replace(/_/g, ' ');
+                    const list = Array.isArray(msgs) ? msgs : [msgs];
+                    list.forEach((m: any) => lines.push(`• ${label}: ${m}`));
+                }
+                throw new Error(lines.length ? lines.join('\n') : type);
+            }
+            throw new Error(err?.reason || err?.message || type || `HTTP ${resp.status}`);
         }
 
         const token = String((json as any)?.data?.id || (json as any)?.data?.token || (json as any)?.id || '').trim();

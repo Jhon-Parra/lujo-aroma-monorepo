@@ -61,18 +61,54 @@ const parseWompiErrorDetail = (body: string): string => {
         const err = (json as any)?.error;
         if (!err) return raw;
 
-        const parts = [err?.type, err?.reason, err?.message]
-            .filter(Boolean)
-            .map((v: any) => String(v));
+        const type = String(err?.type || '').trim();
 
-        const extras: string[] = [];
-        if (err?.messages) extras.push(JSON.stringify(err.messages));
-        if (err?.details) extras.push(JSON.stringify(err.details));
-        if (err?.data) extras.push(JSON.stringify(err.data));
+        // Helper para traducir mensajes tecnicos de Wompi a lenguaje humano
+        const translateMsg = (m: string): string => {
+            let msg = String(m || '');
+            if (msg.includes('debe coincidir con el patron "^\\d{2}$"')) return 'debe tener exactamente 2 digitos (ej: 26)';
+            if (msg.includes('debe coincidir con el patron "^\\d{4}$"')) return 'debe tener exactamente 4 digitos (ej: 2026)';
+            if (msg.includes('no debe contener menos de')) {
+                const num = msg.match(/\d+/);
+                return `debe tener al menos ${num ? num[0] : 'varios'} caracteres`;
+            }
+            if (msg.includes('no es una fecha valida')) return 'no es una fecha valida';
+            if (msg.includes('debe ser una de')) return 'tiene un valor no permitido';
+            if (msg.includes('es obligatorio')) return 'es requerido';
+            return msg;
+        };
 
-        const main = parts.join(' | ') || raw;
-        const extra = extras.filter(Boolean).join(' | ');
-        return extra ? `${main} | ${extra}` : main;
+        // INPUT_VALIDATION_ERROR: contiene mensajes por campo
+        if (type === 'INPUT_VALIDATION_ERROR' && err?.messages && typeof err.messages === 'object') {
+            const fieldErrors: string[] = [];
+            const FIELD_LABELS: Record<string, string> = {
+                exp_year: 'Ano de vencimiento',
+                exp_month: 'Mes de vencimiento',
+                card_holder: 'Nombre en la tarjeta',
+                number: 'Numero de tarjeta',
+                cvc: 'Codigo de seguridad (CVC)',
+                phone_number: 'Numero de telefono',
+                financial_institution_code: 'Banco'
+            };
+
+            for (const [field, msgs] of Object.entries(err.messages)) {
+                const label = FIELD_LABELS[field] || field.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+                const list = Array.isArray(msgs) ? msgs : [msgs];
+                list.forEach((m: any) => fieldErrors.push(`${label} ${translateMsg(m)}`));
+            }
+
+            if (fieldErrors.length) {
+                return `Hay errores en los datos:\n• ${fieldErrors.join('\n• ')}`;
+            }
+        }
+
+        // Resto de lógica de errores...
+        if (type === 'UNAUTHORIZED' || err?.reason?.includes?.('llave')) {
+            return 'Configuración de pago inválida (API Key).';
+        }
+
+        const parts = [err?.reason, err?.message].filter(Boolean);
+        return parts.join(' | ') || type || raw;
     } catch {
         return raw;
     }

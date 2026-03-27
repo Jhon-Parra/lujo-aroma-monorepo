@@ -19,9 +19,9 @@ export type OrderEmailTemplate = {
 
 const STATUS_COPY: Record<OrderEmailStatus, { headline: string; message: string; subject: string }> = {
     PAGADO: {
-        headline: 'Pago confirmado',
-        message: 'Tu pago ha sido confirmado y comenzamos a preparar tu pedido.',
-        subject: 'Pago confirmado para tu pedido #{{order_short_id}}'
+        headline: 'Pedido recibido',
+        message: 'Hemos recibido tu pedido y comenzamos a prepararlo. Si pagaste en linea, la confirmacion puede tardar unos minutos.',
+        subject: 'Hemos recibido tu pedido #{{order_short_id}}'
     },
     ENVIADO: {
         headline: 'Pedido enviado',

@@ -11,6 +11,8 @@ const safeOriginFromReq = (req: any): string => {
     return fallback || 'http://localhost:4200';
 };
 
+const WOMPI_API_VERSION = '1.2.2-debug';
+
 export class WompiController {
     static async getConfig(req: AuthRequest, res: Response): Promise<void> {
         try {
@@ -20,7 +22,7 @@ export class WompiController {
                 ...cfg,
                 has_private_key: hasPrivateKey,
                 configured: true,
-                version: '1.2.1-debug'
+                version: WOMPI_API_VERSION
             });
         } catch (e: any) {
             const msg = String(e?.message || '');
@@ -33,7 +35,7 @@ export class WompiController {
                     public_key: null,
                     base_url: 'https://sandbox.wompi.co/v1',
                     has_private_key: false,
-                    version: '1.2.1-debug',
+                    version: WOMPI_API_VERSION,
                     message: 'Wompi no está configurado aún. Configura las llaves en el panel de administrador.'
                 });
                 return;
@@ -47,6 +49,7 @@ export class WompiController {
         try {
             const data = await WompiService.getMerchant();
             res.status(200).json({
+                version: WOMPI_API_VERSION,
                 name: data.name || null,
                 presigned_acceptance: {
                     acceptance_token: data.acceptance_token,
@@ -54,7 +57,7 @@ export class WompiController {
                 }
             });
         } catch (e: any) {
-            res.status(500).json({ error: e?.message || 'No se pudo obtener merchant de Wompi' });
+            res.status(500).json({ version: WOMPI_API_VERSION, error: e?.message || 'No se pudo obtener merchant de Wompi' });
         }
     }
 

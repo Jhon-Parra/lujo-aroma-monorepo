@@ -455,7 +455,15 @@ export const WompiService = {
         }
 
         const txId = String(json?.data?.id || '').trim();
+
+        // Wompi devuelve la URL de pago PSE en distintos lugares según el ambiente:
+        // - Producción: json.data.payment_method.extra.async_payment_url
+        // - Sandbox: json.data.redirect_url (payment_method.extra solo trae is_three_ds)
+        // Buscamos en todos los lugares posibles.
         let asyncUrl = deepFindStringByKey(json?.data, ['async_payment_url', 'asyncPaymentUrl']);
+        if (!asyncUrl && json?.data?.redirect_url) {
+            asyncUrl = String(json.data.redirect_url).trim();
+        }
 
         // Fallback: fetch transaction details to find async_payment_url.
         let fallbackErr = '';

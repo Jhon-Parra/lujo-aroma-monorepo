@@ -43,6 +43,13 @@ type WompiGetTransactionResponse = {
         reference?: string;
         amount_in_cents?: number;
         currency?: string;
+        payment_method?: {
+            extra?: {
+                async_payment_url?: string;
+                [k: string]: any;
+            };
+            [k: string]: any;
+        };
     };
 };
 
@@ -416,12 +423,42 @@ export const WompiService = {
             throw new Error(`Wompi error (${resp.status}): ${detail}`);
         }
 
-        const json = (await resp.json()) as WompiCreateTransactionResponse;
-        const txId = String(json?.data?.id || '').trim();
-        const asyncUrl = String(json?.data?.payment_method?.extra?.async_payment_url || '').trim();
-        if (!txId || !asyncUrl) {
-            throw new Error('Respuesta Wompi invalida: falta transaction id o async_payment_url');
+        const raw = await resp.text().catch(() => '');
+        let json: any = null;
+        try {
+            json = raw ? JSON.parse(raw) : null;
+        } catch {
+            // Some proxies may mangle response; include snippet.
+            throw new Error(`Respuesta Wompi invalida: no es JSON (${raw.slice(0, 200)})`);
         }
+
+        const txId = String(json?.data?.id || '').trim();
+        const asyncUrlCandidates = [
+            json?.data?.payment_method?.extra?.async_payment_url,
+            json?.data?.payment_method?.extra?.asyncPaymentUrl,
+            json?.data?.payment_method?.extra?.url,
+            json?.data?.payment_method?.async_payment_url,
+            json?.data?.async_payment_url,
+            json?.data?.asyncPaymentUrl
+        ];
+        let asyncUrl = String(asyncUrlCandidates.find((v: any) => typeof v === 'string' && v.trim()) || '').trim();
+
+        // Fallback: fetch transaction details to find async_payment_url.
+        if (txId && !asyncUrl) {
+            try {
+                const tx = await this.getTransaction(txId);
+                asyncUrl = String((tx as any)?.async_payment_url || '').trim();
+            } catch {
+                // ignore; we'll throw below with diagnostic
+            }
+        }
+
+        if (!txId || !asyncUrl) {
+            const snippet = raw ? raw.slice(0, 300) : '';
+            const missing = !txId ? 'transaction id' : 'async_payment_url';
+            throw new Error(`Respuesta Wompi invalida: falta ${missing}${txId ? ` (txId=${txId})` : ''}${snippet ? ` | ${snippet}` : ''}`);
+        }
+
         return { transaction_id: txId, async_payment_url: asyncUrl, status: json?.data?.status };
     }
     ,
@@ -553,7 +590,7 @@ export const WompiService = {
     }
     ,
 
-    async getTransaction(transactionId: string): Promise<{ id: string; status: string; reference: string }>
+    async getTransaction(transactionId: string): Promise<{ id: string; status: string; reference: string; async_payment_url?: string }>
     {
         const cfg = await requirePrivateKey();
         const id = String(transactionId || '').trim();
@@ -573,9 +610,10 @@ export const WompiService = {
         const tid = String(json?.data?.id || '').trim();
         const status = String(json?.data?.status || '').trim();
         const ref = String(json?.data?.reference || '').trim();
+        const asyncUrl = String(json?.data?.payment_method?.extra?.async_payment_url || '').trim();
         if (!tid || !status || !ref) {
             throw new Error('Respuesta Wompi invalida en getTransaction');
         }
-        return { id: tid, status, reference: ref };
+        return { id: tid, status, reference: ref, async_payment_url: asyncUrl || undefined };
     }
 };

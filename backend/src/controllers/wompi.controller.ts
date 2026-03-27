@@ -196,6 +196,24 @@ export class WompiController {
                     redirectUrl
                 });
             } catch (e: any) {
+                const msg = String(e?.message || e || '');
+                // Si Wompi creo la transaccion pero no pudimos obtener el async_payment_url,
+                // NO cancelar la orden (podria reconciliarse luego).
+                const m = msg.match(/txId=([a-zA-Z0-9_\-]+)/);
+                if (m?.[1]) {
+                    const txId = String(m[1]).trim();
+                    if (txId) {
+                        try { await OrderModel.updateTransactionCode(created.orderId, txId); } catch { /* ignore */ }
+                    }
+                    res.status(502).json({
+                        message: 'Checkout PSE creado parcialmente. No se pudo obtener la URL de pago.',
+                        orderId: created.orderId,
+                        transactionId: txId,
+                        detail: msg
+                    });
+                    return;
+                }
+
                 // Si falla el pago, cancelar la orden y devolver stock
                 await OrderModel.cancelAndRestock(created.orderId);
                 throw e;

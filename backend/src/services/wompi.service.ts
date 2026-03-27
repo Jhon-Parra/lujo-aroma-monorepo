@@ -281,14 +281,23 @@ export const WompiService = {
             amount_in_cents: input.amount_in_cents,
             currency: 'COP',
             acceptance_token: input.acceptance_token,
-            reference: input.reference,
-            customer_email: input.customer_email,
+            reference: `${input.reference}-${Date.now()}`,
+            customer_email: input.customer_email || 'correo@ejemplo.com',
+            redirect_url: `${cfg.baseUrl.replace(/\/v1$/, '')}/order-success/${input.reference}`, // Fallback redirect
             payment_method: {
                 type: 'NEQUI',
                 phone_number: input.phone_number,
                 payment_description: input.payment_description
             }
         };
+
+        console.log('Wompi Nequi Request:', {
+            url,
+            ref: body.reference,
+            amount: body.amount_in_cents,
+            email: body.customer_email,
+            phone: body.payment_method.phone_number
+        });
 
         const resp = await fetch(url, {
             method: 'POST',
@@ -300,11 +309,19 @@ export const WompiService = {
         });
 
         if (!resp.ok) {
-            const body = await resp.text().catch(() => '');
-            let detail = body;
+            const bodyText = await resp.text().catch(() => '');
+            console.error('Wompi Nequi Failure:', {
+                status: resp.status,
+                url,
+                ref: body.reference,
+                hasKey: !!cfg.apiKey,
+                keyPrefix: cfg.apiKey?.substring(0, 9),
+                errorBody: bodyText.substring(0, 500)
+            });
+            let detail = bodyText;
             try {
-                const json = JSON.parse(body);
-                detail = json?.error?.type || json?.error?.reason || json?.error?.message || body;
+                const json = JSON.parse(bodyText);
+                detail = json?.error?.type || json?.error?.reason || json?.error?.message || bodyText;
             } catch { /* use raw body */ }
             throw new Error(`Wompi error (${resp.status}): ${detail}`);
         }

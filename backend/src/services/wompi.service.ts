@@ -470,10 +470,21 @@ export const WompiService = {
         }
 
         if (!txId || !asyncUrl) {
-            const snippet = raw ? raw.slice(0, 300) : '';
             const missing = !txId ? 'transaction id' : 'async_payment_url';
             const extra = fallbackErr ? ` | fallback=${fallbackErr}` : '';
-            throw new Error(`Respuesta Wompi invalida: falta ${missing}${txId ? ` (txId=${txId})` : ''}${extra}${snippet ? ` | ${snippet}` : ''}`);
+            const dataKeys = json?.data && typeof json.data === 'object' ? Object.keys(json.data).slice(0, 30) : [];
+            const pm = json?.data?.payment_method;
+            const pmKeys = pm && typeof pm === 'object' ? Object.keys(pm).slice(0, 30) : [];
+            const pmExtra = pm?.extra;
+            const extraKeys = pmExtra && typeof pmExtra === 'object' ? Object.keys(pmExtra).slice(0, 30) : [];
+            const snippet = raw ? raw.slice(0, 200) : '';
+            throw new Error(
+                `Respuesta Wompi invalida: falta ${missing}${txId ? ` (txId=${txId})` : ''}${extra}` +
+                ` | data_keys=${JSON.stringify(dataKeys)}` +
+                ` | payment_method_keys=${JSON.stringify(pmKeys)}` +
+                ` | payment_method_extra_keys=${JSON.stringify(extraKeys)}` +
+                (snippet ? ` | snippet=${snippet}` : '')
+            );
         }
 
         return { transaction_id: txId, async_payment_url: asyncUrl, status: json?.data?.status };

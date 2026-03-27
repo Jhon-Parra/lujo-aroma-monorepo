@@ -109,6 +109,9 @@ export class WompiController {
                 canal_pago,
                 envio_prioritario,
                 perfume_lujo,
+                empaque_regalo,
+                cart_recovery_applied,
+                cart_recovery_discount_pct,
                 user_type,
                 user_legal_id_type,
                 user_legal_id,
@@ -162,7 +165,10 @@ export class WompiController {
                 metodo_pago: String(metodo_pago || 'WOMPI_PSE').trim(),
                 canal_pago: String(canal_pago || 'Wompi').trim(),
                 envio_prioritario: !!envio_prioritario,
-                perfume_lujo: !!perfume_lujo
+                perfume_lujo: !!perfume_lujo,
+                empaque_regalo: !!empaque_regalo,
+                cart_recovery_applied: !!cart_recovery_applied,
+                cart_recovery_discount_pct: cart_recovery_discount_pct
             });
 
             const amountInCents = Math.round(created.total * 100);
@@ -238,7 +244,22 @@ export class WompiController {
                 return;
             }
 
-            const { shipping_address, items, acceptance_token, phone_number, phone: phoneRaw, telefono, nombre_cliente, metodo_pago, canal_pago, envio_prioritario, perfume_lujo } = req.body;
+            const { 
+                shipping_address, 
+                items, 
+                acceptance_token, 
+                phone_number, 
+                phone: phoneRaw, 
+                telefono, 
+                nombre_cliente, 
+                metodo_pago, 
+                canal_pago, 
+                envio_prioritario, 
+                perfume_lujo,
+                empaque_regalo,
+                cart_recovery_applied,
+                cart_recovery_discount_pct
+            } = req.body;
 
             const shipping = String(shipping_address || '').trim();
             if (!shipping) {
@@ -274,7 +295,10 @@ export class WompiController {
                 metodo_pago: String(metodo_pago || 'WOMPI_NEQUI').trim(),
                 canal_pago: String(canal_pago || 'Wompi').trim(),
                 envio_prioritario: !!envio_prioritario,
-                perfume_lujo: !!perfume_lujo
+                perfume_lujo: !!perfume_lujo,
+                empaque_regalo: !!empaque_regalo,
+                cart_recovery_applied: !!cart_recovery_applied,
+                cart_recovery_discount_pct: cart_recovery_discount_pct
             });
 
             const amountInCents = Math.round(created.total * 100);
@@ -327,7 +351,23 @@ export class WompiController {
                 return;
             }
 
-            const { shipping_address, items, acceptance_token, token, installments, phone, telefono, nombre_cliente, metodo_pago, canal_pago, envio_prioritario, perfume_lujo } = req.body;
+            const { 
+                shipping_address, 
+                items, 
+                acceptance_token, 
+                token, 
+                installments, 
+                phone, 
+                telefono, 
+                nombre_cliente, 
+                metodo_pago, 
+                canal_pago, 
+                envio_prioritario, 
+                perfume_lujo,
+                empaque_regalo,
+                cart_recovery_applied,
+                cart_recovery_discount_pct
+            } = req.body;
 
             const shipping = String(shipping_address || '').trim();
             if (!shipping) {
@@ -364,7 +404,10 @@ export class WompiController {
                 metodo_pago: String(metodo_pago || 'WOMPI_CARD').trim(),
                 canal_pago: String(canal_pago || 'Wompi').trim(),
                 envio_prioritario: !!envio_prioritario,
-                perfume_lujo: !!perfume_lujo
+                perfume_lujo: !!perfume_lujo,
+                empaque_regalo: !!empaque_regalo,
+                cart_recovery_applied: !!cart_recovery_applied,
+                cart_recovery_discount_pct: cart_recovery_discount_pct
             });
 
             const amountInCents = Math.round(created.total * 100);

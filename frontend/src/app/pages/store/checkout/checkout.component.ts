@@ -433,7 +433,18 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     dismissCartRecovery(): void {
+        const pending = this.cartRecoveryPendingAction;
         this.closeCartRecovery();
+
+        // Si el usuario cierra con X, ejecutar la accion pendiente SIN aplicar descuento.
+        if (pending === 'clear') {
+            this.cartService.clearCart();
+            return;
+        }
+        if (pending === 'cancel') {
+            this.saveCheckoutDraft();
+            this.router.navigate(['/catalog']);
+        }
     }
 
     proceedCartRecoveryPendingAction(): void {
@@ -444,30 +455,26 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             return;
         }
         if (pending === 'cancel') {
-            // Seguir comprando: volver al catalogo/categorias
+            // Seguir comprando: aplicar descuento y salir del carrito
+            this.applyRecoveryDiscountOnly();
             this.saveCheckoutDraft();
             this.router.navigate(['/catalog']);
         }
     }
 
     onCartRecoveryAction(): void {
+        // Aplicar descuento y mantener al cliente en el carrito.
+        this.applyRecoveryDiscountOnly();
+        this.closeCartRecovery();
+        this.saveCheckoutDraft();
+    }
+
+    private applyRecoveryDiscountOnly(): void {
         this.cartRecoveryApplied = true;
         this.setRecoveryApplied();
         this.cartRecoveryPendingAction = null;
         this.cartRecoveryExpiredNotice = false;
         this.recalcTotals();
-        this.closeCartRecovery();
-
-        // Mantener al usuario en el modal de pago: si ya tiene datos minimos,
-        // llevarlo al paso 3 para que finalice la compra.
-        const phoneClean = this.phone.trim().replace(/\D/g, '');
-        const canGoToPayment = !!this.shippingAddress.trim() && !!this.city.trim() && phoneClean.length >= 7;
-        if (canGoToPayment) {
-            this.checkoutStep = 3;
-            this.loadWompiData();
-        }
-
-        this.saveCheckoutDraft();
     }
 
     private getRecoveryStorageKey(suffix: 'applied' | 'shown'): string {

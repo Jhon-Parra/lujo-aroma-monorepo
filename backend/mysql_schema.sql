@@ -219,6 +219,8 @@ CREATE TABLE configuracionglobal (
     cart_recovery_countdown_seconds INTEGER DEFAULT 120,
     cart_recovery_button_text VARCHAR(255),
     show_instagram_section BOOLEAN DEFAULT TRUE,
+    home_carousel JSON DEFAULT NULL,
+    home_categories JSON DEFAULT NULL,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

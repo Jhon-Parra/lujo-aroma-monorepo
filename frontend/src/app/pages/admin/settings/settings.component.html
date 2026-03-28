@@ -312,6 +312,151 @@
                 </div>
             </div>
 
+            <!-- Home Premium (Carrusel + Categorias) -->
+            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6 lg:col-span-2">
+                <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 border-b border-[#ecece5] pb-4 mb-6">
+                    <div>
+                        <h3 class="font-serif text-xl">Home Premium</h3>
+                        <p class="text-xs text-gray-500 mt-1">Configura carrusel (3 slides) y categorias (4 tarjetas). Soporta imagen o video.</p>
+                    </div>
+                    <div class="text-[10px] uppercase tracking-widest font-bold text-soft-charcoal">
+                        Recomendado: MP4/WebM corto + poster
+                    </div>
+                </div>
+
+                <div class="space-y-10">
+                    <div>
+                        <h4 class="text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-4">Carrusel estrategico</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div *ngFor="let s of settings.home_carousel; let i = index"
+                                class="border border-[#ecece5] rounded-xl p-4 bg-cream">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Slide {{ i + 1 }}</div>
+                                    <div class="text-[10px] font-bold uppercase tracking-widest text-gold">{{ s?.mediaType || 'image' }}</div>
+                                </div>
+
+                                <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">Headline</label>
+                                <input type="text" [(ngModel)]="s.headline"
+                                    class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
+
+                                <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2 mt-4">Subhead</label>
+                                <textarea rows="2" [(ngModel)]="s.subhead"
+                                    class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white"></textarea>
+
+                                <div class="grid grid-cols-2 gap-3 mt-4">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">CTA</label>
+                                        <input type="text" [(ngModel)]="s.ctaText"
+                                            class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">Link</label>
+                                        <input type="text" [(ngModel)]="s.ctaLink" placeholder="/catalog?promo=true"
+                                            class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-3 mt-4">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">Tipo</label>
+                                        <select [(ngModel)]="s.mediaType"
+                                            class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white">
+                                            <option value="image">Imagen</option>
+                                            <option value="video">Video</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">Media URL (opcional)</label>
+                                        <input type="text" [(ngModel)]="s.mediaUrl" placeholder="https://..."
+                                            class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
+                                        <p class="text-[11px] text-gray-500 mt-2">Puedes pegar una URL (Supabase/CDN) o subir un archivo para reemplazarla.</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">Archivo (opcional)</label>
+                                        <input type="file" (change)="onHomeSlideMediaSelected(i, $event)" [accept]="getHomeAccept(s.mediaType)"
+                                            class="w-full border border-[#ecece5] rounded-md px-3 py-2 focus:ring-gold focus:border-gold outline-none bg-white" />
+                                    </div>
+                                </div>
+
+                                <div *ngIf="s?.mediaUrl" class="mt-4">
+                                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal mb-2">Preview</div>
+                                    <video *ngIf="isVideoType(s?.mediaType, s?.mediaUrl)"
+                                        [src]="getHomeMediaUrl(s.mediaUrl)" muted playsinline controls
+                                        class="h-36 w-full object-cover rounded-lg border border-[#ecece5]"></video>
+                                    <img *ngIf="!isVideoType(s?.mediaType, s?.mediaUrl)"
+                                        [src]="getHomeMediaUrl(s.mediaUrl)" alt="Slide preview"
+                                        class="h-36 w-full object-cover rounded-lg border border-[#ecece5]" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-4">Categorias (embudo)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div *ngFor="let c of settings.home_categories; let i = index"
+                                class="border border-[#ecece5] rounded-xl p-4 bg-cream">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Categoria {{ i + 1 }}</div>
+                                    <div class="text-[10px] font-bold uppercase tracking-widest text-gold">{{ c?.mediaType || 'image' }}</div>
+                                </div>
+
+                                <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">Titulo</label>
+                                <input type="text" [(ngModel)]="c.title"
+                                    class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
+
+                                <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2 mt-4">Subtitulo</label>
+                                <input type="text" [(ngModel)]="c.subtitle"
+                                    class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
+
+                                <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2 mt-4">Emocion</label>
+                                <input type="text" [(ngModel)]="c.emotion" placeholder="Define tu presencia"
+                                    class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
+
+                                <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2 mt-4">Link</label>
+                                <input type="text" [(ngModel)]="c.link" placeholder="/catalog?category=hombre"
+                                    class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
+
+                                <div class="grid grid-cols-1 gap-3 mt-4">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">Tipo</label>
+                                        <select [(ngModel)]="c.mediaType"
+                                            class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white">
+                                            <option value="image">Imagen</option>
+                                            <option value="video">Video</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">Media URL (opcional)</label>
+                                        <input type="text" [(ngModel)]="c.mediaUrl" placeholder="https://..."
+                                            class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">Archivo (opcional)</label>
+                                        <input type="file" (change)="onHomeCategoryMediaSelected(i, $event)" [accept]="getHomeAccept(c.mediaType)"
+                                            class="w-full border border-[#ecece5] rounded-md px-3 py-2 focus:ring-gold focus:border-gold outline-none bg-white" />
+                                    </div>
+                                </div>
+
+                                <div *ngIf="c?.mediaUrl" class="mt-4">
+                                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal mb-2">Preview</div>
+                                    <video *ngIf="isVideoType(c?.mediaType, c?.mediaUrl)"
+                                        [src]="getHomeMediaUrl(c.mediaUrl)" muted playsinline controls
+                                        class="h-32 w-full object-cover rounded-lg border border-[#ecece5]"></video>
+                                    <img *ngIf="!isVideoType(c?.mediaType, c?.mediaUrl)"
+                                        [src]="getHomeMediaUrl(c.mediaUrl)" alt="Categoria preview"
+                                        class="h-32 w-full object-cover rounded-lg border border-[#ecece5]" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-gray-500 mt-4">
+                            Rutas sugeridas: <code>/catalog?category=hombre</code>, <code>/catalog?category=mujer</code>, <code>/catalog?category=arabe</code>, <code>/catalog?promo=true</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Social Settings -->
             <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
                 <h3 class="font-serif text-xl border-b border-[#ecece5] pb-4 mb-6">Nuestra Boutique</h3>

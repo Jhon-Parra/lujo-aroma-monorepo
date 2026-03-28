@@ -19,6 +19,10 @@ export interface Settings {
     logo_height_mobile?: number | null;
     logo_height_desktop?: number | null;
 
+    // Home premium
+    home_carousel?: any[];
+    home_categories?: any[];
+
     instagram_url?: string | null;
     show_instagram_section?: boolean | null;
     instagram_feed_configured?: boolean;

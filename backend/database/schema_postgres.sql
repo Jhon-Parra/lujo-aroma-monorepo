@@ -281,6 +281,10 @@ ALTER TABLE IF EXISTS ConfiguracionGlobal
     ADD COLUMN IF NOT EXISTS cart_recovery_countdown_seconds INT DEFAULT 120,
     ADD COLUMN IF NOT EXISTS cart_recovery_button_text VARCHAR(60);
 
+ALTER TABLE IF EXISTS ConfiguracionGlobal
+    ADD COLUMN IF NOT EXISTS home_carousel JSONB,
+    ADD COLUMN IF NOT EXISTS home_categories JSONB;
+
 -- ---------------------------------------------------------
 -- Tabla: OrderEmailTemplates (plantillas de correo por estado)
 -- ---------------------------------------------------------

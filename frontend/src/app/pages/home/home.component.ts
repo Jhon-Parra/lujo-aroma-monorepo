@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { API_CONFIG } from '../../core/config/api-config';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,22 +18,29 @@ import { SkeletonCardComponent } from '../../shared/components/skeleton-card/ske
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent implements OnInit {
-  private readonly HERO_VIDEO_SESSION_KEY = 'lujo_aroma_hero_video_first_visit_done_v1';
+export class HomeComponent implements OnInit, OnDestroy {
+  private readonly HOME_VIDEO_AUTOPLAY_KEY = 'lujo_aroma_home_video_autoplay_done_v1';
+  private readonly EXIT_OFFER_KEY = 'lujo_aroma_exit_offer_seen_v1';
 
-  heroVideoMode: 'first' | 'subsequent' = 'first';
-  heroVideoNeedsUserGesture = false;
-  heroVideoMuted = true;
-  heroVideoLoop = true;
+  // Home premium (carousel)
+  homeSlides: any[] = [];
+  homeCategories: any[] = [];
+  activeSlideIndex = 0;
+  carouselPaused = false;
+  allowVideoAutoplay = true;
+  exitOfferOpen = false;
 
-  private heroVideoEl: HTMLVideoElement | null = null;
+  private carouselTimer: any;
 
-  @ViewChild('heroVideo')
-  set heroVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
-    if (!ref?.nativeElement) return;
-    this.heroVideoEl = ref.nativeElement;
-    // Defer to allow attributes/bindings to settle
-    queueMicrotask(() => this.configureHeroVideo(ref.nativeElement));
+  @HostListener('document:mouseout', ['$event'])
+  onDocumentMouseOut(e: MouseEvent): void {
+    // Exit intent: mouse leaving at top edge (desktop only)
+    const isTouch = (navigator as any)?.maxTouchPoints > 0;
+    if (isTouch) return;
+    if (this.exitOfferOpen) return;
+    if (e.clientY <= 0) {
+      this.maybeOpenExitOffer();
+    }
   }
 
   products: Product[] = [];
@@ -77,6 +84,13 @@ export class HomeComponent implements OnInit {
     private router: Router
   ) { }
 
+  ngOnDestroy(): void {
+    if (this.carouselTimer) {
+      clearInterval(this.carouselTimer);
+      this.carouselTimer = undefined;
+    }
+  }
+
   goToRecommenderQuiz(): void {
     this.router.navigate(['/recommender'], { queryParams: { mode: 'quiz' } });
   }
@@ -98,9 +112,19 @@ export class HomeComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.heroVideoMode = sessionStorage.getItem(this.HERO_VIDEO_SESSION_KEY) ? 'subsequent' : 'first';
-    this.heroVideoMuted = this.heroVideoMode === 'subsequent';
-    this.heroVideoLoop = this.heroVideoMode === 'subsequent';
+    try {
+      this.allowVideoAutoplay = !localStorage.getItem(this.HOME_VIDEO_AUTOPLAY_KEY);
+    } catch {
+      this.allowVideoAutoplay = true;
+    }
+
+    // Autoplay solo primera visita: permitirlo un momento y luego apagarlo
+    if (this.allowVideoAutoplay) {
+      try { localStorage.setItem(this.HOME_VIDEO_AUTOPLAY_KEY, '1'); } catch { /* ignore */ }
+      setTimeout(() => {
+        this.allowVideoAutoplay = false;
+      }, 1500);
+    }
 
     // SEO & JSON-LD
     this.seo.set({
@@ -193,6 +217,8 @@ export class HomeComponent implements OnInit {
     });
 
     this.loadInstagramIfEnabled();
+
+    this.startCarousel();
   }
 
   private applySettings(data: Settings): void {
@@ -206,6 +232,169 @@ export class HomeComponent implements OnInit {
     this.tiktokUrl = this.normalizeExternalUrl(this.settings?.tiktok_url || '', 'tiktok.com');
 
     this.loadInstagramIfEnabled();
+
+    // Home premium config
+    const slides = Array.isArray((data as any)?.home_carousel) ? (data as any).home_carousel : null;
+    const cats = Array.isArray((data as any)?.home_categories) ? (data as any).home_categories : null;
+    this.homeSlides = slides && slides.length ? slides.slice(0, 3) : this.getDefaultSlides();
+    this.homeCategories = cats && cats.length ? cats.slice(0, 4) : this.getDefaultCategories();
+
+    if (this.activeSlideIndex >= (this.homeSlides?.length || 0)) {
+      this.activeSlideIndex = 0;
+    }
+  }
+
+  private getDefaultSlides(): any[] {
+    const heroUrl = String((this.settings as any)?.hero_media_url || this.settings?.hero_image_url || '').trim();
+    const heroType = this.getHeroMediaType();
+    return [
+      {
+        headline: 'Descubre la esencia del lujo',
+        subhead: 'Perfumes originales con presencia. Seleccion curada para quien exige mas.',
+        ctaText: 'Explorar coleccion',
+        ctaLink: '/catalog',
+        mediaType: heroType === 'video' ? 'video' : 'image',
+        mediaUrl: heroUrl
+      },
+      {
+        headline: 'Fragancias originales que definen tu estilo',
+        subhead: 'Bestsellers y lanzamientos: tu aroma firma en un clic.',
+        ctaText: 'Comprar ahora',
+        ctaLink: '/catalog',
+        mediaType: 'image',
+        mediaUrl: 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=2000&auto=format&fit=crop'
+      },
+      {
+        headline: 'Hasta 20% OFF por tiempo limitado',
+        subhead: 'Ofertas activas: el mejor momento para probar tu proximo favorito.',
+        ctaText: 'Aprovechar oferta',
+        ctaLink: '/catalog?promo=true',
+        mediaType: 'image',
+        mediaUrl: 'https://images.unsplash.com/photo-1585386959984-a41552231693?q=80&w=2000&auto=format&fit=crop'
+      }
+    ];
+  }
+
+  private getDefaultCategories(): any[] {
+    return [
+      {
+        title: 'Para El',
+        subtitle: 'Fresco. Intenso. Memorables.',
+        emotion: 'Define tu presencia',
+        link: '/catalog?category=hombre',
+        mediaType: 'image',
+        mediaUrl: 'https://images.unsplash.com/photo-1526045478516-99145907023c?q=80&w=1600&auto=format&fit=crop'
+      },
+      {
+        title: 'Para Ella',
+        subtitle: 'Elegancia que se siente cerca.',
+        emotion: 'Elegancia femenina',
+        link: '/catalog?category=mujer',
+        mediaType: 'image',
+        mediaUrl: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=1600&auto=format&fit=crop'
+      },
+      {
+        title: 'Exclusivos / Nicho',
+        subtitle: 'Oud, arabes, raros.',
+        emotion: 'Fragancias unicas',
+        link: '/catalog?category=arabe',
+        mediaType: 'image',
+        mediaUrl: 'https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=1600&auto=format&fit=crop'
+      },
+      {
+        title: 'Ofertas',
+        subtitle: 'Descuentos activos hoy.',
+        emotion: 'Compra inteligente',
+        link: '/catalog?promo=true',
+        mediaType: 'image',
+        mediaUrl: 'https://images.unsplash.com/photo-1526045431048-5b92f4f1b77f?q=80&w=1600&auto=format&fit=crop'
+      }
+    ];
+  }
+
+  startCarousel(): void {
+    if (this.carouselTimer) return;
+    this.carouselTimer = setInterval(() => {
+      if (this.carouselPaused) return;
+      this.nextSlide();
+    }, 8000);
+  }
+
+  pauseCarousel(): void {
+    this.carouselPaused = true;
+  }
+
+  resumeCarousel(): void {
+    this.carouselPaused = false;
+  }
+
+  goToSlide(i: number): void {
+    const total = (this.homeSlides || []).length || 0;
+    if (!total) return;
+    const next = Math.max(0, Math.min(total - 1, Math.trunc(Number(i || 0))));
+    this.activeSlideIndex = next;
+    this.carouselPaused = true;
+  }
+
+  nextSlide(): void {
+    const total = (this.homeSlides || []).length || 0;
+    if (!total) return;
+    this.activeSlideIndex = (this.activeSlideIndex + 1) % total;
+  }
+
+  prevSlide(): void {
+    const total = (this.homeSlides || []).length || 0;
+    if (!total) return;
+    this.activeSlideIndex = (this.activeSlideIndex - 1 + total) % total;
+    this.carouselPaused = true;
+  }
+
+  isVideoSlide(slide: any): boolean {
+    const t = String(slide?.mediaType || '').trim().toLowerCase();
+    if (t === 'video') return true;
+    const url = String(slide?.mediaUrl || '').trim().toLowerCase();
+    return url.endsWith('.mp4') || url.endsWith('.webm');
+  }
+
+  getHomeSlideMediaUrl(slide: any, index: number): string {
+    const url = String(slide?.mediaUrl || '').trim();
+    if (url) {
+      if (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/assets/') || url.startsWith('assets/')) {
+        return url.startsWith('assets/') ? `/${url}`.replace('//', '/') : url;
+      }
+      return `${API_CONFIG.serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+
+    // Fallbacks
+    if (index === 2) return 'https://images.unsplash.com/photo-1585386959984-a41552231693?q=80&w=2000&auto=format&fit=crop';
+    if (index === 1) return 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=2000&auto=format&fit=crop';
+    return this.getHeroMediaUrl();
+  }
+
+  navigateCta(linkRaw: string): void {
+    const link = String(linkRaw || '').trim();
+    if (!link) return;
+    if (/^https?:\/\//i.test(link)) {
+      window.open(link, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    // Permitir links con querystring
+    this.router.navigateByUrl(link);
+  }
+
+  maybeOpenExitOffer(): void {
+    // Se controla desde template via (document) mouseleave
+    try {
+      if (localStorage.getItem(this.EXIT_OFFER_KEY)) return;
+    } catch {
+      // ignore
+    }
+    this.exitOfferOpen = true;
+    try { localStorage.setItem(this.EXIT_OFFER_KEY, '1'); } catch { /* ignore */ }
+  }
+
+  closeExitOffer(): void {
+    this.exitOfferOpen = false;
   }
 
   private loadInstagramIfEnabled(): void {
@@ -231,77 +420,6 @@ export class HomeComponent implements OnInit {
         this.instagramLoading = false;
       }
     });
-  }
-
-  private configureHeroVideo(video: HTMLVideoElement): void {
-    if (this.getHeroMediaType() !== 'video') return;
-
-    const isFirst = this.heroVideoMode === 'first';
-
-    // Marcar sesion inmediatamente: solo un intento "primera visita" por sesion.
-    if (isFirst) {
-      try { sessionStorage.setItem(this.HERO_VIDEO_SESSION_KEY, '1'); } catch { /* ignore */ }
-    }
-
-    // Estado base
-    this.heroVideoNeedsUserGesture = false;
-    video.controls = false;
-    video.playsInline = true;
-    this.heroVideoLoop = !isFirst;
-    this.heroVideoMuted = !isFirst;
-    video.loop = this.heroVideoLoop;
-    video.muted = this.heroVideoMuted;
-    video.currentTime = 0;
-
-    const attempt = () => {
-      const p = video.play();
-      if (p && typeof (p as any).catch === 'function') {
-        (p as Promise<any>).catch(() => {
-          // Autoplay con sonido suele bloquearse; fallback a muted autoplay
-          this.heroVideoMuted = true;
-          video.muted = true;
-          this.heroVideoNeedsUserGesture = true;
-          const p2 = video.play();
-          if (p2 && typeof (p2 as any).catch === 'function') {
-            (p2 as Promise<any>).catch(() => {
-              // Si incluso muted falla, mostrar CTA igualmente
-              this.heroVideoNeedsUserGesture = true;
-            });
-          }
-        });
-      }
-    };
-
-    // Si el navegador aun no cargo metadata, intentar cuando este listo
-    if (video.readyState >= 1) {
-      attempt();
-    } else {
-      const onMeta = () => {
-        video.removeEventListener('loadedmetadata', onMeta);
-        video.currentTime = 0;
-        attempt();
-      };
-      video.addEventListener('loadedmetadata', onMeta);
-    }
-  }
-
-  enableHeroVideoSound(): void {
-    // Solo aplica al modo first; en subsequent siempre muted segun requerimiento
-    if (this.heroVideoMode !== 'first') return;
-    const el = this.heroVideoEl;
-    if (!el) return;
-    this.heroVideoMuted = false;
-    el.muted = false;
-    el.currentTime = 0;
-    const p = el.play();
-    if (p && typeof (p as any).then === 'function') {
-      (p as Promise<any>).then(() => {
-        this.heroVideoNeedsUserGesture = false;
-      }).catch(() => {
-        // keep CTA
-        this.heroVideoNeedsUserGesture = true;
-      });
-    }
   }
 
   buyNow(): void {

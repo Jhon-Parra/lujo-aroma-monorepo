@@ -15,6 +15,21 @@ import { LowStockBellComponent } from '../../../shared/components/low-stock-bell
 })
 export class SettingsComponent implements OnInit {
 
+  private parseJsonMaybe(raw: any): any {
+    if (raw === undefined || raw === null) return null;
+    if (typeof raw === 'object') return raw;
+    const s = String(raw || '').trim();
+    if (!s) return null;
+    try { return JSON.parse(s); } catch { return null; }
+  }
+
+  isVideoType(typeRaw: any, urlRaw?: any): boolean {
+    const t = String(typeRaw || '').trim().toLowerCase();
+    if (t === 'video') return true;
+    const url = String(urlRaw || '').trim().toLowerCase();
+    return url.endsWith('.mp4') || url.endsWith('.webm');
+  }
+
   settings: Settings = {
     hero_title: 'Cargando...',
     hero_subtitle: 'Cargando...',
@@ -67,7 +82,69 @@ export class SettingsComponent implements OnInit {
     alert_trend_growth_pct: 30,
     alert_trend_min_units: 5,
     alert_failed_login_threshold: 5,
-    alert_abandoned_hours: 24
+    alert_abandoned_hours: 24,
+
+    // Home premium
+    home_carousel: [
+      {
+        headline: 'Descubre la esencia del lujo',
+        subhead: 'Perfumes originales seleccionados para marcar presencia.',
+        ctaText: 'Explorar coleccion',
+        ctaLink: '/catalog',
+        mediaType: 'video',
+        mediaUrl: ''
+      },
+      {
+        headline: 'Fragancias originales que definen tu estilo',
+        subhead: 'Bestsellers y lanzamientos: elige tu firma olfativa.',
+        ctaText: 'Comprar ahora',
+        ctaLink: '/catalog',
+        mediaType: 'image',
+        mediaUrl: ''
+      },
+      {
+        headline: 'Hasta 20% OFF por tiempo limitado',
+        subhead: 'Aprovecha ofertas activas antes de que terminen.',
+        ctaText: 'Aprovechar oferta',
+        ctaLink: '/catalog?promo=true',
+        mediaType: 'image',
+        mediaUrl: ''
+      }
+    ],
+    home_categories: [
+      {
+        title: 'Para El',
+        subtitle: 'Fresco. Intenso. Memorables.',
+        emotion: 'Define tu presencia',
+        link: '/catalog?category=hombre',
+        mediaType: 'image',
+        mediaUrl: ''
+      },
+      {
+        title: 'Para Ella',
+        subtitle: 'Elegancia que se siente cerca.',
+        emotion: 'Elegancia femenina',
+        link: '/catalog?category=mujer',
+        mediaType: 'image',
+        mediaUrl: ''
+      },
+      {
+        title: 'Exclusivos / Nicho',
+        subtitle: 'Oud, arabes, raros.',
+        emotion: 'Fragancias unicas',
+        link: '/catalog?category=arabe',
+        mediaType: 'video',
+        mediaUrl: ''
+      },
+      {
+        title: 'Ofertas',
+        subtitle: 'Descuentos activos hoy.',
+        emotion: 'Compra inteligente',
+        link: '/catalog?promo=true',
+        mediaType: 'image',
+        mediaUrl: ''
+      }
+    ]
   };
 
   selectedFile: File | null = null;
@@ -75,6 +152,9 @@ export class SettingsComponent implements OnInit {
   selectedEnvioPrioritarioImageFile: File | null = null;
   selectedPerfumeLujoImageFile: File | null = null;
   selectedEmpaqueRegalorImageFile: File | null = null;
+
+  homeSlideFiles: Array<File | null> = [null, null, null];
+  homeCategoryFiles: Array<File | null> = [null, null, null, null];
   saving = false;
   logoError: string | null = null;
 
@@ -89,13 +169,18 @@ export class SettingsComponent implements OnInit {
   loadSettings() {
     this.settingsService.getSettings().subscribe({
       next: (data) => {
+        const parsedCarousel = this.parseJsonMaybe((data as any)?.home_carousel);
+        const parsedCategories = this.parseJsonMaybe((data as any)?.home_categories);
+
         this.settings = {
           ...this.settings,
           ...data,
           logo_height_mobile: (data as any)?.logo_height_mobile ?? 96,
           logo_height_desktop: (data as any)?.logo_height_desktop ?? 112,
           logo_url: (data as any)?.logo_url ?? '',
-          show_instagram_section: (data as any)?.show_instagram_section ?? true
+          show_instagram_section: (data as any)?.show_instagram_section ?? true,
+          home_carousel: Array.isArray(parsedCarousel) ? parsedCarousel : (this.settings as any).home_carousel,
+          home_categories: Array.isArray(parsedCategories) ? parsedCategories : (this.settings as any).home_categories
         };
 
         if (!(this.settings as any).banner_accent_color) {
@@ -113,6 +198,82 @@ export class SettingsComponent implements OnInit {
       },
       error: (err) => console.error('Error al cargar configuración', err)
     });
+  }
+
+  getHomeMediaUrl(raw: any): string {
+    const url = String(raw || '').trim();
+    if (!url) return '';
+    if (url.startsWith('data:') || url.startsWith('http')) return url;
+    if (url.startsWith('assets/') || url.startsWith('/assets/')) return url.replace(/^\/+/, '');
+    return `${API_CONFIG.serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+
+  getHomeSlide(i: number): any {
+    const arr = (this.settings as any).home_carousel;
+    if (!Array.isArray(arr)) return null;
+    return arr[i] || null;
+  }
+
+  getHomeCategory(i: number): any {
+    const arr = (this.settings as any).home_categories;
+    if (!Array.isArray(arr)) return null;
+    return arr[i] || null;
+  }
+
+  getHomeAccept(type: string): string {
+    const t = String(type || 'image').toLowerCase();
+    return t === 'video' ? 'video/mp4,video/webm' : 'image/jpeg,image/png,image/webp,image/gif';
+  }
+
+  onHomeSlideMediaSelected(index: number, event: any) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    this.homeSlideFiles[index] = file;
+
+    const slide = this.getHomeSlide(index) || {};
+    const mime = String(file.type || '').toLowerCase();
+    const isVideo = mime.startsWith('video/');
+
+    if (isVideo) {
+      slide.mediaType = 'video';
+      slide.mediaUrl = URL.createObjectURL(file);
+    } else {
+      slide.mediaType = 'image';
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        slide.mediaUrl = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    const arr = (this.settings as any).home_carousel;
+    if (Array.isArray(arr)) arr[index] = slide;
+  }
+
+  onHomeCategoryMediaSelected(index: number, event: any) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    this.homeCategoryFiles[index] = file;
+
+    const card = this.getHomeCategory(index) || {};
+    const mime = String(file.type || '').toLowerCase();
+    const isVideo = mime.startsWith('video/');
+    if (isVideo) {
+      card.mediaType = 'video';
+      card.mediaUrl = URL.createObjectURL(file);
+    } else {
+      card.mediaType = 'image';
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        card.mediaUrl = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    const arr = (this.settings as any).home_categories;
+    if (Array.isArray(arr)) arr[index] = card;
   }
 
   getHeroMediaUrl(): string {
@@ -340,6 +501,14 @@ export class SettingsComponent implements OnInit {
       formData.append('instagram_access_token', this.instagramTokenInput.trim());
     }
 
+    // Home premium JSON
+    try {
+      formData.append('home_carousel', JSON.stringify((this.settings as any).home_carousel || []));
+      formData.append('home_categories', JSON.stringify((this.settings as any).home_categories || []));
+    } catch {
+      // ignore
+    }
+
     if (this.selectedFile) {
       formData.append('hero_media', this.selectedFile);
     }
@@ -358,6 +527,16 @@ export class SettingsComponent implements OnInit {
 
     if (this.selectedEmpaqueRegalorImageFile) {
       formData.append('empaque_regalo_image', this.selectedEmpaqueRegalorImageFile);
+    }
+
+    // Home premium uploads
+    for (let i = 0; i < this.homeSlideFiles.length; i++) {
+      const f = this.homeSlideFiles[i];
+      if (f) formData.append(`home_slide_${i + 1}_media`, f);
+    }
+    for (let i = 0; i < this.homeCategoryFiles.length; i++) {
+      const f = this.homeCategoryFiles[i];
+      if (f) formData.append(`home_category_${i + 1}_media`, f);
     }
 
     this.settingsService.updateSettings(formData).subscribe({
@@ -384,10 +563,18 @@ export class SettingsComponent implements OnInit {
         if (res && res.empaque_regalo_image_url) {
           (this.settings as any).empaque_regalo_image_url = res.empaque_regalo_image_url;
         }
+        if (res && (res as any).home_carousel) {
+          (this.settings as any).home_carousel = (res as any).home_carousel;
+        }
+        if (res && (res as any).home_categories) {
+          (this.settings as any).home_categories = (res as any).home_categories;
+        }
         this.instagramTokenInput = '';
         this.selectedEnvioPrioritarioImageFile = null;
         this.selectedPerfumeLujoImageFile = null;
         this.selectedEmpaqueRegalorImageFile = null;
+        this.homeSlideFiles = [null, null, null];
+        this.homeCategoryFiles = [null, null, null, null];
         this.settings.smtp_pass = '';
         alert('Configuración actualizada exitosamente');
       },
@@ -454,7 +641,10 @@ export class SettingsComponent implements OnInit {
         alert_trend_growth_pct: 30,
         alert_trend_min_units: 5,
         alert_failed_login_threshold: 5,
-        alert_abandoned_hours: 24
+        alert_abandoned_hours: 24,
+
+        home_carousel: (this.settings as any).home_carousel,
+        home_categories: (this.settings as any).home_categories
       };
       this.selectedFile = null;
       this.selectedLogoFile = null;

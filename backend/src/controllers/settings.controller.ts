@@ -16,6 +16,9 @@ interface SettingsRow {
     hero_media_type?: string | null;
     hero_media_url?: string | null;
 
+    home_carousel?: any;
+    home_categories?: any;
+
     logo_url?: string | null;
     logo_height_mobile?: number | null;
     logo_height_desktop?: number | null;
@@ -83,6 +86,44 @@ interface SettingsRow {
     instagram_feed_configured?: boolean;
     smtp_configured?: boolean;
 }
+
+const parseJsonMaybe = (raw: any): any => {
+    if (raw === undefined || raw === null) return null;
+    if (typeof raw === 'object') return raw;
+    const s = String(raw || '').trim();
+    if (!s) return null;
+    try {
+        return JSON.parse(s);
+    } catch {
+        return null;
+    }
+};
+
+const safeJsonString = (raw: any, maxLen: number): string | null => {
+    if (raw === undefined) return null;
+    if (raw === null) return null;
+    if (typeof raw === 'string') {
+        const s = raw.trim();
+        if (!s) return null;
+        if (s.length > maxLen) return s.slice(0, maxLen);
+        return s;
+    }
+    try {
+        const s = JSON.stringify(raw);
+        if (!s) return null;
+        if (s.length > maxLen) return s.slice(0, maxLen);
+        return s;
+    } catch {
+        return null;
+    }
+};
+
+const ensureArraySize = <T = any>(arr: any, size: number, fill: () => T): T[] => {
+    const a = Array.isArray(arr) ? (arr as T[]) : [];
+    const out: T[] = a.slice(0, size);
+    while (out.length < size) out.push(fill());
+    return out;
+};
 
 const normalizeNullableString = (value: any, maxLen: number): string | null => {
     if (value === undefined || value === null) return null;
@@ -205,6 +246,9 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
             'hero_media_type',
             'hero_media_url',
 
+            'home_carousel',
+            'home_categories',
+
             'alert_sales_delta_pct',
             'alert_abandoned_delta_pct',
             'alert_abandoned_value_threshold',
@@ -291,6 +335,9 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
         if (cols.cart_recovery_countdown_seconds) selectParts.push('cart_recovery_countdown_seconds');
         if (cols.cart_recovery_button_text) selectParts.push('cart_recovery_button_text');
 
+        if (cols.home_carousel) selectParts.push('home_carousel');
+        if (cols.home_categories) selectParts.push('home_categories');
+
         const [rows] = await pool.query<SettingsRow[]>(
             `SELECT ${selectParts.join(', ')} FROM configuracionglobal WHERE id = 1`
         );
@@ -306,6 +353,15 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
             instagram_feed_configured: false,
             smtp_configured: false
         };
+
+        if (cols.home_carousel) {
+            const parsed = parseJsonMaybe((rows[0] as any).home_carousel);
+            if (parsed !== null) settings.home_carousel = parsed;
+        }
+        if (cols.home_categories) {
+            const parsed = parseJsonMaybe((rows[0] as any).home_categories);
+            if (parsed !== null) settings.home_categories = parsed;
+        }
 
         if (cols.instagram_access_token) {
             try {
@@ -366,6 +422,9 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             show_banner = current.show_banner,
             banner_text = current.banner_text,
             banner_accent_color,
+
+            home_carousel,
+            home_categories,
             logo_height_mobile,
             logo_height_desktop,
             instagram_url,
@@ -429,6 +488,18 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
         const logoFile = files?.['logo_image']?.[0];
         const envioFile = files?.['envio_prioritario_image']?.[0];
         const lujoFile = files?.['perfume_lujo_image']?.[0];
+
+        const slideFiles = [
+            files?.['home_slide_1_media']?.[0],
+            files?.['home_slide_2_media']?.[0],
+            files?.['home_slide_3_media']?.[0]
+        ];
+        const categoryFiles = [
+            files?.['home_category_1_media']?.[0],
+            files?.['home_category_2_media']?.[0],
+            files?.['home_category_3_media']?.[0],
+            files?.['home_category_4_media']?.[0]
+        ];
 
         let hero_image_url: string | undefined = undefined;
         let hero_media_url: string | undefined = undefined;
@@ -634,6 +705,9 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             'hero_media_type',
             'hero_media_url',
 
+            'home_carousel',
+            'home_categories',
+
             'alert_sales_delta_pct',
             'alert_abandoned_delta_pct',
             'alert_abandoned_value_threshold',
@@ -649,6 +723,159 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             'cart_recovery_countdown_seconds',
             'cart_recovery_button_text'
         ]);
+
+        const anySlideUpload = slideFiles.some(Boolean);
+        const anyCategoryUpload = categoryFiles.some(Boolean);
+
+        const wantsHomePremium =
+            home_carousel !== undefined ||
+            home_categories !== undefined ||
+            anySlideUpload ||
+            anyCategoryUpload;
+
+        if (wantsHomePremium && (!columns.home_carousel || !columns.home_categories)) {
+            res.status(400).json({
+                error: 'Tu base de datos no soporta Home Premium. Ejecuta backend/database/migrations/20260328_settings_home_premium.sql (Postgres) o backend/database/migrations/20260328_settings_home_premium_mysql.sql (MySQL) y vuelve a intentar.'
+            });
+            return;
+        }
+
+        // Home premium: si hay archivos pero no hay JSON en body, cargar actual desde DB.
+        const needsHomeFromDb = (anySlideUpload || anyCategoryUpload) && (home_carousel === undefined || home_categories === undefined);
+        let homeCarouselWork: any = home_carousel;
+        let homeCategoriesWork: any = home_categories;
+
+        if (needsHomeFromDb && (columns.home_carousel || columns.home_categories)) {
+            try {
+                const parts: string[] = [];
+                if (columns.home_carousel) parts.push('home_carousel');
+                if (columns.home_categories) parts.push('home_categories');
+                if (parts.length) {
+                    const [homeRows] = await pool.query<any[]>(
+                        `SELECT ${parts.join(', ')} FROM configuracionglobal WHERE id = 1`
+                    );
+                    const row = (homeRows as any[])?.[0] || {};
+                    if (homeCarouselWork === undefined && columns.home_carousel) homeCarouselWork = row.home_carousel;
+                    if (homeCategoriesWork === undefined && columns.home_categories) homeCategoriesWork = row.home_categories;
+                }
+            } catch {
+                // ignore
+            }
+        }
+
+        // Parse home JSON
+        let carouselArr: any[] | null = null;
+        let categoriesArr: any[] | null = null;
+        if (columns.home_carousel && (homeCarouselWork !== undefined)) {
+            carouselArr = ensureArraySize<any>(parseJsonMaybe(homeCarouselWork), 3, () => ({
+                headline: '',
+                subhead: '',
+                ctaText: '',
+                ctaLink: '/catalog',
+                mediaType: 'image',
+                mediaUrl: ''
+            }));
+        }
+        if (columns.home_categories && (homeCategoriesWork !== undefined)) {
+            categoriesArr = ensureArraySize<any>(parseJsonMaybe(homeCategoriesWork), 4, () => ({
+                title: '',
+                subtitle: '',
+                emotion: '',
+                link: '/catalog',
+                mediaType: 'image',
+                mediaUrl: ''
+            }));
+        }
+
+        // Upload slide media and patch JSON
+        if (columns.home_carousel && carouselArr && anySlideUpload) {
+            for (let i = 0; i < slideFiles.length; i++) {
+                const f = slideFiles[i];
+                if (!f) continue;
+                const actualType = inferHeroMediaTypeFromMime(f.mimetype);
+                if (!actualType) {
+                    res.status(400).json({ error: 'Tipo de archivo invalido para carrusel.' });
+                    return;
+                }
+                const maxBytes = actualType === 'video' ? MAX_HERO_VIDEO_BYTES : MAX_HERO_IMAGE_BYTES;
+                if (f.size > maxBytes) {
+                    res.status(400).json({
+                        error: actualType === 'video' ? 'El video supera el limite de 30MB.' : 'La imagen supera el limite de 10MB.'
+                    });
+                    return;
+                }
+
+                const uniqueFilename = sanitizeFilename(f.originalname);
+                const filePath = `settings/home/carousel/${Date.now()}_${i + 1}_${uniqueFilename}`;
+                const { error } = await supabase.storage
+                    .from('perfumissimo_bucket')
+                    .upload(filePath, f.buffer, {
+                        contentType: f.mimetype,
+                        upsert: true
+                    });
+
+                if (error) {
+                    console.error('Supabase upload error (home_slide):', error);
+                    throw new Error('Error subiendo archivo del carrusel a Supabase');
+                }
+
+                const { data: publicData } = supabase.storage
+                    .from('perfumissimo_bucket')
+                    .getPublicUrl(filePath);
+
+                const mediaType = actualType === 'video' ? 'video' : 'image';
+                carouselArr[i] = {
+                    ...(carouselArr[i] || {}),
+                    mediaType,
+                    mediaUrl: publicData.publicUrl
+                };
+            }
+        }
+
+        // Upload category media and patch JSON
+        if (columns.home_categories && categoriesArr && anyCategoryUpload) {
+            for (let i = 0; i < categoryFiles.length; i++) {
+                const f = categoryFiles[i];
+                if (!f) continue;
+                const actualType = inferHeroMediaTypeFromMime(f.mimetype);
+                if (!actualType) {
+                    res.status(400).json({ error: 'Tipo de archivo invalido para categorias home.' });
+                    return;
+                }
+                const maxBytes = actualType === 'video' ? MAX_HERO_VIDEO_BYTES : MAX_HERO_IMAGE_BYTES;
+                if (f.size > maxBytes) {
+                    res.status(400).json({
+                        error: actualType === 'video' ? 'El video supera el limite de 30MB.' : 'La imagen supera el limite de 10MB.'
+                    });
+                    return;
+                }
+
+                const uniqueFilename = sanitizeFilename(f.originalname);
+                const filePath = `settings/home/categories/${Date.now()}_${i + 1}_${uniqueFilename}`;
+                const { error } = await supabase.storage
+                    .from('perfumissimo_bucket')
+                    .upload(filePath, f.buffer, {
+                        contentType: f.mimetype,
+                        upsert: true
+                    });
+
+                if (error) {
+                    console.error('Supabase upload error (home_category):', error);
+                    throw new Error('Error subiendo archivo de categorias home a Supabase');
+                }
+
+                const { data: publicData } = supabase.storage
+                    .from('perfumissimo_bucket')
+                    .getPublicUrl(filePath);
+
+                const mediaType = actualType === 'video' ? 'video' : 'image';
+                categoriesArr[i] = {
+                    ...(categoriesArr[i] || {}),
+                    mediaType,
+                    mediaUrl: publicData.publicUrl
+                };
+            }
+        }
 
         // Si el frontend envia extras pero la DB no tiene columnas, devolver error claro.
         const wantsExtras = envio_prioritario_precio !== undefined || perfume_lujo_precio !== undefined;
@@ -669,6 +896,17 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
 
         let query = `UPDATE configuracionglobal SET hero_title = ?, hero_subtitle = ?, accent_color = ?, show_banner = ?, banner_text = ?`;
         const params: any[] = [hero_title, hero_subtitle, accent_color, !!show_banner, banner_text];
+
+        if (columns.home_carousel && homeCarouselWork !== undefined) {
+            query += `, home_carousel = ?`;
+            const toStore = carouselArr ? JSON.stringify(carouselArr) : safeJsonString(homeCarouselWork, 20000);
+            params.push(toStore);
+        }
+        if (columns.home_categories && homeCategoriesWork !== undefined) {
+            query += `, home_categories = ?`;
+            const toStore = categoriesArr ? JSON.stringify(categoriesArr) : safeJsonString(homeCategoriesWork, 20000);
+            params.push(toStore);
+        }
 
         if (columns.banner_accent_color && banner_accent_color !== undefined) {
             query += `, banner_accent_color = ?`;
@@ -944,7 +1182,9 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             logo_url,
             envio_prioritario_image_url,
             perfume_lujo_image_url,
-            banner_accent_color: banner_accent_color !== undefined ? banner_accent_color : undefined
+            banner_accent_color: banner_accent_color !== undefined ? banner_accent_color : undefined,
+            home_carousel: carouselArr || undefined,
+            home_categories: categoriesArr || undefined
         });
     } catch (error: any) {
         console.error('Error updating settings:', error);

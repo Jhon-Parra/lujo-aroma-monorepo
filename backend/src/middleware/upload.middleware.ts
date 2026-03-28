@@ -77,10 +77,18 @@ export const uploadSettingsAssets = (req: any, res: any, next: any) => {
         storage,
         limits: {
             fileSize: MAX_SETTINGS_MEDIA_SIZE,
-            files: 3
+            files: 12
         },
         fileFilter: (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
             const field = String(file.fieldname || '');
+
+            // Home premium assets (carousel + categories)
+            if (field.startsWith('home_slide_') || field.startsWith('home_category_')) {
+                if (ALLOWED_MIME_TYPES.includes(file.mimetype) || ALLOWED_VIDEO_MIME_TYPES.includes(file.mimetype)) {
+                    return cb(null, true);
+                }
+                return cb(new Error('Tipo de archivo no permitido. Permite JPEG/PNG/GIF/WebP o MP4/WebM'));
+            }
 
             if (field === 'logo_image') {
                 if (ALLOWED_MIME_TYPES.includes(file.mimetype)) return cb(null, true);
@@ -111,7 +119,16 @@ export const uploadSettingsAssets = (req: any, res: any, next: any) => {
         { name: 'hero_image', maxCount: 1 },
         { name: 'logo_image', maxCount: 1 },
         { name: 'envio_prioritario_image', maxCount: 1 },
-        { name: 'perfume_lujo_image', maxCount: 1 }
+        { name: 'perfume_lujo_image', maxCount: 1 },
+
+        // Home premium
+        { name: 'home_slide_1_media', maxCount: 1 },
+        { name: 'home_slide_2_media', maxCount: 1 },
+        { name: 'home_slide_3_media', maxCount: 1 },
+        { name: 'home_category_1_media', maxCount: 1 },
+        { name: 'home_category_2_media', maxCount: 1 },
+        { name: 'home_category_3_media', maxCount: 1 },
+        { name: 'home_category_4_media', maxCount: 1 }
     ]);
 
     settingsUpload(req, res, (err: any) => {

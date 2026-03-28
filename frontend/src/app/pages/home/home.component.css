@@ -18,6 +18,19 @@
     animation: slowZoom 20s ease-in-out infinite alternate;
 }
 
+.home-hero-zoom {
+    animation: homeHeroZoom 18s ease-in-out infinite alternate;
+}
+
+.home-gold-sheen {
+    background: linear-gradient(110deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.18) 18%,
+        transparent 36%);
+    transform: translateX(-60%);
+    animation: homeSheen 2.8s ease-in-out infinite;
+}
+
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -54,6 +67,18 @@
 @keyframes slowZoom {
     from { transform: scale(1); }
     to { transform: scale(1.1); }
+}
+
+@keyframes homeHeroZoom {
+    from { transform: scale(1.02); }
+    to { transform: scale(1.10); }
+}
+
+@keyframes homeSheen {
+    0% { transform: translateX(-60%); opacity: 0; }
+    18% { opacity: 0.9; }
+    45% { transform: translateX(120%); opacity: 0; }
+    100% { transform: translateX(120%); opacity: 0; }
 }
 
 /* Glassmorphism Classes */

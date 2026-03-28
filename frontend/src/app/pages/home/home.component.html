@@ -1,54 +1,85 @@
 <div class="w-full bg-[#FAFAF9] relative">
-    <!-- Hero Section Premium -->
-    <section class="relative w-full min-h-[85vh] flex items-center overflow-hidden bg-charcoal">
-        <!-- Background Media -->
-        <video *ngIf="getHeroMediaType() === 'video'" #heroVideo data-hero-video="1" [src]="getHeroMediaUrl()"
-            [attr.poster]="getHeroPosterUrl() || null" autoplay playsinline preload="metadata" [muted]="heroVideoMuted"
-            [loop]="heroVideoLoop" class="absolute inset-0 w-full h-full object-cover object-center scale-105 animate-slow-zoom">
-        </video>
+    <!-- HERO / Carrusel estrategico (premium) -->
+    <section class="relative w-full min-h-[88vh] flex items-center overflow-hidden bg-[#07121a]"
+        (mouseenter)="pauseCarousel()" (mouseleave)="resumeCarousel()">
+        <!-- Slides (media) -->
+        <div class="absolute inset-0">
+            <ng-container *ngFor="let s of homeSlides; let i = index">
+                <div class="absolute inset-0 transition-opacity duration-1000 ease-[cubic-bezier(0.21,0.45,0.32,0.9)]"
+                    [class.opacity-100]="i === activeSlideIndex" [class.opacity-0]="i !== activeSlideIndex"
+                    [style.pointer-events]="i === activeSlideIndex ? 'auto' : 'none'" [attr.aria-hidden]="i !== activeSlideIndex">
 
-        <img *ngIf="getHeroMediaType() !== 'video'" [src]="getHeroMediaUrl()" alt="Hero Banner" loading="eager"
-            decoding="async" fetchpriority="high" class="absolute inset-0 w-full h-full object-cover object-center scale-105 animate-slow-zoom" />
+                    <video *ngIf="isVideoSlide(s)" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom"
+                        [attr.src]="i === activeSlideIndex ? getHomeSlideMediaUrl(s, i) : null" preload="metadata" muted playsinline loop
+                        [attr.autoplay]="allowVideoAutoplay && i === activeSlideIndex ? '' : null">
+                    </video>
 
-        <!-- Overlay Premium: Gradiente sofisticado -->
-        <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent"></div>
-        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20"></div>
-
-        <!-- Content Box -->
-        <div class="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full py-20">
-            <div class="max-w-2xl">
-                <div class="inline-flex items-center gap-2 mb-6 animate-fade-in-up" style="animation-delay: 0.1s">
-                    <span class="w-8 h-[1px] bg-gold"></span>
-                    <span class="text-gold text-xs tracking-[0.3em] font-bold uppercase">Exclusividad & Lujo</span>
+                    <img *ngIf="!isVideoSlide(s)" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom"
+                        [src]="getHomeSlideMediaUrl(s, i)" [attr.loading]="i === 0 ? 'eager' : 'lazy'" decoding="async" />
                 </div>
-                
-                <h1 class="font-serif text-5xl md:text-7xl text-white leading-[1.1] mb-6 animate-fade-in-up" style="animation-delay: 0.3s">
-                    {{ settings?.hero_title || 'REVELA TU ESENCIA, DEFINE TU PRESENCIA.' }}
-                </h1>
-                
-                <p class="font-sans text-lg md:text-xl text-white/90 mb-10 tracking-wide max-w-lg animate-fade-in-up leading-relaxed" style="animation-delay: 0.5s">
-                    {{ settings?.hero_subtitle || 'Perfumes de lujo originales que cuentan tu historia con cada nota.' }}
-                </p>
-                
-                <div class="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style="animation-delay: 0.7s">
-                    <button type="button" (click)="buyNow()"
-                        class="btn-primary group relative overflow-hidden text-sm tracking-[0.2em] uppercase px-12 py-5 bg-gold text-white hover:bg-[#b59a68] transition-all duration-500 shadow-xl hover:shadow-gold/20">
-                        <span class="relative z-10">Explorar Colección</span>
-                    </button>
-                    
-                    <button type="button" (click)="goToRecommenderQuiz()"
-                        class="group flex items-center justify-center gap-3 text-sm tracking-[0.2em] uppercase px-12 py-5 border border-white/30 text-white backdrop-blur-sm hover:bg-white hover:text-charcoal transition-all duration-500">
-                        <i class="bi bi-magic text-lg"></i>
-                        <span>Descubrir con IA</span>
-                    </button>
-                </div>
-            </div>
+            </ng-container>
         </div>
-        
-        <!-- Scroll Indicator -->
-        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/50 animate-bounce">
-            <span class="text-[9px] uppercase tracking-[0.3em]">Explorar</span>
-            <i class="bi bi-chevron-down text-sm"></i>
+
+        <!-- Overlays: deep blue + metallic gold glow -->
+        <div class="absolute inset-0 bg-gradient-to-r from-[#07121a]/95 via-[#07121a]/55 to-transparent"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(39,76,104,0.55),transparent_50%)]"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(181,154,104,0.28),transparent_55%)]"></div>
+
+        <!-- Content -->
+        <div class="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full py-24">
+            <ng-container *ngIf="homeSlides[activeSlideIndex] as slide">
+                <div class="max-w-2xl">
+                    <div class="inline-flex items-center gap-3 mb-6 animate-fade-in-up" style="animation-delay: 0.05s">
+                        <span class="w-10 h-[1px] bg-[#b59a68]"></span>
+                        <span class="text-[#d8c08a] text-[10px] tracking-[0.35em] font-bold uppercase">Perfumes originales</span>
+                    </div>
+
+                    <h1 class="font-serif text-5xl md:text-7xl text-white leading-[1.05] mb-6 animate-fade-in-up" style="animation-delay: 0.18s">
+                        {{ slide?.headline || 'Descubre la esencia del lujo' }}
+                    </h1>
+
+                    <p class="font-sans text-lg md:text-xl text-white/85 mb-10 tracking-wide max-w-xl animate-fade-in-up leading-relaxed" style="animation-delay: 0.32s">
+                        {{ slide?.subhead || 'Fragancias exclusivas con envio seguro y asesoria VIP.' }}
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style="animation-delay: 0.46s">
+                        <button type="button" (click)="navigateCta(slide?.ctaLink)"
+                            class="group relative overflow-hidden text-[11px] tracking-[0.28em] uppercase px-12 py-5 rounded-xl bg-[#b59a68] text-white transition-all duration-500 shadow-xl hover:shadow-[#b59a68]/25">
+                            <span class="relative z-10">{{ slide?.ctaText || 'Explorar coleccion' }}</span>
+                            <span class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 home-gold-sheen"></span>
+                        </button>
+
+                        <button type="button" (click)="goToRecommenderQuiz()"
+                            class="group flex items-center justify-center gap-3 text-[11px] tracking-[0.28em] uppercase px-12 py-5 rounded-xl border border-white/20 text-white/90 backdrop-blur-sm hover:bg-white hover:text-[#07121a] transition-all duration-500">
+                            <i class="bi bi-magic text-lg"></i>
+                            <span>Descubrir con IA</span>
+                        </button>
+                    </div>
+
+                    <!-- Indicators (minimal bars) -->
+                    <div class="mt-10 flex items-center gap-3">
+                        <button *ngFor="let dot of homeSlides; let i = index" type="button" (click)="goToSlide(i)"
+                            class="h-[2px] w-10 rounded-full transition-all"
+                            [ngClass]="i === activeSlideIndex ? 'bg-[#d8c08a]' : 'bg-white/20 hover:bg-white/35'"
+                            [attr.aria-label]="'Ir a slide ' + (i + 1)">
+                        </button>
+                    </div>
+                </div>
+            </ng-container>
+        </div>
+
+        <!-- Controls (desktop) -->
+        <div class="hidden md:flex absolute inset-y-0 left-6 items-center z-20">
+            <button type="button" (click)="prevSlide()" aria-label="Anterior"
+                class="w-11 h-11 rounded-full border border-white/15 bg-white/5 backdrop-blur-md text-white hover:bg-white/10 transition-colors">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        </div>
+        <div class="hidden md:flex absolute inset-y-0 right-6 items-center z-20">
+            <button type="button" (click)="nextSlide()" aria-label="Siguiente"
+                class="w-11 h-11 rounded-full border border-white/15 bg-white/5 backdrop-blur-md text-white hover:bg-white/10 transition-colors">
+                <i class="bi bi-chevron-right"></i>
+            </button>
         </div>
     </section>
 
@@ -109,29 +140,39 @@
         </div>
     </section>
 
-    <!-- Categorías por Intención de Compra -->
+    <!-- Categorias como embudo de ventas -->
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div class="text-center mb-12">
-            <h2 class="font-serif text-4xl text-charcoal mb-4 uppercase tracking-[0.1em]">ENCUENTRA TU ESENCIA</h2>
-            <p class="text-sage text-sm uppercase tracking-[0.2em] font-medium">Encuentra tu ruta rápida hacia la fragancia ideal</p>
+            <div class="text-[#274C68] text-[10px] font-bold uppercase tracking-[0.35em]">Explora por intencion</div>
+            <h2 class="font-serif text-4xl text-charcoal mb-4 uppercase tracking-[0.1em]">Encuentra tu esencia</h2>
+            <p class="text-soft-charcoal text-sm uppercase tracking-[0.2em] font-medium">Ruta directa hacia compra: menos friccion, mas deseo</p>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-            <a *ngFor="let cat of categories; let i = index" 
-               [routerLink]="['/catalog']" [queryParams]="getCategoryParams(cat)"
-               class="relative group aspect-[4/5] overflow-hidden rounded-xl bg-charcoal shadow-lg animate-fade-in-up"
-               [style.animation-delay]="(i * 0.1) + 's'">
-                
-                <img [src]="cat.image" [alt]="cat.name" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-70 group-hover:opacity-90">
-                
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                
-                <div class="absolute inset-0 p-6 flex flex-col justify-end items-center text-center">
-                    <div class="w-10 h-10 rounded-full border border-white/30 flex items-center justify-center mb-3 group-hover:bg-gold group-hover:border-gold transition-all duration-500">
-                        <i [ngClass]="'bi ' + cat.icon + ' text-white text-lg'"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <a *ngFor="let c of homeCategories; let i = index" href="#" (click)="$event.preventDefault(); navigateCta(c?.link)"
+                class="relative group overflow-hidden rounded-2xl bg-[#07121a] shadow-xl border border-[#ecece5] aspect-[16/10] md:aspect-[16/9]">
+
+                <video *ngIf="isVideoSlide(c)" class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.04]"
+                    [attr.src]="getHomeSlideMediaUrl(c, i)" preload="metadata" muted playsinline loop autoplay>
+                </video>
+
+                <img *ngIf="!isVideoSlide(c)" class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.06]"
+                    [src]="getHomeSlideMediaUrl(c, i)" loading="lazy" decoding="async" />
+
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(181,154,104,0.30),transparent_55%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+
+                <div class="absolute inset-0 p-7 flex flex-col justify-end">
+                    <div class="text-[#d8c08a] text-[10px] tracking-[0.35em] uppercase font-bold">{{ c?.emotion || 'Exclusividad' }}</div>
+                    <div class="mt-2 flex items-end justify-between gap-6">
+                        <div>
+                            <h3 class="text-white font-serif text-2xl md:text-3xl uppercase tracking-wider">{{ c?.title || 'Categoria' }}</h3>
+                            <p class="text-white/75 text-sm mt-2 max-w-md">{{ c?.subtitle || '' }}</p>
+                        </div>
+                        <div class="shrink-0 w-12 h-12 rounded-full border border-white/20 bg-white/5 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-[#b59a68] group-hover:border-[#b59a68] transition-colors">
+                            <i class="bi bi-arrow-right text-lg"></i>
+                        </div>
                     </div>
-                    <h3 class="text-white font-serif text-xl md:text-2xl uppercase tracking-wider">{{ cat.name }}</h3>
-                    <div class="h-0.5 w-0 group-hover:w-12 bg-gold transition-all duration-500 mt-2"></div>
                 </div>
             </a>
         </div>
@@ -438,6 +479,30 @@
             <a *ngIf="whatsappUrl" [href]="whatsappUrl" target="_blank" class="w-14 h-14 bg-green-500 text-white rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform">
                 <i class="bi bi-whatsapp text-2xl"></i>
             </a>
+        </div>
+    </div>
+
+    <!-- Exit intent offer (elegante) -->
+    <div *ngIf="exitOfferOpen" class="fixed inset-0 z-[200] flex items-center justify-center p-6">
+        <div class="absolute inset-0 bg-black/55" (click)="closeExitOffer()"></div>
+        <div class="relative w-full max-w-lg rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+            <div class="absolute inset-0 bg-gradient-to-br from-[#07121a] via-[#0b1f2c] to-[#274C68]"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(181,154,104,0.35),transparent_60%)]"></div>
+            <div class="relative p-8">
+                <div class="text-[#d8c08a] text-[10px] uppercase tracking-[0.35em] font-bold">Oferta privada</div>
+                <h3 class="font-serif text-3xl text-white mt-3">Antes de irte…</h3>
+                <p class="text-white/80 mt-3 leading-relaxed">Explora perfumes con descuento activo. Elige tu fragancia firma con envio seguro.</p>
+                <div class="mt-7 flex flex-col sm:flex-row gap-3">
+                    <button type="button" (click)="navigateCta('/catalog?promo=true'); closeExitOffer()"
+                        class="flex-1 rounded-xl bg-[#b59a68] text-white py-4 text-[11px] uppercase tracking-[0.28em] font-bold">
+                        Ver ofertas
+                    </button>
+                    <button type="button" (click)="closeExitOffer()"
+                        class="flex-1 rounded-xl border border-white/20 text-white/90 py-4 text-[11px] uppercase tracking-[0.28em] font-bold bg-white/5">
+                        Continuar navegando
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -22,10 +22,20 @@ export class OrderSuccessComponent {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private orderService: OrderService,
+    public orderService: OrderService,
     private authService: AuthService,
     private wompiService: WompiService
   ) {}
+
+  getDisplayStatus(): string {
+    if (!this.order) return '';
+    return this.orderService.getCustomerDisplayStatus(this.order);
+  }
+
+  isPaymentRejected(): boolean {
+    const ep = String(this.order?.estado_pago || '').trim().toUpperCase();
+    return ep === 'RECHAZADO' || ep === 'CANCELADO';
+  }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {

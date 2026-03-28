@@ -603,7 +603,7 @@ export class OrderModel {
         }
     }
 
-    static async cancelAndRestock(orderId: string): Promise<void> {
+    static async cancelAndRestock(orderId: string, observacion?: string): Promise<void> {
         const connection = await pool.getConnection();
         const binary = await detectIdType();
         const idExpr = binary ? 'UUID_TO_BIN(?)' : '?';
@@ -624,6 +624,17 @@ export class OrderModel {
                 `UPDATE ordenes SET estado = ?, actualizado_en = NOW() WHERE id = ${idExpr}`,
                 ['CANCELADO', orderId]
             );
+
+            // Historial (si existe tabla): admin_id NULL
+            try {
+                await connection.query(
+                    `INSERT INTO historial_pedido (id, orden_id, estado_anterior, estado_nuevo, observacion)
+                     VALUES (${idExpr}, ${idExpr}, ?, ?, ?)`,
+                    [uuidv4(), orderId, String(current || '').toUpperCase() || null, 'CANCELADO', String(observacion || 'Pedido cancelado').trim()]
+                );
+            } catch {
+                // ignore
+            }
 
             const [resItems] = await connection.query(
                 `SELECT ${productoIdRead} AS producto_id, cantidad FROM detalleordenes WHERE orden_id = ${idExpr}`,

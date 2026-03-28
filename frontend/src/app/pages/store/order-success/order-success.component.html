@@ -21,36 +21,42 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div class="flex items-center gap-4">
             <div class="w-14 h-14 rounded-full flex items-center justify-center"
-              [ngClass]="order.estado === 'CANCELADO' ? 'bg-red-100' : (order.codigo_transaccion && (order.estado_pago || '').toUpperCase() === 'PENDIENTE' ? 'bg-amber-100' : 'bg-green-100')">
-              <svg *ngIf="order.estado === 'CANCELADO'" class="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              [ngClass]="getDisplayStatus() === 'CANCELADO' ? 'bg-red-100' : (getDisplayStatus() === 'PENDIENTE' ? 'bg-amber-100' : 'bg-green-100')">
+              <svg *ngIf="getDisplayStatus() === 'CANCELADO'" class="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
-              <svg *ngIf="order.estado !== 'CANCELADO' && order.codigo_transaccion && (order.estado_pago || '').toUpperCase() === 'PENDIENTE'" class="w-8 h-8 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg *ngIf="getDisplayStatus() === 'PENDIENTE'" class="w-8 h-8 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
               </svg>
-              <svg *ngIf="order.estado !== 'CANCELADO' && !(order.codigo_transaccion && (order.estado_pago || '').toUpperCase() === 'PENDIENTE')" class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg *ngIf="getDisplayStatus() !== 'CANCELADO' && getDisplayStatus() !== 'PENDIENTE'" class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div>
               <h1 class="text-3xl font-serif font-bold text-charcoal">
-                <ng-container *ngIf="order.estado === 'CANCELADO'; else notCancelled">
-                  Pedido cancelado
+                <ng-container *ngIf="getDisplayStatus() === 'CANCELADO'; else notCancelled">
+                  <ng-container *ngIf="isPaymentRejected(); else cancelledGeneric">Pago rechazado</ng-container>
+                  <ng-template #cancelledGeneric>Pedido cancelado</ng-template>
                 </ng-container>
                 <ng-template #notCancelled>
-                  <ng-container *ngIf="order.codigo_transaccion && (order.estado_pago || '').toUpperCase() === 'PENDIENTE'; else confirmed">
+                  <ng-container *ngIf="getDisplayStatus() === 'PENDIENTE'; else confirmed">
                   Pago en verificación
                   </ng-container>
                   <ng-template #confirmed>¡Pedido Confirmado!</ng-template>
                 </ng-template>
               </h1>
               <p class="text-sm text-gray-500 mt-1">
-                <ng-container *ngIf="order.estado === 'CANCELADO'; else notCancelledMsg">
-                  Si el pago fue aprobado en tu app, pulsa "Actualizar estado". Si no, puedes intentar de nuevo.
+                <ng-container *ngIf="getDisplayStatus() === 'CANCELADO'; else notCancelledMsg">
+                  <ng-container *ngIf="isPaymentRejected(); else cancelledMsgGeneric">
+                    El pago fue rechazado o cancelado. Puedes intentar de nuevo.
+                  </ng-container>
+                  <ng-template #cancelledMsgGeneric>
+                    Si el pago fue aprobado en tu app, pulsa "Actualizar estado".
+                  </ng-template>
                 </ng-container>
                 <ng-template #notCancelledMsg>
-                  <ng-container *ngIf="order.codigo_transaccion && (order.estado_pago || '').toUpperCase() === 'PENDIENTE'; else registered">
+                  <ng-container *ngIf="getDisplayStatus() === 'PENDIENTE'; else registered">
                   Gracias, {{ getUserName() }}. Estamos confirmando tu pago. Puede tardar unos minutos.
                   </ng-container>
                   <ng-template #registered>Gracias, {{ getUserName() }}. Tu pedido fue registrado.</ng-template>
@@ -92,8 +98,8 @@
         <div class="bg-white border border-gray-100 p-6">
           <h2 class="text-sm font-bold text-charcoal uppercase tracking-widest mb-4">Estado</h2>
           <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase"
-            [ngStyle]="{ 'background-color': (order.estado_pago || '').toUpperCase() === 'PENDIENTE' ? '#FEF3C7' : '#E5E7EB', 'color': '#1F2937' }">
-            {{ order.estado }}
+            [ngStyle]="{ 'background-color': getDisplayStatus() === 'PENDIENTE' ? '#FEF3C7' : '#E5E7EB', 'color': '#1F2937' }">
+            {{ getDisplayStatus() }}
           </div>
           <div class="text-xs text-gray-500 mt-3">
             Método:
@@ -101,7 +107,7 @@
             <ng-template #cod>Pago contra entrega</ng-template>
           </div>
 
-          <div *ngIf="order.codigo_transaccion && (order.estado_pago || '').toUpperCase() === 'PENDIENTE'" class="mt-4 text-xs text-gray-500">
+          <div *ngIf="getDisplayStatus() === 'PENDIENTE'" class="mt-4 text-xs text-gray-500">
             Si pagaste con PSE o Nequi, espera la confirmacion. Si fue Nequi, revisa tu app y aprueba el pago.
           </div>
         </div>

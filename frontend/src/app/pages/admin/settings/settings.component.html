@@ -187,44 +187,6 @@
                             class="w-full border border-[#ecece5] rounded-md px-4 py-2 focus:ring-gold focus:border-gold outline-none"></textarea>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Banner principal (multimedia)</label>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-soft-charcoal tracking-widest uppercase mb-2">Tipo</label>
-                                <select [(ngModel)]="settings.hero_media_type" name="hero_media_type"
-                                    class="w-full border border-[#ecece5] rounded-md px-4 py-2 focus:ring-gold focus:border-gold outline-none bg-white">
-                                    <option value="image">Imagen</option>
-                                    <option value="gif">GIF</option>
-                                    <option value="video">Video</option>
-                                </select>
-                                <p class="text-xs text-gray-500 mt-2">
-                                    Imagen/GIF: max 10MB. Video: max 30MB.
-                                </p>
-                            </div>
-
-                            <div class="md:col-span-2">
-                                <label class="block text-xs font-bold text-soft-charcoal tracking-widest uppercase mb-2">Archivo</label>
-                                <input type="file" (change)="onHeroMediaSelected($event)" [accept]="getHeroAccept()"
-                                    class="w-full border border-[#ecece5] rounded-md px-4 py-2 focus:ring-gold focus:border-gold outline-none">
-                                <p class="text-xs text-gray-500 mt-2">
-                                    Formatos: JPG/PNG/WebP/GIF, o MP4/WebM.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div *ngIf="getHeroMediaUrl()" class="mt-4">
-                            <p class="text-xs text-soft-charcoal mb-2">Previsualización:</p>
-
-                            <video *ngIf="getHeroMediaType() === 'video'" [src]="getHeroMediaUrl()" muted playsinline controls
-                                class="h-40 w-full object-cover rounded-md border border-[#ecece5]"></video>
-
-                            <img *ngIf="getHeroMediaType() !== 'video'" [src]="getHeroMediaUrl()" alt="Hero Preview"
-                                class="h-40 w-full object-cover rounded-md border border-[#ecece5]" />
-                        </div>
-                    </div>
-
                     <div class="pt-2 border-t border-[#ecece5]">
                         <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Logo
                             del Sitio</label>

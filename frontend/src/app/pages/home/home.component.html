@@ -1,6 +1,6 @@
 <div class="w-full bg-[#FAFAF9] relative">
     <!-- HERO / Carrusel estrategico (premium) -->
-    <section class="relative w-full min-h-[88vh] flex items-center overflow-hidden bg-[#07121a]"
+    <section class="relative w-full min-h-[88vh] flex items-center overflow-hidden bg-navy-dark"
         (mouseenter)="pauseCarousel()" (mouseleave)="resumeCarousel()">
         <!-- Slides (media) -->
         <div class="absolute inset-0">
@@ -29,17 +29,17 @@
         </div>
 
         <!-- Overlays: deep blue + metallic gold glow -->
-        <div class="absolute inset-0 bg-gradient-to-r from-[#07121a]/95 via-[#07121a]/55 to-transparent"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(39,76,104,0.55),transparent_50%)]"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(181,154,104,0.28),transparent_55%)]"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-navy-dark/95 via-navy-dark/55 to-transparent"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(10,25,47,0.8),transparent_50%)]"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(212,175,55,0.25),transparent_55%)]"></div>
 
         <!-- Content -->
         <div class="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full py-24">
             <ng-container *ngIf="homeSlides[activeSlideIndex] as slide">
                 <div class="max-w-2xl">
                     <div class="inline-flex items-center gap-3 mb-6 animate-fade-in-up" style="animation-delay: 0.05s">
-                        <span class="w-10 h-[1px] bg-[#b59a68]"></span>
-                        <span class="text-[#d8c08a] text-[10px] tracking-[0.35em] font-bold uppercase">Perfumes originales</span>
+                        <span class="w-10 h-[1px] bg-gold"></span>
+                        <span class="text-gold tracking-[0.35em] font-bold uppercase text-[10px]">Perfumes originales</span>
                     </div>
 
                     <h1 class="font-serif text-5xl md:text-7xl text-white leading-[1.05] mb-6 animate-fade-in-up" style="animation-delay: 0.18s">
@@ -52,7 +52,7 @@
 
                     <div class="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style="animation-delay: 0.46s">
                         <button type="button" (click)="navigateCta(slide?.ctaLink)"
-                            class="group relative overflow-hidden text-[11px] tracking-[0.28em] uppercase px-12 py-5 rounded-xl bg-[#b59a68] text-white transition-all duration-500 shadow-xl hover:shadow-[#b59a68]/25">
+                            class="group relative overflow-hidden text-[11px] tracking-[0.28em] uppercase px-12 py-5 rounded-xl bg-gold text-white transition-all duration-500 shadow-xl hover:shadow-gold/30">
                             <span class="relative z-10">{{ slide?.ctaText || 'Explorar coleccion' }}</span>
                             <span class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 home-gold-sheen"></span>
                         </button>
@@ -68,7 +68,7 @@
                     <div class="mt-10 flex items-center gap-3">
                         <button *ngFor="let dot of homeSlides; let i = index" type="button" (click)="goToSlide(i)"
                             class="h-[2px] w-10 rounded-full transition-all"
-                            [ngClass]="i === activeSlideIndex ? 'bg-[#d8c08a]' : 'bg-white/20 hover:bg-white/35'"
+                            [ngClass]="i === activeSlideIndex ? 'bg-gold' : 'bg-white/20 hover:bg-white/35'"
                             [attr.aria-label]="'Ir a slide ' + (i + 1)">
                         </button>
                     </div>
@@ -100,8 +100,8 @@
                         <i class="bi bi-patch-check text-xl"></i>
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-charcoal">Originalidad</span>
-                        <span class="text-[9px] text-sage font-medium uppercase tracking-tighter">100% Garantizada</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Originalidad</span>
+                        <span class="text-[9px] text-navy-light font-medium uppercase tracking-tighter">100% Garantizada</span>
                     </div>
                 </div>
                 
@@ -110,8 +110,8 @@
                         <i class="bi bi-truck text-xl"></i>
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-charcoal">Envío Seguro</span>
-                        <span class="text-[9px] text-sage font-medium uppercase tracking-tighter">Bogotá y Nacional</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Envío Seguro</span>
+                        <span class="text-[9px] text-navy-light font-medium uppercase tracking-tighter">Bogotá y Nacional</span>
                     </div>
                 </div>
 
@@ -120,8 +120,8 @@
                         <i class="bi bi-whatsapp text-xl"></i>
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-charcoal">Asesoría VIP</span>
-                        <span class="text-[9px] text-sage font-medium uppercase tracking-tighter">WhatsApp Directo</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Asesoría VIP</span>
+                        <span class="text-[9px] text-navy-light font-medium uppercase tracking-tighter">WhatsApp Directo</span>
                     </div>
                 </div>
 
@@ -130,8 +130,8 @@
                         <i class="bi bi-tag text-xl"></i>
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-charcoal">Promociones</span>
-                        <span class="text-[9px] text-sage font-medium uppercase tracking-tighter">Ofertas Semanales</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Promociones</span>
+                        <span class="text-[9px] text-navy-light font-medium uppercase tracking-tighter">Ofertas Semanales</span>
                     </div>
                 </div>
 
@@ -140,8 +140,8 @@
                         <i class="bi bi-shield-lock text-xl"></i>
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold uppercase tracking-widest text-charcoal">Pago Seguro</span>
-                        <span class="text-[9px] text-sage font-medium uppercase tracking-tighter">Cifrado Bancario</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Pago Seguro</span>
+                        <span class="text-[9px] text-navy-light font-medium uppercase tracking-tighter">Cifrado Bancario</span>
                     </div>
                 </div>
             </div>
@@ -151,14 +151,14 @@
     <!-- Categorias como embudo de ventas -->
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div class="text-center mb-12">
-            <div class="text-[#274C68] text-[10px] font-bold uppercase tracking-[0.35em]">Explora por intencion</div>
-            <h2 class="font-serif text-4xl text-charcoal mb-4 uppercase tracking-[0.1em]">Encuentra tu esencia</h2>
-            <p class="text-soft-charcoal text-sm uppercase tracking-[0.2em] font-medium">Ruta directa hacia compra: menos friccion, mas deseo</p>
+            <div class="text-navy-light text-[10px] font-bold uppercase tracking-[0.35em]">Explora por intencion</div>
+            <h2 class="font-serif text-4xl text-navy-dark mb-4 uppercase tracking-[0.1em]">Encuentra tu esencia</h2>
+            <p class="text-navy text-sm uppercase tracking-[0.2em] font-medium">Ruta directa hacia compra: menos friccion, mas deseo</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <a *ngFor="let c of homeCategories; let i = index" href="#" (click)="$event.preventDefault(); navigateCta(c?.link)"
-                class="relative group overflow-hidden rounded-2xl bg-[#07121a] shadow-xl border border-[#ecece5] aspect-[16/10] md:aspect-[16/9]">
+                class="relative group overflow-hidden rounded-2xl bg-navy-dark shadow-xl border border-[#ecece5] aspect-[16/10] md:aspect-[16/9]">
 
                 <video *ngIf="isVideoSlide(c)" class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.04]"
                     [attr.src]="getHomeSlideMediaUrl(c, i)" preload="metadata" muted playsinline loop autoplay>
@@ -167,17 +167,17 @@
                 <img *ngIf="!isVideoSlide(c)" class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.06]"
                     [src]="getHomeSlideMediaUrl(c, i)" loading="lazy" decoding="async" />
 
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
-                <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(181,154,104,0.30),transparent_55%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-navy-dark/95 via-navy-dark/40 to-transparent"></div>
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(212,175,55,0.25),transparent_55%)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
 
                 <div class="absolute inset-0 p-7 flex flex-col justify-end">
-                    <div class="text-[#d8c08a] text-[10px] tracking-[0.35em] uppercase font-bold">{{ c?.emotion || 'Exclusividad' }}</div>
+                    <div class="text-gold text-[10px] tracking-[0.35em] uppercase font-bold">{{ c?.emotion || 'Exclusividad' }}</div>
                     <div class="mt-2 flex items-end justify-between gap-6">
                         <div>
                             <h3 class="text-white font-serif text-2xl md:text-3xl uppercase tracking-wider">{{ c?.title || 'Categoria' }}</h3>
                             <p class="text-white/75 text-sm mt-2 max-w-md">{{ c?.subtitle || '' }}</p>
                         </div>
-                        <div class="shrink-0 w-12 h-12 rounded-full border border-white/20 bg-white/5 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-[#b59a68] group-hover:border-[#b59a68] transition-colors">
+                        <div class="shrink-0 w-12 h-12 rounded-full border border-white/20 bg-white/5 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-gold group-hover:border-gold transition-colors">
                             <i class="bi bi-arrow-right text-lg"></i>
                         </div>
                     </div>
@@ -199,10 +199,10 @@
 
     <!-- Recomendación Inteligente IA - Bloque Inmersivo -->
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div class="relative rounded-[2rem] overflow-hidden bg-charcoal text-white shadow-2xl p-8 md:p-16 lg:p-20 group">
+        <div class="relative rounded-[2rem] overflow-hidden bg-navy text-white shadow-2xl p-8 md:p-16 lg:p-20 group">
             <!-- Background effects -->
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(181,154,104,0.2),transparent_50%)]"></div>
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(45,76,59,0.15),transparent_50%)]"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.15),transparent_50%)]"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(26,54,93,0.4),transparent_50%)]"></div>
             
             <div class="relative grid md:grid-cols-2 gap-12 items-center">
                 <div class="animate-fade-in-left">

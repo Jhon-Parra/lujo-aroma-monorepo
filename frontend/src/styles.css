@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply bg-cream text-charcoal font-sans antialiased;
+    @apply bg-cream text-navy font-sans antialiased;
   }
 
   h1,
@@ -30,14 +30,14 @@
     @apply bg-gold text-white font-medium py-2 px-6 rounded-md hover:bg-opacity-90 transition-all duration-300;
   }
 
-  /* Botón Secundario (Sage) */
+  /* Botón Secundario (Navy Light) */
   .btn-secondary {
-    @apply bg-sage text-white font-medium py-2 px-6 rounded-md hover:bg-opacity-90 transition-all duration-300;
+    @apply bg-navy-light text-white font-medium py-2 px-6 rounded-md hover:bg-opacity-90 transition-all duration-300;
   }
 
   /* Botón Premium para Carrito */
   .btn-premium-cart {
-    @apply relative overflow-hidden bg-gradient-to-r from-sage to-primary-green text-white font-bold rounded-xl shadow-lg transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl active:scale-95 flex items-center justify-center gap-2;
+    @apply relative overflow-hidden bg-gradient-to-r from-navy to-navy-light text-white font-bold rounded-xl shadow-lg transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl active:scale-95 flex items-center justify-center gap-2;
     animation: soft-pulse 3s infinite ease-in-out;
   }
 
@@ -49,7 +49,7 @@
 
   /* Outline Button */
   .btn-outline {
-    @apply border border-charcoal text-charcoal font-medium py-2 px-6 rounded-md hover:bg-charcoal hover:text-white transition-all duration-300;
+    @apply border border-navy text-navy font-medium py-2 px-6 rounded-md hover:bg-navy hover:text-white transition-all duration-300;
   }
 
   /* Tarjetas de Producto */

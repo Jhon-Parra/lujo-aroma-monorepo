@@ -6,14 +6,13 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Paleta Premium Lujo & Aroma
-        cream: '#F9F9F6',
-        sage: '#9CA389',
-        gold: '#D4AF37', // Dorado más vibrante y premium
-        charcoal: '#333333',
-        'soft-charcoal': '#4A4A4A',
-        'primary-green': '#2D4C3B',
-        'dark-green': '#1B3326',
+        // Paleta Premium Lujo & Aroma (Mediterranean Blue & Gold)
+        cream: '#F4F4F4', // Ligeramente más blanco perlado
+        gold: '#D4AF37', // Dorado puro brillante
+        'gold-muted': '#B59A68', // Dorado sutil
+        navy: '#0A192F', // Azul Mediterráneo profundo
+        'navy-light': '#1A365D', // Azul acento
+        'navy-dark': '#061121', // Fondo naval oscuro
       },
       fontFamily: {
         serif: ['"Playfair Display"', 'serif'],

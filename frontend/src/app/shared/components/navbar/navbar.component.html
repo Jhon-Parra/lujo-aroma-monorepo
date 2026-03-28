@@ -1,4 +1,4 @@
-<div class="w-full bg-primary-green text-white font-sans" [ngStyle]="getLogoCssVars()">
+<div class="w-full bg-navy text-white font-sans" [ngStyle]="getLogoCssVars()">
   <!-- Top Banner -->
   <div *ngIf="!isAdminRoute && settings?.show_banner"
     (click)="filterByPromotions()"
@@ -33,7 +33,7 @@
 
         <!-- Buscador Móvil (Icono) -->
         <button *ngIf="!isAdminRoute" type="button" (click)="toggleMobileSearch()" aria-label="Abrir buscador"
-          class="md:hidden w-10 h-10 rounded-full border border-[#ecece5] bg-white text-charcoal flex items-center justify-center hover:bg-[#f9f9f6] transition-colors">
+          class="md:hidden w-10 h-10 rounded-full border border-[#ecece5] bg-white text-navy flex items-center justify-center hover:bg-[#f9f9f6] transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round"
               d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
@@ -80,7 +80,7 @@
                 <img [src]="getSuggestionImage(s)" [alt]="s.name || s.nombre"
                   class="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-[#ecece5]" />
                 <div class="flex-1 min-w-0">
-                  <div class="text-xs font-bold text-charcoal truncate uppercase tracking-wide">{{ s.name || s.nombre }}</div>
+                  <div class="text-xs font-bold text-navy-dark truncate uppercase tracking-wide">{{ s.name || s.nombre }}</div>
                   <div class="text-[11px] text-gold font-bold mt-0.5">{{ getSuggestionPrice(s) | currency:'COP':'symbol-narrow':'1.0-0' }}</div>
                 </div>
                 <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,7 +97,7 @@
             <div *ngIf="!suggestionsLoading && suggestions.length > 0"
               class="px-3 py-2 border-t border-[#ecece5] bg-[#f9f9f6]">
               <button (click)="onSearch()"
-                class="w-full text-[10px] font-bold uppercase tracking-widest text-primary-green hover:text-gold transition-colors text-center">
+                class="w-full text-[10px] font-bold uppercase tracking-widest text-navy-light hover:text-gold transition-colors text-center">
                 Ver todos los resultados →
               </button>
             </div>
@@ -106,7 +106,7 @@
 
         <!-- Mobile Hamburger (Store only) -->
         <button *ngIf="!isAdminRoute" type="button" (click)="toggleMobileMenu()" aria-label="Abrir menu"
-          class="md:hidden w-10 h-10 rounded-full border border-[#ecece5] bg-white text-charcoal flex items-center justify-center hover:bg-[#f9f9f6] transition-colors">
+          class="md:hidden w-10 h-10 rounded-full border border-[#ecece5] bg-white text-navy flex items-center justify-center hover:bg-[#f9f9f6] transition-colors">
           <svg *ngIf="!mobileMenuOpen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
             stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />

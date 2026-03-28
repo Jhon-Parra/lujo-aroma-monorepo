@@ -22,12 +22,14 @@ export class HomeComponent implements OnInit, OnDestroy {
   private readonly HOME_VIDEO_AUTOPLAY_KEY = 'lujo_aroma_home_video_autoplay_done_v1';
   private readonly EXIT_OFFER_KEY = 'lujo_aroma_exit_offer_seen_v1';
 
+  // Map to track video elements by slide index for programmatic control
+  private videoElements = new Map<number, HTMLVideoElement>();
+
   // Home premium (carousel)
   homeSlides: any[] = [];
   homeCategories: any[] = [];
   activeSlideIndex = 0;
   carouselPaused = false;
-  allowVideoAutoplay = true;
   exitOfferOpen = false;
 
   private carouselTimer: any;
@@ -91,6 +93,46 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Called by (loadeddata) on each video element. */
+  onVideoLoaded(event: Event, index: number): void {
+    const video = event.target as HTMLVideoElement;
+    this.videoElements.set(index, video);
+    if (index === this.activeSlideIndex) {
+      this.playSlideVideo(index);
+    }
+  }
+
+  /** Programmatically play video at given slide index. */
+  private playSlideVideo(index: number): void {
+    const video = this.videoElements.get(index);
+    if (!video) return;
+    video.currentTime = 0;
+    video.play().catch(() => { /* browser policy: ignore */ });
+  }
+
+  /** Pause all video elements except the active one. */
+  private pauseOtherVideos(activeIndex: number): void {
+    this.videoElements.forEach((video, idx) => {
+      if (idx !== activeIndex) {
+        video.pause();
+        video.currentTime = 0;
+        video.style.opacity = '1';
+      }
+    });
+  }
+
+  /** Fade out video slightly before it loops to create a seamless softer restart. */
+  onVideoTimeUpdate(event: Event): void {
+    const video = event.target as HTMLVideoElement;
+    const timeLeft = video.duration - video.currentTime;
+    // Dim to 0% opacity over the last 400ms (CSS transition handles the smooth fade)
+    if (timeLeft > 0 && timeLeft <= 0.4) {
+      video.style.opacity = '0';
+    } else {
+      video.style.opacity = '1';
+    }
+  }
+
   goToRecommenderQuiz(): void {
     this.router.navigate(['/recommender'], { queryParams: { mode: 'quiz' } });
   }
@@ -112,20 +154,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    try {
-      this.allowVideoAutoplay = !localStorage.getItem(this.HOME_VIDEO_AUTOPLAY_KEY);
-    } catch {
-      this.allowVideoAutoplay = true;
-    }
-
-    // Autoplay solo primera visita: permitirlo un momento y luego apagarlo
-    if (this.allowVideoAutoplay) {
-      try { localStorage.setItem(this.HOME_VIDEO_AUTOPLAY_KEY, '1'); } catch { /* ignore */ }
-      setTimeout(() => {
-        this.allowVideoAutoplay = false;
-      }, 1500);
-    }
-
     // SEO & JSON-LD
     this.seo.set({
       title: 'Lujo & Aroma | Perfumería Árabe',
@@ -334,12 +362,16 @@ export class HomeComponent implements OnInit, OnDestroy {
     const next = Math.max(0, Math.min(total - 1, Math.trunc(Number(i || 0))));
     this.activeSlideIndex = next;
     this.carouselPaused = true;
+    this.playSlideVideo(this.activeSlideIndex);
+    this.pauseOtherVideos(this.activeSlideIndex);
   }
 
   nextSlide(): void {
     const total = (this.homeSlides || []).length || 0;
     if (!total) return;
     this.activeSlideIndex = (this.activeSlideIndex + 1) % total;
+    this.playSlideVideo(this.activeSlideIndex);
+    this.pauseOtherVideos(this.activeSlideIndex);
   }
 
   prevSlide(): void {
@@ -347,6 +379,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (!total) return;
     this.activeSlideIndex = (this.activeSlideIndex - 1 + total) % total;
     this.carouselPaused = true;
+    this.playSlideVideo(this.activeSlideIndex);
+    this.pauseOtherVideos(this.activeSlideIndex);
   }
 
   isVideoSlide(slide: any): boolean {

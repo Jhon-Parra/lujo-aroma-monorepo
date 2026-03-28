@@ -9,9 +9,17 @@
                     [class.opacity-100]="i === activeSlideIndex" [class.opacity-0]="i !== activeSlideIndex"
                     [style.pointer-events]="i === activeSlideIndex ? 'auto' : 'none'" [attr.aria-hidden]="i !== activeSlideIndex">
 
-                    <video *ngIf="isVideoSlide(s)" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom"
-                        [attr.src]="i === activeSlideIndex ? getHomeSlideMediaUrl(s, i) : null" preload="metadata" muted playsinline loop
-                        [attr.autoplay]="allowVideoAutoplay && i === activeSlideIndex ? '' : null">
+                    <!-- Video slide: always loaded, play() called programmatically -->
+                    <video *ngIf="isVideoSlide(s)"
+                        class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom transition-opacity duration-[400ms]"
+                        [attr.data-slide-index]="i"
+                        [src]="getHomeSlideMediaUrl(s, i)"
+                        preload="auto"
+                        muted
+                        playsinline
+                        loop
+                        (loadeddata)="onVideoLoaded($event, i)"
+                        (timeupdate)="onVideoTimeUpdate($event)">
                     </video>
 
                     <img *ngIf="!isVideoSlide(s)" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom"

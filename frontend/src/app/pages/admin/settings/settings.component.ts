@@ -188,6 +188,8 @@ export class SettingsComponent implements OnInit {
   getLogoUrl(): string {
     const url = (this.settings.logo_url || '').trim();
     if (!url) return 'assets/images/logo.png';
+
+    if (url.startsWith('assets/') || url.startsWith('/assets/')) return url.replace(/^\/+/, '');
     if (url.startsWith('data:') || url.startsWith('http')) return url;
     return `${API_CONFIG.serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
   }

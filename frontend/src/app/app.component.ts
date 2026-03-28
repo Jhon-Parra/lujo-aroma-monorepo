@@ -175,7 +175,22 @@ export class AppComponent implements OnInit, OnDestroy {
   private getAbsoluteLogoUrl(logoUrl: string | null | undefined): string {
     const url = (logoUrl || '').trim();
     if (!url) return 'assets/images/logo.png';
-    if (url.startsWith('http') || url.startsWith('data:')) return url;
+
+    // Allow referencing frontend assets directly from settings
+    if (url.startsWith('assets/') || url.startsWith('/assets/')) return url.replace(/^\/+/, '');
+
+    if (url.startsWith('data:')) return url;
+    if (/^https?:\/\//i.test(url)) {
+      try {
+        if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+          return `https://${url.slice('http://'.length)}`;
+        }
+      } catch {
+        // ignore
+      }
+      return url;
+    }
+
     return `${API_CONFIG.serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
   }
 

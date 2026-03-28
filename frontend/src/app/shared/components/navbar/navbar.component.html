@@ -12,9 +12,9 @@
     <div class="flex justify-between items-center navbar-row">
 
       <!-- Logo -->
-      <a [routerLink]="isAdminRoute ? '/admin' : '/'"
-        class="navbar-logo-wrap flex-shrink-0 flex items-center cursor-pointer transition-transform hover:scale-105 duration-300">
-        <img [src]="getLogoUrl()" alt="Lujo & Aroma Perfumería de Lujo"
+        <a [routerLink]="isAdminRoute ? '/admin' : '/'"
+          class="navbar-logo-wrap flex-shrink-0 flex items-center cursor-pointer transition-transform hover:scale-105 duration-300">
+        <img [src]="getLogoUrl()" (error)="onLogoError($event)" alt="Lujo & Aroma Perfumería de Lujo"
           class="navbar-logo object-contain py-1 transition-all duration-300" />
       </a>
 

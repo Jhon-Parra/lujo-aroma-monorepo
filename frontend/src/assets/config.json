@@ -1,4 +1,4 @@
 {
-  "apiUrl": "https://api.lujo_aromacol.com",
+  "apiUrl": "http://localhost:3000",
   "googleClientId": "129037757547-mvt7e9b254t59dc4s7mu8vnth62lf7lr.apps.googleusercontent.com"
 }

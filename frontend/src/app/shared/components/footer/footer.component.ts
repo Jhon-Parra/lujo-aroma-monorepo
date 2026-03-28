@@ -12,6 +12,8 @@ import { API_CONFIG } from '../../../core/config/api-config';
   styleUrl: './footer.component.css'
 })
 export class FooterComponent {
+  private forceLocalLogo = false;
+
   settings: Settings | null = null;
   whatsappUrl = '';
   instagramUrl = '';
@@ -37,6 +39,7 @@ export class FooterComponent {
 
   private updateSettingsData(s: Settings): void {
     this.settings = s;
+    this.forceLocalLogo = false;
     this.whatsappUrl = this.buildWhatsappUrl(s?.whatsapp_number || '', s?.whatsapp_message || '');
     this.instagramUrl = this.normalizeExternalUrl(s?.instagram_url || '', 'instagram.com');
     this.facebookUrl = this.normalizeExternalUrl(s?.facebook_url || '', 'facebook.com');
@@ -45,10 +48,37 @@ export class FooterComponent {
 
   private resetSettingsData(): void {
     this.settings = null;
+    this.forceLocalLogo = false;
     this.whatsappUrl = '';
     this.instagramUrl = '';
     this.facebookUrl = '';
     this.tiktokUrl = '';
+  }
+
+  private resolveLogoUrl(raw: string | null | undefined): string {
+    const url = String(raw || '').trim();
+    if (!url) return 'assets/images/logo.png';
+    if (url.startsWith('assets/') || url.startsWith('/assets/')) return url.replace(/^\/+/, '');
+    if (url.startsWith('data:')) return url;
+    if (/^https?:\/\//i.test(url)) {
+      try {
+        if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+          return `https://${url.slice('http://'.length)}`;
+        }
+      } catch {
+        // ignore
+      }
+      return url;
+    }
+    return `${API_CONFIG.serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+
+  onLogoError(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    if (!img) return;
+    if (img.src && img.src.includes('/assets/images/logo.png')) return;
+    this.forceLocalLogo = true;
+    img.src = 'assets/images/logo.png';
   }
 
   private normalizeExternalUrl(raw: string, expectedHost: string): string {
@@ -71,9 +101,7 @@ export class FooterComponent {
   }
 
   getLogoUrl(): string {
-    const url = (this.settings?.logo_url || '').trim();
-    if (!url) return 'assets/images/logo.png';
-    if (url.startsWith('http') || url.startsWith('data:')) return url;
-    return `${API_CONFIG.serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+    if (this.forceLocalLogo) return 'assets/images/logo.png';
+    return this.resolveLogoUrl(this.settings?.logo_url);
   }
 }

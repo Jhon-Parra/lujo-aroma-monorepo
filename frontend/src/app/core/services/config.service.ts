@@ -80,7 +80,7 @@ export class ConfigService {
 // ...
 
   get apiUrl(): string {
-    return this.config?.apiUrl || 'https://api.lujo_aromacol.com';
+    return this.config?.apiUrl || 'http://localhost:3000';
   }
 
   get googleClientId(): string {

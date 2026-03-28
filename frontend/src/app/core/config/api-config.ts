@@ -3,8 +3,8 @@
  * Updated dynamically by ConfigService at runtime.
  */
 export const API_CONFIG = {
-    serverUrl: 'https://api.lujo_aromacol.com',
-    baseUrl: 'https://api.lujo_aromacol.com/api',
+    serverUrl: 'http://localhost:3000',
+    baseUrl: 'http://localhost:3000/api',
     googleClientId: '129037757547-mvt7e9b254t59dc4s7mu8vnth62lf7lr.apps.googleusercontent.com'
 };
 

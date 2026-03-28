@@ -34,7 +34,7 @@ nav {
   width: auto;
   max-width: 100%;
   z-index: 20;
-  filter: brightness(0) invert(1);
+  /* filter: brightness(0) invert(1); */
   /* Ensure logo is visible on dark green if it's dark color */
 }
 

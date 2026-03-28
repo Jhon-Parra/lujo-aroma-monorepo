@@ -19,6 +19,8 @@ import { API_CONFIG } from '../../../core/config/api-config';
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent implements OnInit, OnDestroy {
+  private forceLocalLogo = false;
+
   cartItemCount$!: Observable<number>;
   cartItems$!: Observable<CartItem[]>;
   favoritesCount$!: Observable<number>;
@@ -57,11 +59,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.settingsSub = this.settingsService.settings$.subscribe((s) => {
-      if (s) this.settings = s;
+      if (!s) return;
+      this.settings = s;
+      this.forceLocalLogo = false;
     });
 
     this.settingsService.getSettings().subscribe({
-      next: (data) => { this.settings = data; },
+      next: (data) => {
+        this.settings = data;
+        this.forceLocalLogo = false;
+      },
       error: (err) => console.error('Error cargando configuraciones', err)
     });
 
@@ -162,11 +169,39 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   // ── Existing methods ──────────────────────────────────────────────────────
 
-  getLogoUrl(): string {
-    const url = (this.settings?.logo_url || '').trim();
+  private resolveLogoUrl(raw: string | null | undefined): string {
+    const url = String(raw || '').trim();
+
     if (!url) return 'assets/images/logo.png';
-    if (url.startsWith('http') || url.startsWith('data:')) return url;
+
+    // Allow referencing frontend assets directly from settings
+    if (url.startsWith('assets/') || url.startsWith('/assets/')) return url.replace(/^\/+/, '');
+
+    if (url.startsWith('data:')) return url;
+    if (/^https?:\/\//i.test(url)) {
+      try {
+        if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+          return `https://${url.slice('http://'.length)}`;
+        }
+      } catch {
+        // ignore
+      }
+      return url;
+    }
+
     return `${API_CONFIG.serverUrl}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+
+  onLogoError(event: Event): void {
+    const img = event.target as HTMLImageElement | null;
+    if (img && img.src && img.src.includes('/assets/images/logo.png')) return;
+    this.forceLocalLogo = true;
+    if (img) img.src = 'assets/images/logo.png';
+  }
+
+  getLogoUrl(): string {
+    if (this.forceLocalLogo) return 'assets/images/logo.png';
+    return this.resolveLogoUrl(this.settings?.logo_url);
   }
 
   getLogoCssVars(): Record<string, string> {

@@ -53,9 +53,9 @@
                         </p>
                     </div>
                     <div class="mt-2 sm:mt-0">
-                        <span [class]="getStatusClass(order.estado)"
+                        <span [class]="getDisplayStatusClass(order)"
                             class="px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider inline-block">
-                            {{ orderService.getStatusLabel(order.estado) }}
+                            {{ orderService.getStatusLabel(getDisplayStatus(order)) }}
                         </span>
                     </div>
                 </div>

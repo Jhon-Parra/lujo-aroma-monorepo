@@ -180,6 +180,22 @@ export class MyOrdersComponent implements OnInit {
         return !this.reviewedProductIds.has(productId);
     }
 
+    getDisplayStatus(order: Order): string {
+        return this.orderService.getCustomerDisplayStatus(order);
+    }
+
+    getDisplayStatusClass(order: Order): string {
+        const estado = this.getDisplayStatus(order);
+        const classes: Record<string, string> = {
+            'PENDIENTE': 'bg-yellow-100 text-yellow-800',
+            'PAGADO': 'bg-green-100 text-green-800',
+            'ENVIADO': 'bg-blue-100 text-blue-800',
+            'CANCELADO': 'bg-red-100 text-red-800',
+            'ENTREGADO': 'bg-purple-100 text-purple-800'
+        };
+        return classes[estado] || 'bg-gray-100 text-gray-600';
+    }
+
     openReview(orderId: string, productId: string, productName: string): void {
         this.reviewOrderId = orderId;
         this.reviewProductId = productId;

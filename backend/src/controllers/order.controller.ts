@@ -173,6 +173,19 @@ export class OrderController {
                 return;
             }
 
+            // Validacion: no permitir ENVIADO/ENTREGADO si el pago no esta aprobado (Wompi)
+            if (estado === 'ENVIADO' || estado === 'ENTREGADO') {
+                const order: any = await OrderModel.getAdminOrderById(id);
+                const metodo = String(order?.metodo_pago || '').trim().toUpperCase();
+                const canal = String(order?.canal_pago || '').trim().toUpperCase();
+                const estadoPago = String(order?.estado_pago || '').trim().toUpperCase();
+                const isWompi = metodo.startsWith('WOMPI_') || canal === 'WOMPI';
+                if (isWompi && estadoPago && estadoPago !== 'APROBADO') {
+                    res.status(409).json({ message: 'No se puede marcar como ENVIADO/ENTREGADO: el pago aún no está aprobado por Wompi.' });
+                    return;
+                }
+            }
+
             await OrderModel.updateOrderStatus(id, estado, adminId);
 
             // Si hay observación adicional, actualizar el historial recién creado
@@ -222,6 +235,21 @@ export class OrderController {
             if (!estadoActual) { res.status(404).json({ message: 'Pedido no encontrado' }); return; }
             if (['CANCELADO', 'ENTREGADO'].includes(estadoActual)) {
                 res.status(400).json({ message: `No se puede registrar guía en un pedido ${estadoActual}` }); return;
+            }
+
+            // Validacion: no permitir guia/envio si el pago no esta aprobado (Wompi)
+            try {
+                const order: any = await OrderModel.getAdminOrderById(ordenId);
+                const metodo = String(order?.metodo_pago || '').trim().toUpperCase();
+                const canal = String(order?.canal_pago || '').trim().toUpperCase();
+                const estadoPago = String(order?.estado_pago || '').trim().toUpperCase();
+                const isWompi = metodo.startsWith('WOMPI_') || canal === 'WOMPI';
+                if (isWompi && estadoPago && estadoPago !== 'APROBADO') {
+                    res.status(409).json({ message: 'No se puede registrar guía: el pago aún no está aprobado por Wompi.' });
+                    return;
+                }
+            } catch {
+                // ignore: si no podemos leer estado_pago, no bloqueamos
             }
 
             const shippingData: RegisterShippingParams = {

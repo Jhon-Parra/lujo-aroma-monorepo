@@ -312,8 +312,16 @@ export class OrderModel {
                 orderData.canal_pago || null,
             ];
 
-            // Estado del pago (si la columna existe): inicia como PENDIENTE hasta confirmación Wompi.
-            if (paymentCols.estado_pago) { cols.push('estado_pago'); vals.push('PENDIENTE'); }
+            // Estado del pago (si la columna existe):
+            // - Wompi: PENDIENTE hasta confirmacion por webhook/sync
+            // - Otros: APROBADO (no depende de confirmacion externa)
+            if (paymentCols.estado_pago) {
+                const metodo = String(orderData.metodo_pago || '').trim().toUpperCase();
+                const canal = String(orderData.canal_pago || '').trim().toUpperCase();
+                const isWompi = metodo.startsWith('WOMPI_') || canal === 'WOMPI';
+                cols.push('estado_pago');
+                vals.push(isWompi ? 'PENDIENTE' : 'APROBADO');
+            }
 
             if (addonCols.subtotal_productos) { cols.push('subtotal_productos'); vals.push(subtotal_productos); }
             if (addonCols.envio_prioritario) { cols.push('envio_prioritario'); vals.push(envio_prioritario); }

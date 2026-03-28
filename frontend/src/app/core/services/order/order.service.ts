@@ -112,9 +112,24 @@ const normalizeEstado = (raw: any): string => {
   return v;
 };
 
+// Normalizacion para mostrar en UI (mantiene PENDIENTE cuando corresponde)
+const normalizeEstadoUi = (raw: any): string => {
+  const v = String(raw || '').trim().toUpperCase();
+  if (!v) return 'PAGADO';
+  if (v === 'PROCESANDO') return 'PAGADO';
+  return v;
+};
+
+const normalizeEstadoPago = (raw: any): string => {
+  const v = String(raw || '').trim().toUpperCase();
+  if (!v) return '';
+  return v;
+};
+
 const normalizeOrder = (o: Order): Order => ({
   ...o,
   estado: normalizeEstado((o as any)?.estado),
+  estado_pago: normalizeEstadoPago((o as any)?.estado_pago),
   items: Array.isArray(o.items) ? o.items.filter(i => i != null) : [],
   historial: Array.isArray(o.historial) ? o.historial : []
 });
@@ -197,26 +212,46 @@ export class OrderService {
     window.open(url, '_blank');
   }
 
+  /**
+   * Estado que se muestra al cliente en la tienda.
+   * - ENVIADO/ENTREGADO/CANCELADO siempre se muestran tal cual.
+   * - Para pagos Wompi: si estado_pago != APROBADO -> PENDIENTE.
+   * - Si no hay estado_pago, cae en PAGADO.
+   */
+  getCustomerDisplayStatus(order: Partial<Order>): string {
+    const estado = normalizeEstado((order as any)?.estado);
+    if (estado === 'CANCELADO' || estado === 'ENVIADO' || estado === 'ENTREGADO') return estado;
+
+    const metodo = String((order as any)?.metodo_pago || '').trim().toUpperCase();
+    const canal = String((order as any)?.canal_pago || '').trim().toUpperCase();
+    const isWompi = metodo.startsWith('WOMPI_') || canal === 'WOMPI' || !!(order as any)?.codigo_transaccion;
+    const pago = normalizeEstadoPago((order as any)?.estado_pago);
+    if (isWompi && pago && pago !== 'APROBADO') return 'PENDIENTE';
+    return 'PAGADO';
+  }
+
   // ── Utilidades de etiquetas/colores ────────────────────────────────────────
   getStatusLabel(estado: string): string {
     const labels: Record<string, string> = {
+      PENDIENTE: 'Pendiente',
       PAGADO: 'Pagado',
       ENVIADO: 'Enviado',
       CANCELADO: 'Cancelado',
       ENTREGADO: 'Entregado'
     };
-    const key = normalizeEstado(estado);
+    const key = normalizeEstadoUi(estado);
     return labels[key] || key;
   }
 
   getStatusColor(estado: string): string {
     const colors: Record<string, string> = {
+      PENDIENTE: '#f59e0b',
       PAGADO: '#10b981',
       ENVIADO: '#3b82f6',
       CANCELADO: '#ef4444',
       ENTREGADO: '#8b5cf6'
     };
-    const key = normalizeEstado(estado);
+    const key = normalizeEstadoUi(estado);
     return colors[key] || '#10b981';
   }
 

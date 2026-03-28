@@ -1,4 +1,4 @@
-<div class="w-full bg-navy text-white font-sans" [ngStyle]="getLogoCssVars()">
+<div class="w-full bg-navy bg-opacity-95 backdrop-blur-md text-white font-sans sticky top-0 z-[1000] border-b border-white/10 shadow-sm transition-all duration-300" [ngStyle]="getLogoCssVars()">
   <!-- Top Banner -->
   <div *ngIf="!isAdminRoute && settings?.show_banner"
     (click)="filterByPromotions()"
@@ -9,104 +9,22 @@
 
   <!-- Navbar Main -->
   <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center navbar-row">
-
-      <!-- Logo -->
-        <a [routerLink]="isAdminRoute ? '/admin' : '/'"
-          class="navbar-logo-wrap flex-shrink-0 flex items-center cursor-pointer transition-transform hover:scale-105 duration-300">
-        <img [src]="getLogoUrl()" (error)="onLogoError($event)" alt="Lujo & Aroma Perfumería de Lujo"
-          class="navbar-logo object-contain py-1 transition-all duration-300" />
-      </a>
-
-      <!-- Center Links (Desktop) -->
-      <div *ngIf="!isAdminRoute" class="hidden md:flex space-x-8 items-center pt-1">
-        <a routerLink="/" routerLinkActive="text-white border-white" [routerLinkActiveOptions]="{exact: true}"
-          class="text-cream/80 hover:text-white transition-colors duration-200 text-sm font-medium tracking-widest border-b-2 border-transparent pb-1">INICIO</a>
-        <a routerLink="/catalog" routerLinkActive="text-white border-gold"
-          class="text-cream/80 hover:text-white transition-colors duration-200 text-sm font-medium tracking-widest border-b-2 border-transparent pb-1 hover:border-gold">CATÁLOGO</a>
-        <a routerLink="/contact" routerLinkActive="text-white border-gold"
-          class="text-cream/80 hover:text-white transition-colors duration-200 text-sm font-medium tracking-widest border-b-2 border-transparent pb-1 hover:border-gold">CONTACTO</a>
-      </div>
-
-      <!-- Icons (Right) -->
-      <div class="flex items-center space-x-3 sm:space-x-6">
-
-        <!-- Buscador Móvil (Icono) -->
-        <button *ngIf="!isAdminRoute" type="button" (click)="toggleMobileSearch()" aria-label="Abrir buscador"
-          class="md:hidden w-10 h-10 rounded-full border border-[#ecece5] bg-white text-navy flex items-center justify-center hover:bg-[#f9f9f6] transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
-          </svg>
-        </button>
-
-        <!-- Buscador (Desktop) con Autocompletado -->
-        <div *ngIf="!isAdminRoute" class="hidden md:block relative">
-          <div class="flex items-center border-b border-white/20 hover:border-gold focus-within:border-gold transition-colors pb-1 group">
-            <input
-              type="text"
-              [(ngModel)]="searchTerm"
-              (ngModelChange)="onSearchInput()"
-              (keyup.enter)="onSearch()"
-              (focus)="onSearchInput()"
-              placeholder="Buscar perfumes..."
-              autocomplete="off"
-              id="navbar-search-desktop"
-              class="w-0 opacity-0 group-hover:w-36 group-hover:opacity-100 focus:w-44 focus:opacity-100 transition-all duration-300 ease-in-out bg-transparent text-sm text-white placeholder-cream/40 focus:outline-none px-1"
-            />
-            <button (click)="onSearch()" class="text-cream hover:text-white transition-colors ml-1 z-10" aria-label="Buscar">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
-              </svg>
-            </button>
-          </div>
-
-          <!-- Autocomplete Desktop Dropdown -->
-          <div *ngIf="showSuggestions"
-            class="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-2xl border border-[#ecece5] z-[200] overflow-hidden">
-            <!-- Loading -->
-            <div *ngIf="suggestionsLoading" class="px-4 py-3 flex items-center gap-2 text-xs text-gray-400">
-              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
-                <path fill="currentColor" d="M4 12a8 8 0 018-8" class="opacity-75"/>
-              </svg>
-              Buscando...
-            </div>
-            <!-- Results -->
-            <ul *ngIf="!suggestionsLoading && suggestions.length > 0">
-              <li *ngFor="let s of suggestions"
-                (click)="selectSuggestion(s)"
-                class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-[#f9f9f6] transition-colors border-b border-[#f0f0eb] last:border-0">
-                <img [src]="getSuggestionImage(s)" [alt]="s.name || s.nombre"
-                  class="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-[#ecece5]" />
-                <div class="flex-1 min-w-0">
-                  <div class="text-xs font-bold text-navy-dark truncate uppercase tracking-wide">{{ s.name || s.nombre }}</div>
-                  <div class="text-[11px] text-gold font-bold mt-0.5">{{ getSuggestionPrice(s) | currency:'COP':'symbol-narrow':'1.0-0' }}</div>
-                </div>
-                <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-              </li>
-            </ul>
-            <!-- No results -->
-            <div *ngIf="!suggestionsLoading && suggestions.length === 0 && searchTerm.length >= 2"
-              class="px-4 py-3 text-xs text-gray-500">
-              No se encontraron productos para "{{ searchTerm }}"
-            </div>
-            <!-- Ver todos -->
-            <div *ngIf="!suggestionsLoading && suggestions.length > 0"
-              class="px-3 py-2 border-t border-[#ecece5] bg-[#f9f9f6]">
-              <button (click)="onSearch()"
-                class="w-full text-[10px] font-bold uppercase tracking-widest text-navy-light hover:text-gold transition-colors text-center">
-                Ver todos los resultados →
-              </button>
-            </div>
-          </div>
+    <div class="grid grid-cols-3 items-center navbar-row">
+      <!-- Left: Navigation (Desktop) & Menu (Mobile) -->
+      <div class="flex items-center justify-start gap-8">
+        <!-- Center Links (Desktop) -->
+        <div *ngIf="!isAdminRoute" class="hidden md:flex space-x-8 items-center pt-1">
+          <a routerLink="/" routerLinkActive="text-white border-white" [routerLinkActiveOptions]="{exact: true}"
+            class="text-cream/80 hover:text-white transition-colors duration-300 text-[11px] uppercase font-bold tracking-[0.2em] border-b border-transparent pb-1 hover:border-gold">INICIO</a>
+          <a routerLink="/catalog" routerLinkActive="text-white border-gold"
+            class="text-cream/80 hover:text-white transition-colors duration-300 text-[11px] uppercase font-bold tracking-[0.2em] border-b border-transparent pb-1 hover:border-gold">CATÁLOGO</a>
+          <a routerLink="/contact" routerLinkActive="text-white border-gold"
+            class="text-cream/80 hover:text-white transition-colors duration-300 text-[11px] uppercase font-bold tracking-[0.2em] border-b border-transparent pb-1 hover:border-gold">CONTACTO</a>
         </div>
 
         <!-- Mobile Hamburger (Store only) -->
         <button *ngIf="!isAdminRoute" type="button" (click)="toggleMobileMenu()" aria-label="Abrir menu"
-          class="md:hidden w-10 h-10 rounded-full border border-[#ecece5] bg-white text-navy flex items-center justify-center hover:bg-[#f9f9f6] transition-colors">
+          class="md:hidden w-10 h-10 rounded-full border border-white/20 bg-white/5 text-cream flex items-center justify-center hover:bg-white/10 transition-colors">
           <svg *ngIf="!mobileMenuOpen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
             stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -116,6 +34,92 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
+      </div>
+
+      <!-- Center: Logo -->
+      <div class="flex items-center justify-center overflow-visible">
+        <a [routerLink]="isAdminRoute ? '/admin' : '/'"
+          class="navbar-logo-wrap flex items-center justify-center cursor-pointer transition-transform hover:scale-105 duration-500">
+          <img [src]="getLogoUrl()" (error)="onLogoError($event)" alt="Lujo & Aroma Perfumería de Lujo"
+            class="navbar-logo object-contain py-1 transition-all duration-500" />
+        </a>
+      </div>
+
+      <!-- Right: Search & Icons -->
+      <div class="flex items-center justify-end space-x-3 sm:space-x-6">
+
+        <!-- Buscador Móvil (Icono) -->
+        <button *ngIf="!isAdminRoute" type="button" (click)="toggleMobileSearch()" aria-label="Abrir buscador"
+          class="md:hidden w-10 h-10 rounded-full border border-white/20 bg-white/5 text-gold flex items-center justify-center hover:bg-gold hover:text-white transition-colors group">
+          <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+          </svg>
+        </button>
+
+        <!-- Buscador (Desktop) con Autocompletado -->
+        <div *ngIf="!isAdminRoute" class="hidden md:block relative">
+          <div class="flex items-center border-b border-white/20 hover:border-gold focus-within:border-gold transition-colors pb-1 group/search">
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (ngModelChange)="onSearchInput()"
+              (keyup.enter)="onSearch()"
+              (focus)="onSearchInput()"
+              placeholder="Buscar aromas..."
+              autocomplete="off"
+              id="navbar-search-desktop"
+              class="w-0 opacity-0 group-hover/search:w-40 group-hover/search:opacity-100 focus:w-48 focus:opacity-100 transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] bg-transparent text-sm text-white placeholder-cream/40 focus:outline-none px-2"
+            />
+            <button (click)="onSearch()" class="text-cream hover:text-gold transition-colors ml-1 z-10" aria-label="Buscar">
+              <svg class="w-5 h-5 transition-transform hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Autocomplete Desktop Dropdown -->
+          <div *ngIf="showSuggestions"
+            class="absolute right-0 top-full mt-3 w-72 bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/20 z-[200] overflow-hidden">
+            <!-- Loading -->
+            <div *ngIf="suggestionsLoading" class="px-4 py-3 flex items-center gap-2 text-xs text-navy-dark">
+              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/>
+                <path fill="currentColor" d="M4 12a8 8 0 018-8" class="opacity-75"/>
+              </svg>
+              Buscando esencias...
+            </div>
+            <!-- Results -->
+            <ul *ngIf="!suggestionsLoading && suggestions.length > 0">
+              <li *ngFor="let s of suggestions"
+                (click)="selectSuggestion(s)"
+                class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-cream/50 transition-colors border-b border-cream/50 last:border-0">
+                <img [src]="getSuggestionImage(s)" [alt]="s.name || s.nombre"
+                  class="w-10 h-10 rounded-md object-cover flex-shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <div class="text-[10px] font-bold text-navy-dark truncate uppercase tracking-[0.2em]">{{ s.name || s.nombre }}</div>
+                  <div class="text-[10px] text-gold font-bold mt-1">{{ getSuggestionPrice(s) | currency:'COP':'symbol-narrow':'1.0-0' }}</div>
+                </div>
+                <svg class="w-4 h-4 text-navy/30 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+              </li>
+            </ul>
+            <!-- No results -->
+            <div *ngIf="!suggestionsLoading && suggestions.length === 0 && searchTerm.length >= 2"
+              class="px-4 py-3 text-[10px] tracking-widest text-navy-light uppercase font-bold text-center">
+              No se encontraron esencias
+            </div>
+            <!-- Ver todos -->
+            <div *ngIf="!suggestionsLoading && suggestions.length > 0"
+              class="px-3 py-3 border-t border-cream bg-white">
+              <button (click)="onSearch()"
+                class="w-full text-[9px] font-bold uppercase tracking-[0.25em] text-navy hover:text-gold transition-colors text-center flex items-center justify-center gap-2">
+                Ver catalogo completo <i class="bi bi-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
 
         <!-- Logged In View / Icons -->
         <div class="flex items-center space-x-3 sm:space-x-6">

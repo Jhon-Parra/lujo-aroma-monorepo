@@ -9,8 +9,7 @@
 }
 
 nav {
-  border-bottom: 2px solid #061121;
-  /* navy-dark fallback */
+  /* No hardcoded borders, controlled via Tailwind HTML for glassmorphism */
 }
 
 .navbar-row {
@@ -22,7 +21,9 @@ nav {
 .navbar-logo-wrap {
   position: relative;
   height: 100%;
-  width: clamp(160px, 50vw, 260px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   overflow: visible;
 }
 
@@ -45,8 +46,7 @@ nav {
 
   .navbar-logo-wrap {
     height: 100%;
-    width: 300px;
-    /* Aún más ancho para albergar el logo grande */
+    /* Let grid handle width implicitly */
     overflow: visible;
   }
 

@@ -425,6 +425,8 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
 
             home_carousel,
             home_categories,
+            perfume_lujo_nombre,
+            empaque_regalo_precio,
             logo_height_mobile,
             logo_height_desktop,
             instagram_url,
@@ -670,6 +672,8 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
 
             'envio_prioritario_precio',
             'perfume_lujo_precio',
+            'perfume_lujo_nombre',
+            'empaque_regalo_precio',
             'envio_prioritario_image_url',
             'perfume_lujo_image_url',
             'instagram_access_token',
@@ -1008,6 +1012,15 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
         if (columns.perfume_lujo_precio && perfume_lujo_precio !== undefined) {
             query += `, perfume_lujo_precio = ?`;
             params.push(normalizeMoney(perfume_lujo_precio));
+        }
+        if (columns.perfume_lujo_nombre !== undefined && perfume_lujo_nombre !== undefined) {
+            // column exists check via detectColumns
+            query += `, perfume_lujo_nombre = ?`;
+            params.push(normalizeNullableString(perfume_lujo_nombre, 120));
+        }
+        if (columns.empaque_regalo_precio !== undefined && empaque_regalo_precio !== undefined) {
+            query += `, empaque_regalo_precio = ?`;
+            params.push(normalizeMoney(empaque_regalo_precio));
         }
 
         if (envio_prioritario_image_url !== undefined) {

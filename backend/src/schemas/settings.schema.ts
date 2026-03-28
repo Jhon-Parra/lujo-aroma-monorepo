@@ -101,6 +101,8 @@ export const updateSettingsSchema = z.object({
     // Extras checkout
     envio_prioritario_precio: moneyOptional(),
     perfume_lujo_precio: moneyOptional(),
+    perfume_lujo_nombre: z.string().max(120).optional(),
+    empaque_regalo_precio: moneyOptional(),
     envio_prioritario_image_url: z.string().max(500).optional(),
     perfume_lujo_image_url: z.string().max(500).optional(),
 

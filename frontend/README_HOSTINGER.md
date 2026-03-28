@@ -1,20 +1,20 @@
 # Despliegue en Hostinger (Frontend + Backend)
 
-Este documento describe como desplegar Perfumissimo con:
+Este documento describe como desplegar Lujo & Aroma con:
 - Frontend estatico en Hostinger (public_html)
 - Backend Node.js en Hostinger (hPanel > Node.js)
 
 ## Frontend (GitHub Actions + SFTP)
 
 ### 1) Secrets en GitHub
-Repositorio: `perfumissimo-frontend`
+Repositorio: `lujo_aroma-frontend`
 
 En `Settings > Secrets and variables > Actions` crea:
 - `SFTP_HOST` = `86.38.202.54`
 - `SFTP_PORT` = `65002`
 - `SFTP_USER` = `u498956148`
 - `SFTP_PASS` = (tu password SFTP)
-- `SFTP_REMOTE_PATH` = `/home/u498956148/domains/perfumissimocol.com/public_html`
+- `SFTP_REMOTE_PATH` = `/home/u498956148/domains/lujo_aromacol.com/public_html`
 
 ### 2) Workflow
 El workflow ya esta en:
@@ -28,11 +28,11 @@ Cada push a `main`:
 ## Backend (hPanel > Node.js)
 
 ### 1) Crear app Node.js
-- Subdominio: `backend.perfumissimocol.com`
-- Ruta: `/home/u498956148/domains/perfumissimocol.com/public_html/backend`
+- Subdominio: `backend.lujo_aromacol.com`
+- Ruta: `/home/u498956148/domains/lujo_aromacol.com/public_html/backend`
 
 ### 2) Conectar repo
-Repo: `perfumissimo-backend`
+Repo: `lujo_aroma-backend`
 
 ### 3) Comandos
 - Build: `npm install`
@@ -40,7 +40,7 @@ Repo: `perfumissimo-backend`
 
 ### 4) Variables de entorno (minimas)
 - `NODE_ENV=production`
-- `FRONTEND_URL=https://perfumissimocol.com`
+- `FRONTEND_URL=https://lujo_aromacol.com`
 - `DATABASE_URL=...`
 - `SUPABASE_URL=...`
 - `SUPABASE_ANON_KEY=...`
@@ -56,5 +56,5 @@ npx ts-node src/scripts/run-migrations.ts
 ```
 
 ## Verificacion
-1) Frontend: `https://perfumissimocol.com`
-2) Backend: `https://backend.perfumissimocol.com/api/settings`
+1) Frontend: `https://lujo_aromacol.com`
+2) Backend: `https://backend.lujo_aromacol.com/api/settings`

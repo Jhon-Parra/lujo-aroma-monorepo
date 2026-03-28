@@ -70,7 +70,7 @@ export class AuthService {
       tap(response => {
         if (response.user) {
           this.currentUserSubject.next(response.user);
-          try { localStorage.removeItem('perfumissimo_permissions_me_v1'); } catch {}
+          try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
           this.favoritesService.refreshFavorites();
         }
       })
@@ -82,7 +82,7 @@ export class AuthService {
       tap(response => {
         if (response.user) {
           this.currentUserSubject.next(response.user);
-          try { localStorage.removeItem('perfumissimo_permissions_me_v1'); } catch {}
+          try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
           this.favoritesService.refreshFavorites();
         }
       })
@@ -95,7 +95,7 @@ export class AuthService {
         this.currentUserSubject.next(null);
         this.cartService.clearCartStorage();
         this.favoritesService.clearFavorites();
-        try { localStorage.removeItem('perfumissimo_permissions_me_v1'); } catch {}
+        try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
         this.router.navigate(['/login']);
       }
     });
@@ -107,15 +107,15 @@ export class AuthService {
         tap((response) => {
           if (response?.user) {
             this.currentUserSubject.next(response.user);
-            try { localStorage.removeItem('perfumissimo_permissions_me_v1'); } catch {}
+            try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
           } else {
             this.currentUserSubject.next(null);
-            try { localStorage.removeItem('perfumissimo_permissions_me_v1'); } catch {}
+            try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
           }
         }),
         catchError(() => {
           this.currentUserSubject.next(null);
-          try { localStorage.removeItem('perfumissimo_permissions_me_v1'); } catch {}
+          try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
           return of({ user: null });
         })
       );

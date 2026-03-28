@@ -6,7 +6,7 @@ dotenv.config();
 
 const router = Router();
 
-const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://perfumissimocol.com').replace(/\/$/, '');
+const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://lujo_aromacol.com').replace(/\/$/, '');
 
 /**
  * GET /api/seo/sitemap

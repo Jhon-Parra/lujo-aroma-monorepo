@@ -14,7 +14,7 @@ export type CartSnapshotItem = {
 })
 export class AnalyticsService {
   private baseUrl = `${API_CONFIG.baseUrl}/intelligence`;
-  private sessionKey = 'perfumissimo_cart_session_id';
+  private sessionKey = 'lujo_aroma_cart_session_id';
 
   constructor(private http: HttpClient) {}
 

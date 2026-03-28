@@ -52,7 +52,7 @@ export class MyOrdersComponent implements OnInit {
 
     private getPromptStorageKey(): string {
         const userId = this.authService.getUserId() || 'guest';
-        return `perfumissimo_review_prompted_v1_${userId}`;
+        return `lujo_aroma_review_prompted_v1_${userId}`;
     }
 
     private loadPromptedProducts(): void {

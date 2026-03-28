@@ -6,7 +6,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Paleta Premium Perfumissimo
+        // Paleta Premium Lujo & Aroma
         cream: '#F9F9F6',
         sage: '#9CA389',
         gold: '#D4AF37', // Dorado más vibrante y premium

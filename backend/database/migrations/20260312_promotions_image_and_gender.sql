@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Promociones: imagen + filtro por genero
+-- Lujo & Aroma - Promociones: imagen + filtro por genero
 -- PostgreSQL / Supabase
 -- ---------------------------------------------------------
 

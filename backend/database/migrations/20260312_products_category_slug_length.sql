@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Productos: ampliar longitud del slug de categoria
+-- Lujo & Aroma - Productos: ampliar longitud del slug de categoria
 --
 -- `Productos.genero` se usa como slug de categoria.
 -- Alinea con `Categorias.slug` (hasta 120).

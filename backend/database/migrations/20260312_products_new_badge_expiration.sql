@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Productos: etiqueta "Nuevo" con expiracion
+-- Lujo & Aroma - Productos: etiqueta "Nuevo" con expiracion
 --
 -- - es_nuevo: flag visual
 -- - nuevo_hasta: fecha/hora limite para mostrar la etiqueta

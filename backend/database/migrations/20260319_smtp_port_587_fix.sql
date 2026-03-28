@@ -8,5 +8,5 @@ WHERE id = 1;
 
 -- Asegurar que el remitente sea el correcto (tienda@)
 UPDATE configuracionglobal
-SET email_from_address = 'tienda@perfumissimocol.com'
+SET email_from_address = 'tienda@lujo_aromacol.com'
 WHERE id = 1;

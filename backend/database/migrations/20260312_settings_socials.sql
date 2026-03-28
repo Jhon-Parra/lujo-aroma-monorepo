@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - ConfiguracionGlobal: redes sociales
+-- Lujo & Aroma - ConfiguracionGlobal: redes sociales
 -- PostgreSQL / Supabase
 -- ---------------------------------------------------------
 

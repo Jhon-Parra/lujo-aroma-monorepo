@@ -58,7 +58,7 @@ export class SettingsComponent implements OnInit {
     boutique_address_line1: 'Calle 12 #13-85',
     boutique_address_line2: 'Bogotá, Colombia',
     boutique_phone: '+57 (300) 123-4567',
-    boutique_email: 'contacto@perfumissimo.com',
+    boutique_email: 'contacto@lujo_aroma.com',
 
     alert_sales_delta_pct: 20,
     alert_abandoned_delta_pct: 20,
@@ -443,7 +443,7 @@ export class SettingsComponent implements OnInit {
         boutique_address_line1: 'Calle 12 #13-85',
         boutique_address_line2: 'Bogotá, Colombia',
         boutique_phone: '+57 (300) 123-4567',
-        boutique_email: 'contacto@perfumissimo.com',
+        boutique_email: 'contacto@lujo_aroma.com',
 
         alert_sales_delta_pct: 20,
         alert_abandoned_delta_pct: 20,

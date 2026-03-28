@@ -20,7 +20,7 @@ export class FavoritesService {
     clearFavorites(): void {
         this.favoritesSubject.next([]);
         try {
-            localStorage.removeItem('perfumissimo_favorites');
+            localStorage.removeItem('lujo_aroma_favorites');
         } catch {
             // ignore
         }
@@ -99,11 +99,11 @@ export class FavoritesService {
     }
 
     private saveToLocal(favorites: Product[]): void {
-        localStorage.setItem('perfumissimo_favorites', JSON.stringify(favorites));
+        localStorage.setItem('lujo_aroma_favorites', JSON.stringify(favorites));
     }
 
     private loadFromLocal(): void {
-        const stored = localStorage.getItem('perfumissimo_favorites');
+        const stored = localStorage.getItem('lujo_aroma_favorites');
         if (stored) {
             try {
                 this.favoritesSubject.next(JSON.parse(stored));

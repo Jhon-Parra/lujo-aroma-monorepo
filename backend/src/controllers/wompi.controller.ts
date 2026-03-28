@@ -186,7 +186,7 @@ export class WompiController {
                     user_legal_id_type: idType,
                     user_legal_id: idNum,
                     financial_institution_code: bankCode,
-                    payment_description: `Pedido Perfumissimo ${created.orderId}`
+                    payment_description: `Pedido Lujo & Aroma ${created.orderId}`
                 });
 
                 await OrderModel.updateTransactionCode(created.orderId, tx.transaction_id);
@@ -313,7 +313,7 @@ export class WompiController {
                     acceptance_token: accToken,
                     redirect_url: redirectUrl,
                     phone_number: phoneDigits,
-                    payment_description: `Pedido Perfumissimo ${created.orderId}`
+                    payment_description: `Pedido Lujo & Aroma ${created.orderId}`
                 });
 
                 await OrderModel.updateTransactionCode(created.orderId, tx.transaction_id);

@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Hero (banner principal) con soporte multimedia
+-- Lujo & Aroma - Hero (banner principal) con soporte multimedia
 --
 -- Permite configurar el recurso del Hero como:
 -- - image: jpg/png/webp

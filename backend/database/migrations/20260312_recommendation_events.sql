@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Eventos de recomendacion (IA)
+-- Lujo & Aroma - Eventos de recomendacion (IA)
 --
 -- Guarda interacciones para mejorar el recomendador:
 -- - inicio test

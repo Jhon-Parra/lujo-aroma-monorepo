@@ -93,8 +93,8 @@ export class ProductDetailComponent implements OnDestroy {
         this.selectedImage = this.galleryImages[0] || '';
 
         const anyP: any = p as any;
-        const title = `${String(anyP?.nombre || 'Producto')} | Perfumissimo`;
-        const description = String(anyP?.descripcion || 'Perfume disponible en Perfumissimo.').trim();
+        const title = `${String(anyP?.nombre || 'Producto')} | Lujo & Aroma`;
+        const description = String(anyP?.descripcion || 'Perfume disponible en Lujo & Aroma.').trim();
         const image = this.selectedImage || String(anyP?.imagen_url || '').trim();
         const price = Number(anyP?.precio_con_descuento ?? anyP?.precio ?? 0);
         this.seo.set({ 
@@ -115,7 +115,7 @@ export class ProductDetailComponent implements OnDestroy {
           sku: String(p.id || id),
           brand: {
             '@type': 'Brand',
-            name: 'Perfumissimo'
+            name: 'Lujo & Aroma'
           },
           offers: {
             '@type': 'Offer',
@@ -165,7 +165,7 @@ export class ProductDetailComponent implements OnDestroy {
         this.loading = false;
 
         this.seo.set({
-          title: 'Producto no encontrado | Perfumissimo',
+          title: 'Producto no encontrado | Lujo & Aroma',
           description: 'El producto que buscas no esta disponible.'
         });
         this.seo.clearJsonLd();
@@ -476,7 +476,7 @@ export class ProductDetailComponent implements OnDestroy {
   getWhatsAppUrl(): string {
     const name = encodeURIComponent(this.product?.nombre || 'este perfume');
     const url = encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '');
-    const msg = `¡Mira este perfume en Perfumissimo!%0A*${name}*%0A${url}`;
+    const msg = `¡Mira este perfume en Lujo & Aroma!%0A*${name}*%0A${url}`;
     return `https://wa.me/?text=${msg}`;
   }
 }

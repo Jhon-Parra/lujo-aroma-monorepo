@@ -44,8 +44,8 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
         const okStates = ['PAGADO', 'ENVIADO', 'ENTREGADO'];
         const normalizedStateExpr = normalizeOrderStateExpr('estado');
 
-        const monthsBackParsed = z.coerce.number().int().min(1).max(24).catch(12).parse((req.query as any)?.months_back);
-        const monthsBack = monthsBackParsed || 12;
+        const monthsBackParsed = z.coerce.number().int().min(1).max(24).catch(12).safeParse((req.query as any)?.months_back);
+        const monthsBack = monthsBackParsed.success ? monthsBackParsed.data : 12;
 
         const [revRows] = await pool.query<any[]>(
             `SELECT COALESCE(SUM(total), 0) AS total
@@ -126,20 +126,7 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
                 CAST(o.estado AS CHAR) AS estado,
                 o.creado_en,
                 CONCAT(u.nombre, ' ', u.apellido) AS cliente_nombre,
-                u.email AS cliente_email,
-                (
-                    SELECT JSON_ARRAYAGG(
-                        JSON_OBJECT(
-                            'producto_id', d2.producto_id,
-                            'nombre', p2.nombre,
-                            'cantidad', d2.cantidad,
-                            'imagen_url', p2.imagen_url
-                        )
-                    )
-                    FROM detalleordenes d2
-                    JOIN productos p2 ON p2.id = d2.producto_id
-                    WHERE d2.orden_id = o.id
-                ) AS items
+                u.email AS cliente_email
             FROM ordenes o
             JOIN usuarios u ON u.id = o.usuario_id
             WHERE ${normalizeOrderStateExpr('o.estado')} = 'PENDIENTE'
@@ -147,22 +134,26 @@ export const getDashboardSummary = async (req: AuthRequest, res: Response): Prom
             LIMIT 10`
         );
 
-        const pending_orders_preview: DashboardOrderPreview[] = (pendingPreviewRows || []).map((r) => ({
-            id: String(r.id),
-            total: toNumber(r.total),
-            estado: String(r.estado || ''),
-            creado_en: r.creado_en,
-            cliente_nombre: String(r.cliente_nombre || 'Cliente'),
-            cliente_email: String(r.cliente_email || ''),
-            items: Array.isArray(r.items)
-                ? r.items.map((it: any) => ({
+        const pending_orders_preview = [];
+        for (const r of (pendingPreviewRows || [])) {
+            const [itemRows] = await pool.query<any[]>(
+                `SELECT d.producto_id, p.nombre, d.cantidad, p.imagen_url
+                 FROM detalleordenes d
+                 JOIN productos p ON p.id = d.producto_id
+                 WHERE d.orden_id = ?`,
+                [r.id]
+            );
+            pending_orders_preview.push({
+                ...r,
+                total: toNumber(r.total),
+                items: (itemRows || []).map(it => ({
                     producto_id: String(it.producto_id),
                     nombre: String(it.nombre || ''),
                     cantidad: toNumber(it.cantidad),
                     imagen_url: it.imagen_url ? String(it.imagen_url) : null
                 }))
-                : []
-        }));
+            });
+        }
 
         const [topRows] = await pool.query<any[]>(
             `SELECT

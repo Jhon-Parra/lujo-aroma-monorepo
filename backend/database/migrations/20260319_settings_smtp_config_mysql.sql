@@ -1,5 +1,5 @@
 -- ================================================================
--- Perfumissimo - Migración SMTP para MySQL / MariaDB (Hostinger)
+-- Lujo & Aroma - Migración SMTP para MySQL / MariaDB (Hostinger)
 -- Ejecutar en phpMyAdmin del panel de Hostinger
 -- SEGURO: usa columnas condicionales para no fallar si ya existen
 -- ================================================================
@@ -29,11 +29,11 @@ SET
     `smtp_host`    = 'smtp.hostinger.com',
     `smtp_port`    = 465,
     `smtp_secure`  = 1,
-    `smtp_user`    = 'tienda@perfumissimocol.com',
-    `smtp_from`    = 'Perfumissimo <tienda@perfumissimocol.com>',
-    `email_bcc_orders` = 'ventas@perfumissimocol.com'
+    `smtp_user`    = 'tienda@lujo_aromacol.com',
+    `smtp_from`    = 'Lujo & Aroma <tienda@lujo_aromacol.com>',
+    `email_bcc_orders` = 'ventas@lujo_aromacol.com'
 WHERE id = 1;
 
--- NOTA: smtp_pass_enc se configura desde el panel admin de Perfumissimo
+-- NOTA: smtp_pass_enc se configura desde el panel admin de Lujo & Aroma
 -- (Admin → Configuración → SMTP → ingresar contraseña → guardar)
 -- La contraseña se cifra con AES-256-GCM antes de guardarse en la BD.

@@ -6,16 +6,21 @@ dotenv.config();
 const rawHost = process.env.DB_HOST || '127.0.0.1';
 const host = rawHost === 'localhost' ? '127.0.0.1' : rawHost;
 
-const dbConfig = {
-    host: host,
+const dbConfig: any = {
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'perfumissimo',
-    port: Number(process.env.DB_PORT) || 3306,
+    database: process.env.DB_NAME || 'lujo_aroma',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 };
+
+if (process.env.DB_SOCKET_PATH) {
+    dbConfig.socketPath = process.env.DB_SOCKET_PATH;
+} else {
+    dbConfig.host = host;
+    dbConfig.port = Number(process.env.DB_PORT) || 3306;
+}
 
 // Si se prefiere usar una URL de conexión completa:
 let connectionString = process.env.DATABASE_URL;

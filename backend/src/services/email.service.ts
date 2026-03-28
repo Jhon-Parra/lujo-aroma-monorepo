@@ -89,7 +89,7 @@ const resolveSenderConfig = async (fallbackFrom?: string): Promise<SenderConfig>
 
     const colsReady = await detectSenderColumns();
     if (!colsReady) {
-        // Use env-level BCC if available (e.g. EMAIL_BCC_ORDERS=ventas@perfumissimocol.com)
+        // Use env-level BCC if available (e.g. EMAIL_BCC_ORDERS=ventas@lujo_aromacol.com)
         const envBcc = String(process.env.EMAIL_BCC_ORDERS || '').trim() || undefined;
         const value: SenderConfig = { from: baseFrom, bccOrders: envBcc };
         senderCache = { expiresAt: now + 5 * 60 * 1000, value };
@@ -269,7 +269,7 @@ export const sendOrderShippingEmail = async (params: ShippingEmailParams): Promi
     const html = `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden">
           <div style="background:#1a1a1a;padding:24px;text-align:center">
-            <h1 style="color:#e8c96a;margin:0;font-size:24px">Perfumissimo</h1>
+            <h1 style="color:#e8c96a;margin:0;font-size:24px">Lujo & Aroma</h1>
           </div>
           <div style="padding:32px">
             <h2 style="color:#1a1a1a;margin-top:0">🚚 ¡Tu pedido está en camino!</h2>
@@ -283,7 +283,7 @@ export const sendOrderShippingEmail = async (params: ShippingEmailParams): Promi
             <p style="color:#666;font-size:13px;margin-top:24px">Si tienes alguna pregunta, responde a este correo o contáctanos.</p>
           </div>
           <div style="background:#f5f5f5;padding:16px;text-align:center">
-            <p style="color:#888;font-size:12px;margin:0">© ${new Date().getFullYear()} Perfumissimo — perfumissimocol.com</p>
+            <p style="color:#888;font-size:12px;margin:0">© ${new Date().getFullYear()} Lujo & Aroma — lujo_aromacol.com</p>
           </div>
         </div>`;
 

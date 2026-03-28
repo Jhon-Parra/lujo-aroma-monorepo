@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Promociones: permitir categoria dinamica
+-- Lujo & Aroma - Promociones: permitir categoria dinamica
 --
 -- Reutilizamos las columnas existentes:
 -- - product_scope = 'GENDER'

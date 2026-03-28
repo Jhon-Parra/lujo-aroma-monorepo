@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Guardar extras seleccionados en orden
+-- Lujo & Aroma - Guardar extras seleccionados en orden
 --
 -- Se guardan flags y costos para que el recibo/correo no dependa
 -- de configuraciones futuras.

@@ -1,9 +1,9 @@
 -- ---------------------------------------------------------
--- Base de Datos: Perfumissimo (E-commerce de Lujo)
+-- Base de Datos: Lujo & Aroma (E-commerce de Lujo)
 -- ---------------------------------------------------------
-CREATE DATABASE IF NOT EXISTS perfumissimo_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS lujo_aroma_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE perfumissimo_db;
+USE lujo_aroma_db;
 
 -- ---------------------------------------------------------
 -- Tabla: Usuarios
@@ -115,7 +115,7 @@ VALUES (
         UUID_TO_BIN(UUID()),
         'Admin',
         'Sistema',
-        'admin@perfumissimo.com',
+        'admin@lujo_aroma.com',
         '$2b$10$w0aZlE.K/v8Fk6B1i.5bV.E0qK/2A7r4mZpG3gQ6jT9v5xK.6l1gq',
         'ADMIN'
     );

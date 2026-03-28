@@ -24,7 +24,7 @@ export class PromotionsStoreComponent implements OnInit {
 
   ngOnInit(): void {
     this.seo.set({
-      title: 'Promociones | Perfumissimo',
+      title: 'Promociones | Lujo & Aroma',
       description: 'Explora todas las promociones activas y compra con descuento.'
     });
 

@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Datos Iniciales para Perfumissimo (PostgreSQL)
+-- Datos Iniciales para Lujo & Aroma (PostgreSQL)
 -- Ejecutar DESPUÉS de crear las tablas
 -- ---------------------------------------------------------
 
@@ -11,7 +11,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Insertar usuario admin (Password: Admin123$)
 -- El hash es: $2b$10$w0aZlE.K/v8Fk6B1i.5bV.E0qK/2A7r4mZpG3gQ6jT9v5xK.6l1gq
 INSERT INTO Usuarios (nombre, apellido, email, password_hash, rol)
-VALUES ('Admin', 'Sistema', 'admin@perfumissimo.com', '$2b$10$w0aZlE.K/v8Fk6B1i.5bV.E0qK/2A7r4mZpG3gQ6jT9v5xK.6l1gq', 'ADMIN')
+VALUES ('Admin', 'Sistema', 'admin@lujo_aroma.com', '$2b$10$w0aZlE.K/v8Fk6B1i.5bV.E0qK/2A7r4mZpG3gQ6jT9v5xK.6l1gq', 'ADMIN')
 ON CONFLICT DO NOTHING;
 
 -- Insertar productos de ejemplo

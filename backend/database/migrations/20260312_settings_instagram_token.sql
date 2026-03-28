@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - ConfiguracionGlobal: instagram token (server-side)
+-- Lujo & Aroma - ConfiguracionGlobal: instagram token (server-side)
 -- PostgreSQL / Supabase
 --
 -- Nota: Este token NO debe ser expuesto al frontend.

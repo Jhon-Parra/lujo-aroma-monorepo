@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Resenas (solo compras verificadas)
+-- Lujo & Aroma - Resenas (solo compras verificadas)
 -- PostgreSQL / Supabase
 -- ---------------------------------------------------------
 

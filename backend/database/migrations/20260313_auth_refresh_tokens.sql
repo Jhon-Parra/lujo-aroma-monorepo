@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Refresh token rotation storage
+-- Lujo & Aroma - Refresh token rotation storage
 -- PostgreSQL / Supabase
 -- ---------------------------------------------------------
 

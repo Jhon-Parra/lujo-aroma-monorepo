@@ -14,7 +14,7 @@ export interface AppConfig {
 export class ConfigService {
   private config: AppConfig | null = null;
   private inflight?: Promise<void>;
-  private readonly CACHE_KEY = 'perfumissimo_app_config_v1';
+  private readonly CACHE_KEY = 'lujo_aroma_app_config_v1';
 
   constructor(private http: HttpClient) {}
 
@@ -80,7 +80,7 @@ export class ConfigService {
 // ...
 
   get apiUrl(): string {
-    return this.config?.apiUrl || 'https://api.perfumissimocol.com';
+    return this.config?.apiUrl || 'https://api.lujo_aromacol.com';
   }
 
   get googleClientId(): string {

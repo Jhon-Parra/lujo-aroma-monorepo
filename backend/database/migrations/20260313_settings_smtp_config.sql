@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Configuracion SMTP en ConfiguracionGlobal
+-- Lujo & Aroma - Configuracion SMTP en ConfiguracionGlobal
 -- PostgreSQL / Supabase
 -- ---------------------------------------------------------
 

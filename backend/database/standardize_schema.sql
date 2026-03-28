@@ -2,7 +2,7 @@
 -- Standardize MySQL Schema to VARCHAR(36) IDs (Matching User Environment)
 -- ---------------------------------------------------------
 
-USE perfumissimo_db;
+USE lujo_aroma_db;
 
 -- 1. Disable foreign key checks
 SET FOREIGN_KEY_CHECKS = 0;

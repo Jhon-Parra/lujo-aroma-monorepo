@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Log de envios de correo por orden
+-- Lujo & Aroma - Log de envios de correo por orden
 -- PostgreSQL / Supabase
 -- ---------------------------------------------------------
 

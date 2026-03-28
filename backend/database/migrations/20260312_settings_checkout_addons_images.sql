@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Imagenes para extras en checkout
+-- Lujo & Aroma - Imagenes para extras en checkout
 --
 -- Permite subir imagenes (opcional) para:
 -- - Envio prioritario

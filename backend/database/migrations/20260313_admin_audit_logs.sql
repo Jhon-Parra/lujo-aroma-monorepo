@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Admin audit logs
+-- Lujo & Aroma - Admin audit logs
 -- PostgreSQL / Supabase
 -- ---------------------------------------------------------
 

@@ -11,13 +11,13 @@ try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
-            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'perfumissimo-app.appspot.com'
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'lujo_aroma-app.appspot.com'
         });
         console.log('✅ Firebase Admin inicializado correctamente.');
     } else {
         console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_JSON no encontrado en .env. Firebase se inicializa vacío.');
         admin.initializeApp({
-            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'perfumissimo-app.appspot.com'
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'lujo_aroma-app.appspot.com'
         });
     }
 } catch (error) {

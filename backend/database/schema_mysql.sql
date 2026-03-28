@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.2.0, for macos13 (arm64)
 --
--- Host: 127.0.0.1    Database: perfumissimo_db
+-- Host: 127.0.0.1    Database: lujo_aroma_db
 -- ------------------------------------------------------
 -- Server version	8.2.0
 

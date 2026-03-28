@@ -76,8 +76,8 @@ export class ManualComponent {
 
   constructor(private seo: SeoService) {
     this.seo.set({
-      title: 'Manual de uso | Perfumissimo',
-      description: 'Guia rapida para comprar en Perfumissimo y conocer las herramientas disponibles para administrar la tienda.'
+      title: 'Manual de uso | Lujo & Aroma',
+      description: 'Guia rapida para comprar en Lujo & Aroma y conocer las herramientas disponibles para administrar la tienda.'
     });
   }
 }

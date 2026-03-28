@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - ConfiguracionGlobal: Soporte Multimedia para Banner
+-- Lujo & Aroma - ConfiguracionGlobal: Soporte Multimedia para Banner
 --
 -- Agrega soporte para videos y GIFs en el banner principal.
 -- PostgreSQL / Supabase

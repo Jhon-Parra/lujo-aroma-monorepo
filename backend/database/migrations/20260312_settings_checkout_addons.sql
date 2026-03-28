@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Extras configurables en checkout
+-- Lujo & Aroma - Extras configurables en checkout
 --
 -- - Envio prioritario
 -- - Perfume de lujo

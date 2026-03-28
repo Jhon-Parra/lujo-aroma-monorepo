@@ -7,10 +7,10 @@ const createAdmin = async () => {
             host: 'localhost',
             user: 'root',
             password: 'Jh@n52828378',
-            database: 'perfumissimo_db'
+            database: 'lujo_aroma_db'
         });
 
-        const email = 'admin@perfumissimo.com';
+        const email = 'admin@lujo_aroma.com';
         const password = 'Admin123$';
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);

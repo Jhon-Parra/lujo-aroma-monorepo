@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - ConfiguracionGlobal: remitente de correos
+-- Lujo & Aroma - ConfiguracionGlobal: remitente de correos
 -- PostgreSQL / Supabase
 --
 -- Esto NO guarda credenciales SMTP. Solo personaliza el "From"/"Reply-To".

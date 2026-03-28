@@ -1,8 +1,8 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Fix Productos: Missing columns and Slug support
+-- Lujo & Aroma - Fix Productos: Missing columns and Slug support
 -- ---------------------------------------------------------
 
-USE perfumissimo_db;
+USE lujo_aroma_db;
 
 -- 1. Add missing columns used by the controller
 ALTER TABLE Productos ADD COLUMN imagen_url_2 VARCHAR(500) AFTER imagen_url;

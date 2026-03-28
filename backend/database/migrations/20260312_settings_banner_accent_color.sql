@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Banner superior: color de resaltado
+-- Lujo & Aroma - Banner superior: color de resaltado
 --
 -- banner_accent_color: color para borde/contorno del texto del banner.
 -- Hex (#RRGGBB)

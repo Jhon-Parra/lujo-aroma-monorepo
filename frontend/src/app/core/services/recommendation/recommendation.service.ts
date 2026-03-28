@@ -44,7 +44,7 @@ export class RecommendationService {
 
   getSessionId(): string {
     try {
-      const key = 'perfumissimo_reco_session_v1';
+      const key = 'lujo_aroma_reco_session_v1';
       const existing = sessionStorage.getItem(key);
       if (existing) return existing;
       const id = 'sess_' + Math.random().toString(36).slice(2) + '_' + Date.now().toString(36);

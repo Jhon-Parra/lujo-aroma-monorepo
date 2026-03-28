@@ -67,7 +67,7 @@ export class CartService {
   clearCartStorage(): void {
     this.itemsSubject.next([]);
     try {
-      localStorage.removeItem('perfumissimo_cart');
+      localStorage.removeItem('lujo_aroma_cart');
     } catch {
       // ignore
     }
@@ -83,7 +83,7 @@ export class CartService {
 
   private updateCart(items: CartItem[]): void {
     this.itemsSubject.next(items);
-    localStorage.setItem('perfumissimo_cart', JSON.stringify(items));
+    localStorage.setItem('lujo_aroma_cart', JSON.stringify(items));
     this.scheduleCartTracking(items);
   }
 
@@ -105,7 +105,7 @@ export class CartService {
   }
 
   private loadCart(): void {
-    const stored = localStorage.getItem('perfumissimo_cart');
+    const stored = localStorage.getItem('lujo_aroma_cart');
     if (stored) {
       try {
         this.itemsSubject.next(JSON.parse(stored));

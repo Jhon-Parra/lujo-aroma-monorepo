@@ -15,7 +15,7 @@ const cookieBaseOptions = {
     secure: isProduction,
     sameSite: cookieSameSite,
     path: '/',
-    domain: isProduction ? '.perfumissimocol.com' : undefined // Permite compartir cookies entre subdominios
+    domain: isProduction ? '.lujo_aromacol.com' : undefined // Permite compartir cookies entre subdominios
 };
 
 const ACCESS_TOKEN_FALLBACK_MS = 60 * 60 * 1000;

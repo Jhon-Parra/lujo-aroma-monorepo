@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Base de Datos: Supabase (PostgreSQL) - Migración del e-commerce Perfumissimo
+-- Base de Datos: Supabase (PostgreSQL) - Migración del e-commerce Lujo & Aroma
 -- Convertido desde init.sql
 -- ---------------------------------------------------------
 
@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS ConfiguracionGlobal (
     boutique_address_line1 VARCHAR(200) DEFAULT 'Calle 12 #13-85',
     boutique_address_line2 VARCHAR(200) DEFAULT 'Bogotá, Colombia',
     boutique_phone VARCHAR(60) DEFAULT '+57 (300) 123-4567',
-    boutique_email VARCHAR(200) DEFAULT 'contacto@perfumissimo.com',
+    boutique_email VARCHAR(200) DEFAULT 'contacto@lujo_aroma.com',
 
     -- Datos del vendedor (pagos manuales)
     seller_bank_name VARCHAR(120) DEFAULT '',

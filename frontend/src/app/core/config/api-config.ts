@@ -1,10 +1,10 @@
 /**
- * Centralized API configuration for Perfumissimo
+ * Centralized API configuration for Lujo & Aroma
  * Updated dynamically by ConfigService at runtime.
  */
 export const API_CONFIG = {
-    serverUrl: 'https://api.perfumissimocol.com',
-    baseUrl: 'https://api.perfumissimocol.com/api',
+    serverUrl: 'https://api.lujo_aromacol.com',
+    baseUrl: 'https://api.lujo_aromacol.com/api',
     googleClientId: '129037757547-mvt7e9b254t59dc4s7mu8vnth62lf7lr.apps.googleusercontent.com'
 };
 

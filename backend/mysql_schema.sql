@@ -1,4 +1,4 @@
--- PERFUMISSIMO MYSQL DATABASE SCHEMA
+-- LUJO & AROMA MYSQL DATABASE SCHEMA
 -- Export/Conversion Date: 2026-03-15
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -175,7 +175,7 @@ CREATE TABLE configuracionglobal (
     boutique_address_line1 VARCHAR(255) DEFAULT 'Calle 12 #13-85',
     boutique_address_line2 VARCHAR(255) DEFAULT 'Bogotá, Colombia',
     boutique_phone VARCHAR(50) DEFAULT '+57 (300) 123-4567',
-    boutique_email VARCHAR(100) DEFAULT 'contacto@perfumissimo.com',
+    boutique_email VARCHAR(100) DEFAULT 'contacto@lujo_aroma.com',
     role_permissions JSON,
     seller_bank_name VARCHAR(100) DEFAULT '',
     seller_bank_account_type VARCHAR(50) DEFAULT '',
@@ -356,8 +356,8 @@ INSERT IGNORE INTO usuarios (id, nombre, apellido, email, password_hash, rol)
 VALUES (
     'f6f7e8a9-b0c1-4d2e-8f3a-4b5c6d7e8f9a', 
     'Admin', 
-    'Perfumissimo', 
-    'admin@perfumissimo.com', 
+    'Lujo & Aroma', 
+    'admin@lujo_aroma.com', 
     '$2b$10$mnX9cssrpnFN/xoiICcjLu2PTAO5EsqLRFmuSlKJOjU6BBy2IAdzO', 
     'SUPERADMIN'
 );

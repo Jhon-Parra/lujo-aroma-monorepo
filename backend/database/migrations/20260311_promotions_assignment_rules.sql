@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Promociones: reglas de asignacion
+-- Lujo & Aroma - Promociones: reglas de asignacion
 -- PostgreSQL / Supabase
 --
 -- Agrega:

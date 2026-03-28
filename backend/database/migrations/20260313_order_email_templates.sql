@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Plantillas de correo por estado de orden
+-- Lujo & Aroma - Plantillas de correo por estado de orden
 -- PostgreSQL / Supabase
 -- ---------------------------------------------------------
 

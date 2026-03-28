@@ -3,8 +3,8 @@ import { sendEmail } from './email.service';
 import { OrderEmailLogsService } from './order-email-logs.service';
 import { OrderEmailTemplateService, OrderEmailStatus } from './order-email-templates.service';
 
-const FRONTEND_URL = String(process.env.FRONTEND_URL || 'https://perfumissimocol.com').replace(/\/$/, '');
-const BRAND_NAME = 'Perfumissimo';
+const FRONTEND_URL = String(process.env.FRONTEND_URL || 'https://lujo_aromacol.com').replace(/\/$/, '');
+const BRAND_NAME = 'Lujo & Aroma';
 const BRAND_LOGO_URL = `${FRONTEND_URL}/assets/images/logo.png`;
 
 /** MariaDB JSON_ARRAYAGG devuelve strings — parsear siempre antes de usar */

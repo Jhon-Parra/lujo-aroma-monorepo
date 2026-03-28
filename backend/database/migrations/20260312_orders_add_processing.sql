@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - Ordenes: agregar estado PROCESANDO
+-- Lujo & Aroma - Ordenes: agregar estado PROCESANDO
 -- PostgreSQL / Supabase
 -- ---------------------------------------------------------
 

@@ -155,7 +155,7 @@ export class CatalogComponent implements OnInit {
 
   ngOnInit(): void {
     this.seo.set({
-      title: 'Catálogo de Perfumes en Bogotá | Perfumissimo',
+      title: 'Catálogo de Perfumes en Bogotá | Lujo & Aroma',
       description: 'Explora nuestra colección exclusiva de perfumes originales en Bogotá. Envíos a toda Colombia. Filtra por categoría y encuentra tu aroma ideal.'
     });
 
@@ -262,7 +262,7 @@ export class CatalogComponent implements OnInit {
 
           const suffix = parts.length ? ` (${parts.join(' · ')})` : '';
           this.seo.set({
-            title: `Catalogo${suffix} | Perfumissimo`,
+            title: `Catalogo${suffix} | Lujo & Aroma`,
             description: 'Explora perfumes para mujer, hombre y unisex. Filtra por categoria y encuentra tu aroma ideal.'
           });
         });

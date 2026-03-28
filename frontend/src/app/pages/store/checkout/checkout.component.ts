@@ -17,7 +17,7 @@ import { SettingsService, Settings } from '../../../core/services/settings/setti
 })
 export class CheckoutComponent implements OnInit, OnDestroy {
 
-    private readonly checkoutDraftPrefix = 'perfumissimo_checkout_draft_v1';
+    private readonly checkoutDraftPrefix = 'lujo_aroma_checkout_draft_v1';
     private readonly checkoutDraftTtlMs = 7 * 24 * 60 * 60 * 1000; // 7 dias
     private draftSaveTimer?: any;
 
@@ -70,14 +70,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     private cartRecoveryTimer?: any;
     private exitIntentHandler?: (event: MouseEvent) => void;
     private cartRecoveryPendingAction: 'cancel' | 'clear' | null = null;
-    private readonly cartRecoveryStoragePrefix = 'perfumissimo_cart_recovery';
+    private readonly cartRecoveryStoragePrefix = 'lujo_aroma_cart_recovery';
     private readonly cartRecoveryTtlMs = 5 * 60 * 60 * 1000;
     private cartRecoveryExpiryTimer?: any;
     private cartRecoveryAppliedAt = 0;
     cartRecoveryExpiredNotice = false;
     cartRecoveryExpiredMessage = 'El descuento de recuperacion expiro.';
     private cartRecoveryExpiredNotified = false;
-    private readonly cartRecoveryExpiredNoticeKey = 'perfumissimo_cart_recovery_expired_notice_shown';
+    private readonly cartRecoveryExpiredNoticeKey = 'lujo_aroma_cart_recovery_expired_notice_shown';
 
     paymentMethod: 'WOMPI_PSE' | 'WOMPI_NEQUI' | 'WOMPI_CARD' = 'WOMPI_PSE';
 

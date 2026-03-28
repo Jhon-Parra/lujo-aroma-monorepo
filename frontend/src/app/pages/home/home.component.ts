@@ -19,7 +19,7 @@ import { SkeletonCardComponent } from '../../shared/components/skeleton-card/ske
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
-  private readonly HERO_VIDEO_SESSION_KEY = 'perfumissimo_hero_video_first_visit_done_v1';
+  private readonly HERO_VIDEO_SESSION_KEY = 'lujo_aroma_hero_video_first_visit_done_v1';
 
   heroVideoMode: 'first' | 'subsequent' = 'first';
   heroVideoNeedsUserGesture = false;
@@ -51,7 +51,7 @@ export class HomeComponent implements OnInit {
   private instagramRequested = false;
 
   instagramUrl = '';
-  instagramLabel = '@perfumissimo.col';
+  instagramLabel = '@lujo_aroma.col';
 
   facebookUrl = '';
   whatsappUrl = '';
@@ -104,19 +104,19 @@ export class HomeComponent implements OnInit {
 
     // SEO & JSON-LD
     this.seo.set({
-      title: 'Perfumissimo | Perfumería Árabe',
-      description: 'Perfumería árabe y perfumes originales en Bogotá y Colombia. Fragancias para hombre, mujer y unisex con envíos rápidos. Descubre Perfumissimo.',
+      title: 'Lujo & Aroma | Perfumería Árabe',
+      description: 'Perfumería árabe y perfumes originales en Bogotá y Colombia. Fragancias para hombre, mujer y unisex con envíos rápidos. Descubre Lujo & Aroma.',
       keywords: 'perfumería árabe, perfumes árabes, perfumes originales, oud, perfumes bogota, fragancias originales, perfumes colombia'
     });
 
     this.seo.setJsonLd({
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "Perfumissimo",
-      "url": "https://perfumissimocol.com/",
+      "name": "Lujo & Aroma",
+      "url": "https://lujo_aromacol.com/",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://perfumissimocol.com/catalog?q={search_term_string}",
+        "target": "https://lujo_aromacol.com/catalog?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     });
@@ -330,7 +330,7 @@ export class HomeComponent implements OnInit {
   }
 
   private buildInstagramLabel(normalizedUrl: string, raw: string): string {
-    const fallback = '@perfumissimo.col';
+    const fallback = '@lujo_aroma.col';
     const rawValue = (raw || '').trim();
     if (!rawValue && !normalizedUrl) return fallback;
 

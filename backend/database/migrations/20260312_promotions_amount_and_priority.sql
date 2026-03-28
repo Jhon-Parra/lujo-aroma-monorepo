@@ -1,4 +1,4 @@
--- Perfumissimo - Promociones: descuento fijo + prioridad
+-- Lujo & Aroma - Promociones: descuento fijo + prioridad
 
 ALTER TABLE Promociones
   ADD COLUMN IF NOT EXISTS discount_type VARCHAR(10) NOT NULL DEFAULT 'PERCENT';

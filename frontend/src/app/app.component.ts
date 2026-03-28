@@ -44,10 +44,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.seoService.setJsonLd({
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
-      "name": "Perfumissimo",
-      "image": "https://perfumissimocol.com/assets/images/logo.png",
-      "@id": "https://perfumissimocol.com",
-      "url": "https://perfumissimocol.com",
+      "name": "Lujo & Aroma",
+      "image": "https://lujo_aromacol.com/assets/images/logo.png",
+      "@id": "https://lujo_aromacol.com",
+      "url": "https://lujo_aromacol.com",
       "telephone": "+573001234567",
       "address": {
         "@type": "PostalAddress",
@@ -76,8 +76,8 @@ export class AppComponent implements OnInit, OnDestroy {
         "closes": "18:00"
       },
       "sameAs": [
-        "https://www.facebook.com/perfumissimo",
-        "https://www.instagram.com/perfumissimo.col"
+        "https://www.facebook.com/lujo_aroma",
+        "https://www.instagram.com/lujo_aroma.col"
       ]
     });
 

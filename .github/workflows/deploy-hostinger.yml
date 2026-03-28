@@ -44,6 +44,6 @@ jobs:
           port: 65002
           password: ${{ secrets.FTP_PASS }}
           local_path: ./frontend/dist/frontend/browser/
-          remote_path: domains/perfumissimocol.com/public_html/
+          remote_path: domains/lujoaroma.com/public_html/
           sftp_only: true
 

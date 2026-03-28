@@ -1,5 +1,5 @@
 -- ---------------------------------------------------------
--- Perfumissimo - ConfiguracionGlobal: TikTok
+-- Lujo & Aroma - ConfiguracionGlobal: TikTok
 -- PostgreSQL / Supabase
 -- ---------------------------------------------------------
 

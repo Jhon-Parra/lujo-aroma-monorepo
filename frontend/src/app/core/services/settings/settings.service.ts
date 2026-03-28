@@ -90,7 +90,7 @@ export interface Settings {
 export class SettingsService {
     private apiUrl = `${API_CONFIG.baseUrl}/settings`;
 
-    private readonly CACHE_KEY = 'perfumissimo_settings_cache_v1';
+    private readonly CACHE_KEY = 'lujo_aroma_settings_cache_v1';
     private settingsSubject = new BehaviorSubject<Settings | null>(null);
     public settings$ = this.settingsSubject.asObservable();
     private inflight$?: Observable<Settings>;

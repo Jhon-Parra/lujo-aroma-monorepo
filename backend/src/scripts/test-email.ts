@@ -24,7 +24,7 @@ async function verifySmtp(): Promise<boolean> {
     console.log(`   Pass   : ${pass && pass !== 'TU_CONTRASEÑA_HOSTINGER_AQUI' ? `✅ configurado (${pass.length} chars)` : '❌ PLACEHOLDER / VACÍO'}`);
 
     if (!host || !user || !pass || pass === 'TU_CONTRASEÑA_HOSTINGER_AQUI') {
-        console.error('\n❌ SMTP_PASS no está configurado. Por favor actualiza backend/.env con la contraseña real del correo tienda@perfumissimocol.com');
+        console.error('\n❌ SMTP_PASS no está configurado. Por favor actualiza backend/.env con la contraseña real del correo tienda@lujo_aromacol.com');
         return false;
     }
 
@@ -40,7 +40,7 @@ async function verifySmtp(): Promise<boolean> {
 }
 
 async function runTest() {
-    console.log(`\n🚀 Prueba del sistema de correos automáticos Perfumissimo`);
+    console.log(`\n🚀 Prueba del sistema de correos automáticos Lujo & Aroma`);
     console.log(`   Destino: ${TEST_RECIPIENT}`);
 
     const smtpOk = await verifySmtp();
@@ -49,14 +49,14 @@ async function runTest() {
     try {
         const result = await sendEmail({
             to: TEST_RECIPIENT,
-            subject: '✅ Prueba de correo automático — Perfumissimo',
+            subject: '✅ Prueba de correo automático — Lujo & Aroma',
             html: `
                 <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px">
-                    <h2 style="color:#c9a84c">Perfumissimo — Prueba de correo</h2>
+                    <h2 style="color:#c9a84c">Lujo & Aroma — Prueba de correo</h2>
                     <p>Este correo confirma que el sistema de <strong>notificaciones automáticas</strong> está funcionando correctamente.</p>
-                    <p style="color:#666;font-size:13px">Si recibiste este mensaje, el SMTP de <code>tienda@perfumissimocol.com</code> está configurado y operativo.</p>
+                    <p style="color:#666;font-size:13px">Si recibiste este mensaje, el SMTP de <code>tienda@lujo_aromacol.com</code> está configurado y operativo.</p>
                     <hr style="border:none;border-top:1px solid #eee">
-                    <p style="font-size:11px;color:#999">Perfumissimo · perfumissimocol.com</p>
+                    <p style="font-size:11px;color:#999">Lujo & Aroma · lujo_aromacol.com</p>
                 </div>
             `
         });

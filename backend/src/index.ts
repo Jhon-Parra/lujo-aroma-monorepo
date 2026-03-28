@@ -22,13 +22,28 @@ import categoryRoutes from './routes/category.routes';
 import emailTemplatesRoutes from './routes/email-templates.routes';
 import intelligenceRoutes from './routes/intelligence.routes';
 import seoRoutes from './routes/seo.routes';
-import { generalLimiter, authLimiter, refreshLimiter, logoutLimiter, aiLimiter, createOrderLimiter } from './middleware/security.middleware';
+import { 
+    generalLimiter, 
+    authLimiter, 
+    refreshLimiter, 
+    logoutLimiter, 
+    aiLimiter, 
+    createOrderLimiter 
+} from './middleware/security.middleware';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import path from 'path';
 
 dotenv.config();
 
+process.on('uncaughtException', (err) => {
+    console.error('🔥 UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('🔥 UNHANDLED REJECTION:', reason);
+});
+
 const app = express();
+
 if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
 }
@@ -201,7 +216,7 @@ app.use('/api/intelligence', intelligenceRoutes);
 app.use('/api/seo', seoRoutes);
 
 app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK', message: 'Perfumissimo API is running' });
+    res.status(200).json({ status: 'OK', message: 'Lujo & Aroma API is running' });
 });
 
 app.use(notFoundHandler);

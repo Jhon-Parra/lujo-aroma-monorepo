@@ -23,7 +23,7 @@ export type RolePermissionsMapping = Record<string, PermissionId[]>;
 })
 export class PermissionsService {
   private apiUrl = `${API_CONFIG.baseUrl}/permissions`;
-  private readonly CACHE_KEY = 'perfumissimo_permissions_me_v1';
+  private readonly CACHE_KEY = 'lujo_aroma_permissions_me_v1';
   private inflight$?: Observable<PermissionId[]>;
   private inflightAt = 0;
   private readonly CACHE_MS = 30_000;

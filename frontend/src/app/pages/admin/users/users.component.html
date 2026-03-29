@@ -1,11 +1,11 @@
-<div class="min-h-screen bg-gray-50 flex">
+<div class="min-h-screen bg-[#EAE8E3] flex">
     <!-- Sidebar Administrador -->
     <aside class="w-64 bg-charcoal text-white flex flex-col hidden md:flex">
         <div class="h-32 flex items-center justify-center border-b border-gray-700 py-4">
             <a routerLink="/"
                 class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300 w-full px-6">
                 <div class="bg-white rounded-md p-2 w-full flex justify-center shadow-sm">
-                    <img src="assets/images/logo.png" alt="Lujo & Aroma Admin" class="h-12 w-auto object-contain" />
+                    <img [src]="getAdminLogoUrl() || '/assets/images/logo.png'" alt="Lujo & Aroma Admin" class="h-12 w-auto object-contain" />
                 </div>
                 <span class="text-[9px] text-gray-400 font-sans tracking-widest mt-3 uppercase font-bold">Panel
                     Admin</span>
@@ -160,7 +160,7 @@
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-soft-charcoal">
                     <thead
-                        class="bg-gray-50 border-b border-[#ecece5] text-xs uppercase tracking-widest font-bold text-charcoal">
+                        class="bg-[#EAE8E3] border-b border-[#ecece5] text-xs uppercase tracking-widest font-bold text-charcoal">
                         <tr>
                             <th class="p-4">Usuario</th>
                             <th class="p-4">Email / Teléfono</th>
@@ -171,7 +171,7 @@
                     </thead>
                     <tbody>
                         <tr *ngFor="let user of users"
-                            class="border-b border-[#ecece5] hover:bg-gray-50 transition-colors">
+                            class="border-b border-[#ecece5] hover:bg-[#EAE8E3] transition-colors">
                             <td class="p-4 font-bold text-charcoal">{{ user.nombre }} {{ user.apellido }}</td>
                             <td class="p-4">
                                 <span class="block text-charcoal font-medium">{{ user.email }}</span>

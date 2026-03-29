@@ -105,6 +105,7 @@ export const updateSettingsSchema = z.object({
     empaque_regalo_precio: moneyOptional(),
     envio_prioritario_image_url: z.string().max(500).optional(),
     perfume_lujo_image_url: z.string().max(500).optional(),
+    empaque_regalo_image_url: z.string().max(500).optional(),
 
     email_from_name: z.string().max(120).optional(),
     email_from_address: z.string().max(200).optional(),

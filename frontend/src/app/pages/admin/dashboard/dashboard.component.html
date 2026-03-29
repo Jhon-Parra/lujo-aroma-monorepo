@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-50 flex">
+<div class="min-h-screen bg-[#EAE8E3] flex">
 
     <!-- Sidebar Administrador -->
     <aside class="w-64 bg-charcoal text-white flex flex-col hidden md:flex">
@@ -6,7 +6,7 @@
             <a routerLink="/"
                 class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300 w-full px-6">
                 <div class="bg-white rounded-md p-2 w-full flex justify-center shadow-sm">
-                    <img src="assets/images/logo.png" alt="Lujo & Aroma Admin" class="h-12 w-auto object-contain" />
+                    <img [src]="getAdminLogoUrl() || '/assets/images/logo.png'" alt="Lujo & Aroma Admin" class="h-12 w-auto object-contain" />
                 </div>
                 <span class="text-[9px] text-gray-400 font-sans tracking-widest mt-3 uppercase font-bold">Panel
                     Admin</span>
@@ -255,22 +255,22 @@
 
             <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <a routerLink="/admin/orders" [queryParams]="{ status: 'PAGADO' }"
-                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-gray-50 transition-colors">
+                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-[#EAE8E3] transition-colors">
                     <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Pagado</div>
                     <div class="mt-2 font-serif text-2xl text-charcoal">{{ summary.orders_by_status?.['PAGADO'] || 0 }}</div>
                 </a>
                 <a routerLink="/admin/orders" [queryParams]="{ status: 'ENVIADO' }"
-                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-gray-50 transition-colors">
+                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-[#EAE8E3] transition-colors">
                     <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Enviado</div>
                     <div class="mt-2 font-serif text-2xl text-charcoal">{{ summary.orders_by_status?.['ENVIADO'] || 0 }}</div>
                 </a>
                 <a routerLink="/admin/orders" [queryParams]="{ status: 'ENTREGADO' }"
-                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-gray-50 transition-colors">
+                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-[#EAE8E3] transition-colors">
                     <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Entregado</div>
                     <div class="mt-2 font-serif text-2xl text-charcoal">{{ summary.orders_by_status?.['ENTREGADO'] || 0 }}</div>
                 </a>
                 <a routerLink="/admin/orders" [queryParams]="{ status: 'CANCELADO' }"
-                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-gray-50 transition-colors">
+                    class="p-4 rounded-lg border border-[#ecece5] hover:bg-[#EAE8E3] transition-colors">
                     <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal">Cancelado</div>
                     <div class="mt-2 font-serif text-2xl text-charcoal">{{ summary.orders_by_status?.['CANCELADO'] || 0 }}</div>
                 </a>

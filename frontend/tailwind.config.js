@@ -13,6 +13,9 @@ module.exports = {
         navy: '#0A192F', // Azul Mediterráneo profundo
         'navy-light': '#1A365D', // Azul acento
         'navy-dark': '#061121', // Fondo naval oscuro
+        charcoal: '#07121a', // Gris/Azul tan oscuro que parece negro
+        'soft-charcoal': '#4a4d52',
+        sage: '#6f7062',
       },
       fontFamily: {
         serif: ['"Playfair Display"', 'serif'],

@@ -121,4 +121,20 @@ export class DashboardComponent implements OnInit {
     const escaped = s.replace(/"/g, '""');
     return `"${escaped}"`;
   }
+
+  getAdminLogoUrl(): string {
+    const s = String(localStorage.getItem('lujo_aroma_settings_cache_v1') || '');
+    if (s) {
+      try {
+        const parsed = JSON.parse(s);
+        const url = parsed.logo_url;
+        if (url) {
+          if (url.startsWith('http') || url.startsWith('data:')) return url;
+          if (url.startsWith('assets/')) return '/' + url;
+          return url;
+        }
+      } catch (e) {}
+    }
+    return '/assets/images/logo.png';
+  }
 }

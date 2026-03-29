@@ -4,15 +4,15 @@
   <app-navbar class="sticky top-0 z-50 shadow-sm"></app-navbar>
 
   <!-- Contenido Dinámico de las Páginas -->
-  <main class="flex-grow mt-28 md:mt-32">
+  <main [ngClass]="isAdminRoute ? 'flex-grow min-h-screen' : 'flex-grow mt-28 md:mt-32'">
     <router-outlet></router-outlet>
   </main>
 
   <!-- Footer -->
-  <app-footer></app-footer>
+  <app-footer *ngIf="!isAdminRoute"></app-footer>
 
   <!-- Floating Promotions Button -->
-  <button *ngIf="promotions.length > 0"
+  <button *ngIf="!isAdminRoute && promotions.length > 0"
     (click)="filterByPromotions()"
     class="fixed bottom-28 right-6 bg-gold text-white p-4 rounded-full shadow-lg hover:scale-110 hover:shadow-xl transition-all z-50 flex items-center justify-center group"
     aria-label="Ver promociones">
@@ -32,7 +32,7 @@
   <app-toast></app-toast>
 
   <!-- WhatsApp Floating Button -->
-  <a *ngIf="whatsappUrl" [href]="whatsappUrl" target="_blank" rel="noopener noreferrer"
+  <a *ngIf="!isAdminRoute && whatsappUrl" [href]="whatsappUrl" target="_blank" rel="noopener noreferrer"
     class="fixed bottom-6 right-6 bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:scale-110 hover:shadow-xl transition-all z-50 flex items-center justify-center">
     <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-whatsapp"
       viewBox="0 0 16 16">

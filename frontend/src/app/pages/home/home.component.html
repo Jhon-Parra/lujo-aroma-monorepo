@@ -1,7 +1,6 @@
 <div class="w-full bg-[#FAFAF9] relative">
     <!-- HERO / Carrusel estrategico (premium) -->
-    <section class="relative w-full min-h-[88vh] flex items-center overflow-hidden bg-navy-dark"
-        (mouseenter)="pauseCarousel()" (mouseleave)="resumeCarousel()">
+    <section class="relative w-full min-h-[75vh] md:min-h-[85vh] flex items-center overflow-hidden bg-navy-dark">
         <!-- Slides (media) -->
         <div class="absolute inset-0">
             <ng-container *ngFor="let s of homeSlides; let i = index">
@@ -11,15 +10,14 @@
 
                     <!-- Video slide: always loaded, play() called programmatically -->
                     <video *ngIf="isVideoSlide(s)"
-                        class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom transition-opacity duration-[400ms]"
+                        class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom"
                         [attr.data-slide-index]="i"
                         [src]="getHomeSlideMediaUrl(s, i)"
                         preload="auto"
-                        muted
+                        [muted]="true"
                         playsinline
                         loop
-                        (loadeddata)="onVideoLoaded($event, i)"
-                        (timeupdate)="onVideoTimeUpdate($event)">
+                        (loadeddata)="onVideoLoaded($event, i)">
                     </video>
 
                     <img *ngIf="!isVideoSlide(s)" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom"
@@ -34,7 +32,7 @@
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,rgba(212,175,55,0.25),transparent_55%)]"></div>
 
         <!-- Content -->
-        <div class="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full py-24">
+        <div class="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full py-12 md:py-20 lg:py-24">
             <ng-container *ngIf="homeSlides[activeSlideIndex] as slide">
                 <div class="max-w-2xl">
                     <div class="inline-flex items-center gap-3 mb-6 animate-fade-in-up" style="animation-delay: 0.05s">
@@ -149,7 +147,7 @@
     </section>
 
     <!-- Categorias como embudo de ventas -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24">
         <div class="text-center mb-12">
             <div class="text-navy-light text-[10px] font-bold uppercase tracking-[0.35em]">Explora por intencion</div>
             <h2 class="font-serif text-4xl text-navy-dark mb-4 uppercase tracking-[0.1em]">Encuentra tu esencia</h2>
@@ -161,7 +159,7 @@
                 class="relative group overflow-hidden rounded-2xl bg-navy-dark shadow-xl border border-[#ecece5] aspect-[16/10] md:aspect-[16/9]">
 
                 <video *ngIf="isVideoSlide(c)" class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.04]"
-                    [attr.src]="getHomeSlideMediaUrl(c, i)" preload="metadata" muted playsinline loop autoplay>
+                    [src]="getHomeSlideMediaUrl(c, i)" [muted]="true" playsinline loop autoplay>
                 </video>
 
                 <img *ngIf="!isVideoSlide(c)" class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.06]"
@@ -197,91 +195,63 @@
         </div>
     </section>
 
-    <!-- Recomendación Inteligente IA - Bloque Inmersivo -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div class="relative rounded-[2rem] overflow-hidden bg-navy text-white shadow-2xl p-8 md:p-16 lg:p-20 group">
-            <!-- Background effects -->
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(212,175,55,0.15),transparent_50%)]"></div>
-            <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(26,54,93,0.4),transparent_50%)]"></div>
-            
-            <div class="relative grid md:grid-cols-2 gap-12 items-center">
-                <div class="animate-fade-in-left">
-                    <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 mb-6">
-                        <span class="relative flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-gold"></span>
-                        </span>
-                        <span class="text-[10px] uppercase tracking-[0.2em] font-bold">Tecnología Sensorial IA</span>
-                    </div>
-                    
-                    <h2 class="font-serif text-4xl md:text-5xl lg:text-6xl mb-6 leading-tight">¿No sabes qué aroma elegir?</h2>
-                    
-                    <p class="text-white/70 text-lg mb-10 leading-relaxed font-light">
-                        Nuestra inteligencia artificial analiza tus gustos, el clima y la ocasión para recomendarte la fragancia que se convertirá en tu sello personal.
-                    </p>
-                    
-                    <div class="space-y-6">
-                        <div class="relative flex items-center">
+    <!-- Recomendación Inteligente IA - Buscador Central Épico -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+        <div class="relative rounded-[2.5rem] overflow-hidden bg-navy shadow-2xl p-6 md:p-12 lg:p-20 text-center flex flex-col items-center justify-center min-h-[400px] lg:min-h-[500px] border border-gold/20">
+            <!-- Background Magic -->
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.15),transparent_70%)] animate-pulse" style="animation-duration: 4s;"></div>
+            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 pointer-events-none"></div>
+
+            <!-- Top Badge / Icon -->
+            <div class="relative z-10 animate-fade-in-down mb-4 sm:mb-6">
+                <div class="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gold/10 border border-gold/30 text-gold shadow-[0_0_30px_rgba(212,175,55,0.3)] relative">
+                    <span class="absolute inset-0 rounded-full border border-gold/50 animate-ping"></span>
+                    <i class="bi bi-stars text-2xl sm:text-3xl"></i>
+                </div>
+            </div>
+
+            <!-- Titles -->
+            <h2 class="relative z-10 font-serif text-3xl md:text-5xl lg:text-5xl text-white mb-3 sm:mb-4 leading-tight animate-fade-in-up" style="animation-delay: 100ms;">
+                Descubre tu Aroma Ideal
+            </h2>
+            <p class="relative z-10 text-cream/70 text-sm md:text-lg max-w-2xl mx-auto mb-8 font-light animate-fade-in-up" style="animation-delay: 200ms;">
+                Nuestra Inteligencia artificial analiza tus gustos, el clima y la ocasión para recomendarte la fragancia que se convertirá en tu sello personal.
+            </p>
+
+            <!-- Search / Input Area -->
+            <div class="relative z-10 w-full max-w-3xl mx-auto mb-8 animate-fade-in-up" style="animation-delay: 300ms;">
+                <div class="relative flex items-center group">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-gold via-white to-gold rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                    <div class="relative w-full flex flex-col sm:flex-row items-center bg-navy-light/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden focus-within:border-gold/50 transition-colors shadow-inner">
+                        <div class="w-full flex items-center flex-1 min-w-0">
+                            <i class="bi bi-search text-gold/70 text-xl pl-6"></i>
                             <input [(ngModel)]="recoQuery" (keyup.enter)="goToRecommenderFree()"
                                 type="text"
-                                placeholder='Ej: "Busco algo fresco para una cita de noche"'
-                                class="w-full bg-white/5 border border-white/20 rounded-xl px-6 py-5 pr-16 text-lg focus:outline-none focus:border-gold focus:bg-white/10 transition-all placeholder:text-white/30" />
-                            <button (click)="goToRecommenderFree()" 
-                                class="absolute right-3 w-12 h-12 rounded-lg bg-gold text-white flex items-center justify-center hover:scale-105 transition-transform">
-                                <i class="bi bi-arrow-right text-xl"></i>
-                            </button>
+                                placeholder='Ej: "Fresco para la oficina"'
+                                class="w-full bg-transparent px-5 py-4 sm:py-5 text-white placeholder:text-cream/40 focus:outline-none text-base sm:text-lg" />
                         </div>
-                        
-                        <div class="flex items-center gap-6">
-                            <button (click)="goToRecommenderQuiz()"
-                                class="flex items-center gap-2 text-gold font-bold uppercase tracking-widest text-xs hover:gap-4 transition-all">
-                                <span>Realizar Test de Escencias</span>
-                                <i class="bi bi-magic"></i>
-                            </button>
-                            <span class="text-white/20">|</span>
-                            <span class="text-white/40 text-[10px] uppercase tracking-widest">Resultados en milisegundos</span>
-                        </div>
+                        <button (click)="goToRecommenderFree()" 
+                            class="w-full sm:w-auto h-14 sm:h-full px-8 bg-gold text-navy-dark font-bold uppercase tracking-widest text-xs sm:text-sm hover:bg-white transition-colors flex items-center justify-center gap-2 shrink-0">
+                            <span>Descubrir</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
                     </div>
                 </div>
-                
-                <div class="hidden md:block relative animate-fade-in-right">
-                    <div class="relative z-10 p-8 rounded-3xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-3xl">
-                        <div class="flex items-start gap-4 mb-6">
-                            <div class="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center text-gold">
-                                <i class="bi bi-cpu text-2xl"></i>
-                            </div>
-                            <div>
-                                <h4 class="text-xl font-serif">Análisis de Perfil</h4>
-                                <div class="mt-2 flex gap-1">
-                                    <div class="w-12 h-1 bg-gold rounded-full"></div>
-                                    <div class="w-8 h-1 bg-white/20 rounded-full"></div>
-                                    <div class="w-20 h-1 bg-white/20 rounded-full"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-4 opacity-50">
-                            <div class="h-4 bg-white/10 rounded-full w-3/4"></div>
-                            <div class="h-4 bg-white/10 rounded-full w-full"></div>
-                            <div class="h-4 bg-white/10 rounded-full w-5/6"></div>
-                        </div>
-                        <div class="mt-10 pt-6 border-t border-white/10 flex justify-between items-center">
-                            <span class="text-xs text-white/40 uppercase tracking-widest">Procesando Notas de Salida...</span>
-                            <div class="flex -space-x-3">
-                                <div class="w-8 h-8 rounded-full border-2 border-charcoal bg-sage"></div>
-                                <div class="w-8 h-8 rounded-full border-2 border-charcoal bg-gold"></div>
-                                <div class="w-8 h-8 rounded-full border-2 border-charcoal bg-[#E1306C]"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Glow effect -->
-                    <div class="absolute -inset-4 bg-gold/20 blur-3xl -z-10 animate-pulse"></div>
-                </div>
+            </div>
+
+            <!-- Alternative / Quiz -->
+            <div class="relative z-10 animate-fade-in-up" style="animation-delay: 400ms;">
+                <button (click)="goToRecommenderQuiz()"
+                    class="flex items-center gap-3 px-6 py-2.5 rounded-full border border-white/20 text-cream text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] hover:bg-white/5 hover:border-gold hover:text-gold transition-all duration-300">
+                    <i class="bi bi-magic text-sm sm:text-base"></i>
+                    <span>Test Sensorial Rápido</span>
+                </button>
             </div>
         </div>
     </section>
 
     <!-- Mas Vendidos / Bestsellers -->
-    <section class="w-full bg-white py-24">
+    <section class="w-full bg-white py-12 md:py-20 lg:py-24">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
                 <div>
@@ -308,7 +278,7 @@
     </section>
 
     <!-- Highlighted Promotion Section -->
-    <section *ngIf="promotions.length > 0" class="w-full py-12 md:py-24 bg-[#FAFAF9]">
+    <section *ngIf="promotions.length > 0" class="w-full py-10 md:py-16 lg:py-24 bg-[#FAFAF9]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="relative rounded-[2.5rem] overflow-hidden bg-charcoal aspect-[16/9] md:aspect-[21/7] group shadow-2xl">
                 <img *ngIf="promotions[0].imagen_url" [src]="promotions[0].imagen_url" class="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-[2000ms] group-hover:scale-105">
@@ -353,8 +323,8 @@
     </section>
 
     <!-- Nuevos Ingresos -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div class="text-center mb-16">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24">
+        <div class="text-center mb-10 md:mb-16">
             <span class="text-gold text-xs font-bold uppercase tracking-[0.3em] mb-2 block">Justo en Tendencia</span>
             <h2 class="font-serif text-4xl md:text-5xl text-charcoal">NUEVOS INGRESOS</h2>
         </div>
@@ -380,98 +350,126 @@
         </div>
     </section>
 
-    <!-- Social Proof: Reseñas Premium -->
-    <section class="w-full bg-white py-24 border-t border-[#ecece5]">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid lg:grid-cols-3 gap-16 items-center">
-                <div class="lg:col-span-1">
-                    <h2 class="font-serif text-4xl md:text-5xl text-charcoal mb-6">LO QUE DICEN NUESTROS CLIENTES</h2>
-                    <p class="text-sage text-lg mb-8 leading-relaxed">Más de 5,000 mil personas ya han encontrado su esencia con nosotros. La confianza se construye con cada gota.</p>
-                    <div class="flex items-center gap-4">
-                        <div class="flex text-gold">
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                            <i class="bi bi-star-fill"></i>
-                        </div>
-                        <span class="text-charcoal font-bold text-sm">4.9/5 Calificación</span>
+    <!-- Social Proof: Reseñas Premium (Dark Mode Marquee) -->
+    <section class="w-full bg-navy border-y border-gold/20 py-16 md:py-24 relative overflow-hidden">
+        <!-- Texturas de fondo -->
+        <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.03] pointer-events-none"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(212,175,55,0.08),transparent_50%)] pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-12 relative z-20">
+            <span class="text-gold text-xs font-bold uppercase tracking-[0.3em] mb-2 block">Voces de Exclusividad</span>
+            <h2 class="font-serif text-3xl md:text-5xl text-white mb-4">EXPERIENCIAS INOLVIDABLES</h2>
+            <div class="flex items-center justify-center gap-2 text-gold">
+                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
+                <span class="text-white/70 text-sm ml-2 font-light">Basado en clientes reales</span>
+            </div>
+        </div>
+
+        <!-- Contenedor Horizontal con Scroll Suave -->
+        <div class="relative w-full z-20">
+            <!-- Fade Edges -->
+            <div class="absolute inset-y-0 left-0 w-8 md:w-32 bg-gradient-to-r from-navy to-transparent z-10 pointer-events-none"></div>
+            <div class="absolute inset-y-0 right-0 w-8 md:w-32 bg-gradient-to-l from-navy to-transparent z-10 pointer-events-none"></div>
+            
+            <div class="flex gap-6 px-8 md:px-32 overflow-x-auto snap-x snap-mandatory hide-scrollbar pb-8" style="scrollbar-width: none;">
+                <!-- Review Card 1 -->
+                <div class="w-[85vw] sm:w-[350px] md:w-[400px] bg-white/[0.03] backdrop-blur-md border border-white/10 p-8 rounded-3xl shrink-0 snap-center hover:bg-white/[0.05] transition-colors group">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center font-bold text-gold border border-gold/20 group-hover:bg-gold group-hover:text-navy transition-colors">ML</div>
+                        <i class="bi bi-quote text-4xl text-white/5"></i>
+                    </div>
+                    <p class="text-white/80 font-light italic mb-8 text-sm md:text-base leading-relaxed">"La asesoría por WhatsApp fue impecable. Me ayudaron a elegir un regalo y el empaque premium superó mis expectativas. Volveré a comprar."</p>
+                    <div>
+                        <h4 class="font-bold text-xs md:text-sm text-white uppercase tracking-widest">María Londoño</h4>
+                        <span class="text-[9px] uppercase tracking-widest text-gold mt-1 block">Cliente Verificado</span>
                     </div>
                 </div>
                 
-                <div class="lg:col-span-2 grid md:grid-cols-2 gap-8">
-                    <!-- Review 1 -->
-                    <div class="bg-[#FAFAF9] p-8 rounded-3xl border border-[#ecece5] shadow-sm hover:shadow-md transition-all">
-                        <div class="flex gap-1 text-gold text-xs mb-6">
-                            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                        </div>
-                        <p class="text-charcoal text-lg font-light italic mb-8 leading-relaxed">"La asesoría por WhatsApp fue impecable. Me ayudaron a elegir un regalo y el empaque premium superó mis expectativas. Volveré a comprar."</p>
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-cream flex items-center justify-center font-bold text-gold border border-gold/10">ML</div>
-                            <div>
-                                <h4 class="font-bold text-sm text-charcoal">María Londoño</h4>
-                                <span class="text-[10px] uppercase tracking-widest text-sage">Cliente Verificado</span>
-                            </div>
-                        </div>
+                <!-- Review Card 2 -->
+                <div class="w-[85vw] sm:w-[350px] md:w-[400px] bg-white/[0.03] backdrop-blur-md border border-white/10 p-8 rounded-3xl shrink-0 snap-center hover:bg-white/[0.05] transition-colors group">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center font-bold text-gold border border-gold/20 group-hover:bg-gold group-hover:text-navy transition-colors">AR</div>
+                        <i class="bi bi-quote text-4xl text-white/5"></i>
                     </div>
-                    <!-- Review 2 -->
-                    <div class="bg-[#FAFAF9] p-8 rounded-3xl border border-[#ecece5] shadow-sm hover:shadow-md transition-all">
-                        <div class="flex gap-1 text-gold text-xs mb-6">
-                            <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i>
-                        </div>
-                        <p class="text-charcoal text-lg font-light italic mb-8 leading-relaxed">"Envío súper rápido a Medellín. La fragancia llegó en perfectas condiciones y se siente de excelente calidad. Muy buena experiencia comprando en línea."</p>
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 rounded-full bg-cream flex items-center justify-center font-bold text-gold border border-gold/10">AR</div>
-                            <div>
-                                <h4 class="font-bold text-sm text-charcoal">Andrés Reyes</h4>
-                                <span class="text-[10px] uppercase tracking-widest text-sage">Comprador Frecuente</span>
-                            </div>
-                        </div>
+                    <p class="text-white/80 font-light italic mb-8 text-sm md:text-base leading-relaxed">"Buscaba un perfume árabe original y Lujo & Aroma superó mis expectativas. Entrega a Medellín en tiempo récord y el aroma es de otro mundo."</p>
+                    <div>
+                        <h4 class="font-bold text-xs md:text-sm text-white uppercase tracking-widest">Andrés Reyes</h4>
+                        <span class="text-[9px] uppercase tracking-widest text-gold mt-1 block">Amante del Oud</span>
+                    </div>
+                </div>
+
+                <!-- Review Card 3 -->
+                <div class="w-[85vw] sm:w-[350px] md:w-[400px] bg-white/[0.03] backdrop-blur-md border border-white/10 p-8 rounded-3xl shrink-0 snap-center hover:bg-white/[0.05] transition-colors group">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center font-bold text-gold border border-gold/20 group-hover:bg-gold group-hover:text-navy transition-colors">VC</div>
+                        <i class="bi bi-quote text-4xl text-white/5"></i>
+                    </div>
+                    <p class="text-white/80 font-light italic mb-8 text-sm md:text-base leading-relaxed">"La caja, los detalles, la botella pesada... Todo grita lujo. Definitivamente encontraron mi fragancia firma. Tienen la mejor selección garantizada."</p>
+                    <div>
+                        <h4 class="font-bold text-xs md:text-sm text-white uppercase tracking-widest">Valentina Castro</h4>
+                        <span class="text-[9px] uppercase tracking-widest text-gold mt-1 block">Comprador Frecuente</span>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Social Media Feed - Premium Restoration -->
-    <section class="w-full bg-[#FAFAF9] py-24 pb-32">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="mb-16">
-                <!-- Icono de Instagram Dorado -->
-                <i class="bi bi-instagram text-5xl text-gold mb-8 inline-block animate-fade-in"></i>
+    <!-- Social Media Feed - Mosaico Asimétrico -->
+    <section class="w-full bg-[#f4f4f0] py-16 md:py-24 pb-24 lg:pb-32 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row items-center justify-between mb-16 gap-8 text-center lg:text-left">
+                <div class="max-w-2xl">
+                    <span class="text-gold text-xs font-bold uppercase tracking-[0.3em] mb-3 block">Comunidad Exclusiva</span>
+                    <h2 class="font-serif text-3xl md:text-5xl text-charcoal leading-tight">INSPIRACIÓN EN CADA GOTA</h2>
+                    <p class="text-sage mt-4 text-sm md:text-base max-w-lg mx-auto lg:mx-0">Únete a nuestra comunidad y descubre consejos de perfumería, novedades y el estilo de vida Lujo & Aroma.</p>
+                </div>
                 
-                <!-- Titulo con estilo Serif y subrayado elegante -->
-                <h2 class="font-serif text-2xl md:text-4xl text-charcoal flex flex-col md:flex-row items-center justify-center gap-x-4 uppercase tracking-[0.15em] mb-4">
-                    <span>SÍGUENOS EN</span>
-                    <a [href]="instagramUrl" target="_blank" class="relative group inline-block text-charcoal hover:text-gold transition-colors duration-300">
-                        &#64;LUJO & AROMA.COL
-                        <span class="absolute -bottom-2 left-0 w-full h-[3px] bg-gold scale-x-100 group-hover:scale-x-110 transition-transform duration-500"></span>
+                <div class="flex items-center gap-4">
+                    <a [href]="instagramUrl" target="_blank" class="group relative overflow-hidden flex items-center gap-3 px-8 py-4 rounded-full border border-gold/50 bg-transparent text-charcoal hover:text-white transition-all shadow-[0_5px_15px_rgba(212,175,55,0.15)]">
+                        <span class="absolute inset-0 bg-gold translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-out z-0"></span>
+                        <i class="bi bi-instagram text-lg relative z-10"></i>
+                        <span class="text-[10px] uppercase tracking-[0.2em] font-bold relative z-10 transition-colors">Seguir a {{ instagramLabel }}</span>
                     </a>
-                </h2>
+                </div>
             </div>
             
             <ng-container *ngIf="settings?.show_instagram_section">
-                <!-- Grilla elegante de Instagram -->
+                <!-- Grilla Mosaico Instagram -->
                 <div *ngIf="!instagramLoading && instagramMedia.length > 0"
-                    class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    <a *ngFor="let item of instagramMedia.slice(0, 6)" [href]="item.permalink || instagramUrl" target="_blank"
-                        rel="noopener noreferrer" class="block w-full aspect-square overflow-hidden rounded-xl shadow-sm hover:shadow-xl transition-all duration-700 hover:-translate-y-2 group">
-                        <img [src]="getInstagramImage(item)" decoding="async"
-                            class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                    class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-5 auto-rows-[200px] md:auto-rows-[250px] lg:auto-rows-[300px]">
+                    <a *ngFor="let item of instagramMedia.slice(0, 5); let i = index" [href]="item.permalink || instagramUrl" target="_blank"
+                        rel="noopener noreferrer" 
+                        class="block w-full h-full overflow-hidden rounded-3xl group relative shadow-md"
+                        [ngClass]="{
+                            'col-span-2 row-span-1 md:col-span-2 md:row-span-2': i === 0, 
+                            'col-span-1 md:col-span-1 lg:col-span-1 lg:row-span-2': i === 4
+                        }">
+                        
+                        <!-- Premium Hover Overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-navy-dark/80 via-navy-dark/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10 flex flex-col justify-end p-6">
+                            <i class="bi bi-instagram text-white text-3xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 mb-2"></i>
+                            <p class="text-white text-xs line-clamp-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 delay-75">{{ item.caption || 'Descubre más en nuestro Instagram' }}</p>
+                        </div>
+
+                        <img [src]="getInstagramImage(item)" 
+                            class="w-full h-full object-cover transform transition-transform duration-1000 group-hover:scale-105"
                             [alt]="item.caption || 'Instagram Post'" loading="lazy" />
                     </a>
                 </div>
             </ng-container>
 
-            <div class="mt-16 flex justify-center gap-6">
-                <a *ngIf="instagramUrl" [href]="instagramUrl" target="_blank" class="w-12 h-12 rounded-full border border-[#ecece5] bg-white flex items-center justify-center text-charcoal hover:bg-gold hover:text-white transition-all duration-300">
-                    <i class="bi bi-instagram"></i>
+            <!-- Extra Socials Bottom Border -->
+            <div class="mt-20 flex justify-center items-center gap-6 border-t border-[#ecece5] pt-12">
+                <span class="text-[10px] uppercase tracking-[0.3em] font-bold text-sage mr-4 hidden sm:block">Conecta con Nosotros</span>
+                
+                <a *ngIf="tiktokUrl" [href]="tiktokUrl" target="_blank" class="w-12 h-12 rounded-full border border-transparent bg-white shadow-md flex items-center justify-center text-charcoal hover:-translate-y-1 hover:border-gold hover:text-gold transition-all duration-300">
+                    <i class="bi bi-tiktok text-xl"></i>
                 </a>
-                <a *ngIf="tiktokUrl" [href]="tiktokUrl" target="_blank" class="w-12 h-12 rounded-full border border-[#ecece5] bg-white flex items-center justify-center text-charcoal hover:bg-gold hover:text-white transition-all duration-300">
-                    <i class="bi bi-tiktok"></i>
+                <a *ngIf="whatsappUrl" [href]="whatsappUrl" target="_blank" class="w-12 h-12 rounded-full border border-transparent bg-white shadow-md flex items-center justify-center text-charcoal hover:-translate-y-1 hover:border-gold hover:text-gold transition-all duration-300">
+                    <i class="bi bi-whatsapp text-xl"></i>
                 </a>
-                <a *ngIf="whatsappUrl" [href]="whatsappUrl" target="_blank" class="w-12 h-12 rounded-full border border-[#ecece5] bg-white flex items-center justify-center text-charcoal hover:bg-gold hover:text-white transition-all duration-300">
-                    <i class="bi bi-whatsapp"></i>
+                <a *ngIf="facebookUrl" [href]="facebookUrl" target="_blank" class="w-12 h-12 rounded-full border border-transparent bg-white shadow-md flex items-center justify-center text-charcoal hover:-translate-y-1 hover:border-gold hover:text-gold transition-all duration-300">
+                    <i class="bi bi-facebook text-xl"></i>
                 </a>
             </div>
         </div>

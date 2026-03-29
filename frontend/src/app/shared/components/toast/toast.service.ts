@@ -16,7 +16,7 @@ export class ToastService {
   private toastsSubject = new BehaviorSubject<ToastMessage[]>([]);
   toasts$ = this.toastsSubject.asObservable();
 
-  show(message: string, tone: ToastTone = 'info', duration = 3200): void {
+  show(message: string, tone: ToastTone = 'info', duration = 5000): void {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const next = [...this.toastsSubject.value, { id, message, tone }];
     this.toastsSubject.next(next);
@@ -24,15 +24,15 @@ export class ToastService {
     window.setTimeout(() => this.dismiss(id), duration);
   }
 
-  success(message: string, duration = 3200): void {
+  success(message: string, duration = 5000): void {
     this.show(message, 'success', duration);
   }
 
-  warning(message: string, duration = 3800): void {
+  warning(message: string, duration = 6500): void {
     this.show(message, 'warning', duration);
   }
 
-  error(message: string, duration = 4200): void {
+  error(message: string, duration = 8000): void {
     this.show(message, 'error', duration);
   }
 

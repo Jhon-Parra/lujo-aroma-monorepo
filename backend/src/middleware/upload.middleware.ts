@@ -120,6 +120,7 @@ export const uploadSettingsAssets = (req: any, res: any, next: any) => {
         { name: 'logo_image', maxCount: 1 },
         { name: 'envio_prioritario_image', maxCount: 1 },
         { name: 'perfume_lujo_image', maxCount: 1 },
+        { name: 'empaque_regalo_image', maxCount: 1 },
 
         // Home premium
         { name: 'home_slide_1_media', maxCount: 1 },

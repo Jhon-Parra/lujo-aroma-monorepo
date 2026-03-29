@@ -32,6 +32,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   carouselPaused = false;
   exitOfferOpen = false;
 
+
+
   private carouselTimer: any;
 
   @HostListener('document:mouseout', ['$event'])
@@ -52,6 +54,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   error = '';
   settings: Settings | null = null;
   promotions: Promotion[] = [];
+  private ambientAudio: HTMLAudioElement | null = null;
+  private interactionListener: () => void;
 
   instagramMedia: InstagramMediaItem[] = [];
   instagramLoading = true;
@@ -84,13 +88,51 @@ export class HomeComponent implements OnInit, OnDestroy {
     private instagramService: InstagramService,
     private seo: SeoService,
     private router: Router
-  ) { }
+  ) {
+    this.interactionListener = () => {};
+  }
 
   ngOnDestroy(): void {
     if (this.carouselTimer) {
       clearInterval(this.carouselTimer);
       this.carouselTimer = undefined;
     }
+    if (this.ambientAudio) {
+      this.ambientAudio.pause();
+      this.ambientAudio.src = '';
+      this.ambientAudio = null;
+    }
+    this.removeInteractionListeners();
+  }
+
+  private removeInteractionListeners(): void {
+    if (this.interactionListener) {
+      document.removeEventListener('click', this.interactionListener);
+      document.removeEventListener('touchstart', this.interactionListener);
+      document.removeEventListener('scroll', this.interactionListener);
+    }
+  }
+
+  private initAmbientAudio(): void {
+    if (typeof window === 'undefined') return;
+    
+    this.ambientAudio = new Audio('https://cdn.pixabay.com/audio/2022/10/25/audio_51a007f300.mp3');
+    this.ambientAudio.loop = true;
+    this.ambientAudio.volume = 0.25; // Softer volume since it's forced background
+
+    this.ambientAudio.play().catch(() => {
+      // Autoplay blocked. Wait for user interaction.
+      this.interactionListener = () => {
+        if (this.ambientAudio) {
+          this.ambientAudio.play().catch(() => {});
+        }
+        this.removeInteractionListeners();
+      };
+
+      document.addEventListener('click', this.interactionListener, { once: true });
+      document.addEventListener('touchstart', this.interactionListener, { once: true });
+      document.addEventListener('scroll', this.interactionListener, { once: true });
+    });
   }
 
   /** Called by (loadeddata) on each video element. */
@@ -121,17 +163,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Fade out video slightly before it loops to create a seamless softer restart. */
-  onVideoTimeUpdate(event: Event): void {
-    const video = event.target as HTMLVideoElement;
-    const timeLeft = video.duration - video.currentTime;
-    // Dim to 0% opacity over the last 400ms (CSS transition handles the smooth fade)
-    if (timeLeft > 0 && timeLeft <= 0.4) {
-      video.style.opacity = '0';
-    } else {
-      video.style.opacity = '1';
-    }
-  }
+
 
   goToRecommenderQuiz(): void {
     this.router.navigate(['/recommender'], { queryParams: { mode: 'quiz' } });
@@ -244,9 +276,12 @@ export class HomeComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.loadInstagramIfEnabled();
-
     this.startCarousel();
+
+    // Init invisible background ambient audio
+    setTimeout(() => {
+      this.initAmbientAudio();
+    }, 1500);
   }
 
   private applySettings(data: Settings): void {
@@ -345,7 +380,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.carouselTimer = setInterval(() => {
       if (this.carouselPaused) return;
       this.nextSlide();
-    }, 8000);
+    }, 4500); // Speeds up autoplay to 4.5s so it's obvious to the user
   }
 
   pauseCarousel(): void {

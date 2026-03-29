@@ -25,6 +25,7 @@ export class AppComponent implements OnInit, OnDestroy {
   settings: Settings | null = null;
   whatsappUrl = '';
   promotions: Promotion[] = [];
+  isAdminRoute = false;
   private settingsSub?: Subscription;
   private promoSub?: Subscription;
 
@@ -83,8 +84,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
-    ).subscribe(() => {
+    ).subscribe((event: any) => {
       window.scrollTo(0, 0);
+      this.isAdminRoute = event.urlAfterRedirects?.includes('/admin') || false;
     });
 
     this.settingsSub = this.settingsService.settings$.subscribe({

@@ -42,6 +42,9 @@ export class PromotionsComponent implements OnInit {
   loading = true;
   error = '';
 
+  fabClicks = 0;
+  fabClicksLoading = false;
+
   allProducts: ApiProduct[] = [];
   productSearch = '';
   userIdsText = '';
@@ -91,6 +94,18 @@ export class PromotionsComponent implements OnInit {
   load(): void {
     this.loading = true;
     this.error = '';
+
+    this.fabClicksLoading = true;
+    this.promotionService.getFabMetrics().subscribe({
+      next: (m) => {
+        this.fabClicks = Number(m?.clicks || 0);
+        this.fabClicksLoading = false;
+      },
+      error: () => {
+        this.fabClicks = 0;
+        this.fabClicksLoading = false;
+      }
+    });
 
     this.promotionService.getAdminPromotions().subscribe({
       next: (data) => {

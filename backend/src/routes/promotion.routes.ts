@@ -1,5 +1,14 @@
 import { Router } from 'express';
-import { createPromotion, getPromotions, getPromotionsAdmin, updatePromotion, updatePromotionActive, deletePromotion } from '../controllers/promotion.controller';
+import {
+  createPromotion,
+  getPromotions,
+  getPromotionsAdmin,
+  updatePromotion,
+  updatePromotionActive,
+  deletePromotion,
+  trackPromotionsFabClick,
+  getPromotionsFabMetrics
+} from '../controllers/promotion.controller';
 import { verifyToken, requirePermission } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
 import { createPromotionSchema, updatePromotionActiveSchema } from '../schemas/promotion.schema';
@@ -9,7 +18,13 @@ const router = Router();
 
 router.get('/', getPromotions);
 
+// Public: registrar click del boton flotante
+router.post('/fab/click', trackPromotionsFabClick);
+
 router.get('/admin', verifyToken, requirePermission('admin.promotions'), getPromotionsAdmin);
+
+// Admin: ver contador de clicks del boton flotante
+router.get('/fab/metrics', verifyToken, requirePermission('admin.promotions'), getPromotionsFabMetrics);
 
 router.post('/', verifyToken, requirePermission('admin.promotions'), uploadSingleImage, validate(createPromotionSchema), createPromotion);
 

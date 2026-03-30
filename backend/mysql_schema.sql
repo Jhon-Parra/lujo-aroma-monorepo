@@ -221,6 +221,7 @@ CREATE TABLE configuracionglobal (
     show_instagram_section BOOLEAN DEFAULT TRUE,
     home_carousel JSON DEFAULT NULL,
     home_categories JSON DEFAULT NULL,
+    promotions_fab_clicks INTEGER DEFAULT 0,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

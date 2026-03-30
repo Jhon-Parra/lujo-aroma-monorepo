@@ -285,6 +285,9 @@ ALTER TABLE IF EXISTS ConfiguracionGlobal
     ADD COLUMN IF NOT EXISTS home_carousel JSONB,
     ADD COLUMN IF NOT EXISTS home_categories JSONB;
 
+ALTER TABLE IF EXISTS ConfiguracionGlobal
+    ADD COLUMN IF NOT EXISTS promotions_fab_clicks INT DEFAULT 0;
+
 -- ---------------------------------------------------------
 -- Tabla: OrderEmailTemplates (plantillas de correo por estado)
 -- ---------------------------------------------------------

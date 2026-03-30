@@ -101,6 +101,11 @@
       <div>
         <h1 class="font-serif text-3xl text-charcoal tracking-wide">Promociones</h1>
         <p class="text-sm text-soft-charcoal mt-1">Crea y administra descuentos activos por fecha.</p>
+        <div class="mt-2 inline-flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-soft-charcoal">
+          <span class="px-3 py-1 rounded-full bg-white border border-[#ecece5]">
+            Clicks boton flotante: <span class="text-charcoal">{{ fabClicksLoading ? '...' : fabClicks }}</span>
+          </span>
+        </div>
       </div>
       <div class="flex flex-wrap items-center gap-3">
         <app-low-stock-bell></app-low-stock-bell>

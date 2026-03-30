@@ -45,7 +45,8 @@ const migrations = [
     '20260314_product_view_events.sql',
     '20260314_cart_sessions.sql',
     '20260314_auth_security_events.sql',
-    '20260328_settings_home_premium.sql'
+    '20260328_settings_home_premium.sql',
+    '20260330_promotions_fab_clicks.sql'
 ];
 
 async function runMigrations() {

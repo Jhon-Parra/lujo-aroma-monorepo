@@ -166,6 +166,11 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   filterByPromotions(): void {
+    // Fire-and-forget: track clicks on floating promotions button.
+    this.promotionService.trackFabClick().subscribe({
+      next: () => {},
+      error: () => {}
+    });
     this.router.navigate(['/promotions']);
   }
 

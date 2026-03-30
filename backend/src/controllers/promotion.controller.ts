@@ -9,6 +9,26 @@ let promotionMediaReady: boolean | null = null;
 let promotionAdvancedReady: boolean | null = null;
 let promotionGenderReady: boolean | null = null;
 
+let promoFabClicksReady: boolean | null = null;
+const detectPromoFabClicksColumn = async (): Promise<boolean> => {
+    if (promoFabClicksReady !== null) return promoFabClicksReady;
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE lower(table_name) = 'configuracionglobal'
+                  AND column_name = 'promotions_fab_clicks'
+                  AND table_schema = DATABASE()
+            ) AS ok`
+        );
+        promoFabClicksReady = !!rows?.[0]?.ok;
+        return promoFabClicksReady;
+    } catch {
+        promoFabClicksReady = false;
+        return false;
+    }
+};
+
 let categoriesReady: boolean | null = null;
 const detectCategoriesSchema = async (): Promise<boolean> => {
     if (categoriesReady !== null) return categoriesReady;
@@ -715,5 +735,53 @@ export const deletePromotion = async (req: Request, res: Response): Promise<void
     } catch (error) {
         console.error('Error deleting promo:', error);
         res.status(500).json({ error: 'Error al eliminar promocion' });
+    }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Floating Promotions Button metrics
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const trackPromotionsFabClick = async (_req: Request, res: Response): Promise<void> => {
+    try {
+        const supported = await detectPromoFabClicksColumn();
+        if (!supported) {
+            res.status(400).json({
+                error: 'Tu base de datos no soporta metrics de clicks del boton flotante. Ejecuta backend/database/migrations/20260330_promotions_fab_clicks_mysql.sql (MySQL) o backend/database/migrations/20260330_promotions_fab_clicks.sql (Postgres).'
+            });
+            return;
+        }
+
+        await pool.query(
+            'UPDATE configuracionglobal SET promotions_fab_clicks = COALESCE(promotions_fab_clicks, 0) + 1 WHERE id = 1'
+        );
+
+        const [rows] = await pool.query<any[]>(
+            'SELECT COALESCE(promotions_fab_clicks, 0) AS clicks FROM configuracionglobal WHERE id = 1'
+        );
+        const clicks = Number(rows?.[0]?.clicks || 0);
+        res.status(200).json({ ok: true, clicks: Number.isFinite(clicks) ? clicks : 0 });
+    } catch (e: any) {
+        res.status(500).json({ ok: false, error: e?.message || 'No se pudo registrar click' });
+    }
+};
+
+export const getPromotionsFabMetrics = async (_req: Request, res: Response): Promise<void> => {
+    try {
+        const supported = await detectPromoFabClicksColumn();
+        if (!supported) {
+            res.status(400).json({
+                error: 'Tu base de datos no soporta metrics de clicks del boton flotante. Ejecuta backend/database/migrations/20260330_promotions_fab_clicks_mysql.sql (MySQL) o backend/database/migrations/20260330_promotions_fab_clicks.sql (Postgres).'
+            });
+            return;
+        }
+
+        const [rows] = await pool.query<any[]>(
+            'SELECT COALESCE(promotions_fab_clicks, 0) AS clicks FROM configuracionglobal WHERE id = 1'
+        );
+        const clicks = Number(rows?.[0]?.clicks || 0);
+        res.status(200).json({ ok: true, clicks: Number.isFinite(clicks) ? clicks : 0 });
+    } catch (e: any) {
+        res.status(500).json({ ok: false, error: e?.message || 'No se pudo obtener metrics' });
     }
 };

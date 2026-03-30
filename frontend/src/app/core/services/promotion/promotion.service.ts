@@ -63,4 +63,12 @@ export class PromotionService {
   deletePromotion(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`, { withCredentials: true });
   }
+
+  trackFabClick(): Observable<{ ok: boolean; clicks: number }> {
+    return this.http.post<{ ok: boolean; clicks: number }>(`${this.apiUrl}/fab/click`, {});
+  }
+
+  getFabMetrics(): Observable<{ ok: boolean; clicks: number }> {
+    return this.http.get<{ ok: boolean; clicks: number }>(`${this.apiUrl}/fab/metrics`, { withCredentials: true });
+  }
 }

@@ -211,6 +211,17 @@
   }
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-150%) rotate(45deg); }
+  100% { transform: translateX(150%) rotate(45deg); }
+}
+
+@keyframes svg-gold-shine {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .btn-premium-blue,
   .btn-premium-blue-outline {

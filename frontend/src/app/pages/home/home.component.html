@@ -101,32 +101,35 @@
             <div class="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-4 items-center">
                 <!-- Sello de Originalidad (Custom SVG) -->
                 <div class="flex items-center gap-3 justify-center md:justify-start group transition-transform hover:scale-105">
-                    <svg viewBox="0 0 100 100" class="w-12 h-12 md:w-14 md:h-14 drop-shadow-md flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
-                      <!-- Outer scalloped circle (Dark Navy) -->
-                      <path fill="#0A192F" d="M50 2L56 9L65 7L68 15L77 15L78 24L86 27L84 35L91 40L87 48L93 55L86 61L89 69L80 73L80 82L72 84L68 92L59 91L53 98L45 95L38 100L32 93L23 94L20 86L11 84L12 75L4 70L8 62L2 54L8 47L2 39L9 33L6 25L15 22L17 13L26 14L31 6L39 9L45 2Z" />
-                      <!-- Inner circular ring (White/Cream) -->
-                      <circle cx="50" cy="50" r="40" fill="#F4F4F4" />
-                      <!-- Outer thin navy line inside the white ring -->
-                      <circle cx="50" cy="50" r="37.5" fill="none" stroke="#0A192F" stroke-width="1" />
-                      <circle cx="50" cy="50" r="36" fill="none" stroke="#D4AF37" stroke-width="0.5" />
-                      <!-- Inner solid circle (Dark Navy) -->
-                      <circle cx="50" cy="50" r="23" fill="#0A192F" />
-                      <!-- Checkmark -->
-                      <path d="M40 50 L46 56 L62 38" stroke="#F4F4F4" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                    <svg viewBox="0 0 100 100" class="w-12 h-12 md:w-14 md:h-14 drop-shadow-lg flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
                       <defs>
+                        <linearGradient id="goldRadial" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" style="stop-color:#B59A68;stop-opacity:1" />
+                          <stop offset="20%" style="stop-color:#D8C08A;stop-opacity:1" />
+                          <stop offset="50%" style="stop-color:#F1E4C1;stop-opacity:1" />
+                          <stop offset="80%" style="stop-color:#D8C08A;stop-opacity:1" />
+                          <stop offset="100%" style="stop-color:#B59A68;stop-opacity:1" />
+                        </linearGradient>
                         <path id="topText" d="M 23, 50 a 27,27 0 1,1 54,0" />
                         <path id="bottomText" d="M 77, 50 a 27,27 0 1,1 -54,0" />
                       </defs>
+                      <!-- Outer scalloped circle (Dark Navy) -->
+                      <path fill="#0A192F" d="M50 2L56 9L65 7L68 15L77 15L78 24L86 27L84 35L91 40L87 48L93 55L86 61L89 69L80 73L80 82L72 84L68 92L59 91L53 98L45 95L38 100L32 93L23 94L20 86L11 84L12 75L4 70L8 62L2 54L8 47L2 39L9 33L6 25L15 22L17 13L26 14L31 6L39 9L45 2Z" />
+                      <!-- Inner circular ring (Gold Gradient) -->
+                      <circle cx="50" cy="50" r="40" fill="url(#goldRadial)" />
+                      <!-- Inner lines -->
+                      <circle cx="50" cy="50" r="37.5" fill="none" stroke="#0A192F" stroke-width="0.5" opacity="0.5" />
+                      <!-- Inner solid circle (Dark Navy) -->
+                      <circle cx="50" cy="50" r="23" fill="#0A192F" />
+                      <!-- Checkmark (White) -->
+                      <path d="M40 50 L46 56 L62 38" stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
                       <!-- Text -->
-                      <text fill="#0A192F" font-size="10" font-family="'Montserrat', sans-serif" font-weight="900" letter-spacing="1">
+                      <text fill="#0A192F" font-size="9" font-family="'Montserrat', sans-serif" font-weight="900" letter-spacing="1">
                         <textPath href="#topText" startOffset="50%" text-anchor="middle">100% ORIGINAL</textPath>
                       </text>
-                      <text fill="#0A192F" font-size="10" font-family="'Montserrat', sans-serif" font-weight="900" letter-spacing="1">
+                      <text fill="#0A192F" font-size="9" font-family="'Montserrat', sans-serif" font-weight="900" letter-spacing="1">
                         <textPath href="#bottomText" startOffset="50%" text-anchor="middle">100% ORIGINAL</textPath>
                       </text>
-                      <!-- Dots -->
-                      <circle cx="18" cy="50" r="2.5" fill="#0A192F" />
-                      <circle cx="82" cy="50" r="2.5" fill="#0A192F" />
                     </svg>
                     <div class="flex flex-col">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Perfumes Originales</span>

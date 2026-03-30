@@ -27,18 +27,28 @@
               <!-- Glow effect background -->
               <div class="absolute inset-0 bg-gold/10 rounded-full blur-2xl animate-pulse"></div>
               
-              <div class="relative w-32 h-32 rounded-full border-[3px] border-gold bg-white shadow-xl flex items-center justify-center transform hover:rotate-6 transition-transform duration-500">
-                <div class="w-[110px] h-[110px] rounded-full border border-gold/40 border-dashed flex items-center justify-center">
-                  <div class="text-center -rotate-12 select-none">
-                    <div class="text-[12px] font-black tracking-[0.3em] text-gold leading-none mb-1">SELLO</div>
-                    <div class="text-[10px] font-black tracking-[0.15em] text-gold leading-none">AUTOENTICIDAD</div>
-                    <div class="mt-1 h-[1px] bg-gold/30 w-3/4 mx-auto"></div>
-                    <div class="text-[8px] font-bold tracking-widest text-[#0f3d2e] mt-1">LUJO & AROMA</div>
+              <div class="relative w-32 h-32 rounded-full shadow-[0_0_40px_rgba(212,175,55,0.4)] flex items-center justify-center transform hover:scale-105 transition-transform duration-700 bg-navy overflow-hidden">
+                <!-- Metallic Gold Border Mask -->
+                <div class="absolute inset-0 p-[3px] rounded-full bg-gradient-to-br from-[#B59A68] via-[#F1E4C1] to-[#B59A68]">
+                  <div class="w-full h-full rounded-full bg-navy flex items-center justify-center">
+                    <div class="w-[110px] h-[110px] rounded-full border border-gold/40 border-dashed flex items-center justify-center relative">
+                      <!-- Shine effect -->
+                      <div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent rotate-45 transform -translate-x-full animate-[shimmer_3s_infinite]"></div>
+                      
+                      <div class="text-center select-none z-10">
+                        <div class="text-[12px] font-black tracking-[0.3em] text-gold leading-none mb-1">SELLO</div>
+                        <div class="text-[10px] font-black tracking-[0.15em] text-gold leading-none">ORIGINALIDAD</div>
+                        <div class="mt-1 h-[1px] bg-gold/30 w-3/4 mx-auto"></div>
+                        <div class="text-[8px] font-bold tracking-widest text-cream/80 mt-1">LUJO & AROMA</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
-                <!-- Ribbon overlay (optional, but premium) -->
-                <div class="absolute -bottom-1 -right-1 bg-gold text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm">100% ORIGINAL</div>
+                <!-- Ribbon overlay -->
+                <div class="absolute -bottom-1 right-2 bg-gradient-to-r from-[#B59A68] to-[#D8C08A] text-navy-dark text-[8px] font-black px-3 py-1 rounded-full shadow-lg border border-white/20 whitespace-nowrap z-20">
+                  100% ORIGINAL
+                </div>
               </div>
             </div>
             

@@ -449,7 +449,7 @@ export class OrderController {
                 .text('Tu producto llegará junto con el Certificado de Perfumes Originales, respaldado por el sello físico de Lujo & Aroma.', 70, doc.y, { width: 320 });
             
             doc.moveDown(0.5);
-            doc.fontSize(8).font('Helvetica-Bold').fillColor('#c9a84c')
+            doc.fontSize(8).font('Helvetica-Bold').fillColor('#B59A68')
                 .text('● CALIDAD GARANTIZADA 100% ORIGINAL', 70, doc.y);
 
             // Sello (estilo estampilla premium)
@@ -459,15 +459,15 @@ export class OrderController {
             
             doc.save();
             // Outer circle
-            doc.circle(stampCx, stampCy, stampR).lineWidth(1.5).strokeColor('#c9a84c').stroke();
+            doc.circle(stampCx, stampCy, stampR).lineWidth(1.5).strokeColor('#B59A68').stroke();
             // Inner dashed circle
-            doc.circle(stampCx, stampCy, stampR - 4).lineWidth(0.5).strokeColor('#c9a84c').dash(2, { space: 2 }).stroke().undash();
+            doc.circle(stampCx, stampCy, stampR - 4).lineWidth(0.5).strokeColor('#B59A68').dash(2, { space: 2 }).stroke().undash();
             
             doc.rotate(-15, { origin: [stampCx, stampCy] });
-            doc.font('Helvetica-Bold').fontSize(9).fillColor('#c9a84c')
+            doc.font('Helvetica-Bold').fontSize(9).fillColor('#B59A68')
                 .text('SELLO', stampCx - stampR, stampCy - 10, { width: stampR * 2, align: 'center' });
-            doc.font('Helvetica-Bold').fontSize(8).fillColor('#c9a84c')
-                .text('AUTENTICIDAD', stampCx - stampR, stampCy + 1, { width: stampR * 2, align: 'center' });
+            doc.font('Helvetica-Bold').fontSize(8).fillColor('#B59A68')
+                .text('ORIGINALIDAD', stampCx - stampR, stampCy + 1, { width: stampR * 2, align: 'center' });
             doc.restore();
             
             doc.fillColor('#000000');

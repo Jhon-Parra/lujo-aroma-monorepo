@@ -442,11 +442,11 @@ export class OrderController {
 
             const certContentY = certBoxY + 15;
             doc.fontSize(11).font('Helvetica-Bold').fillColor('#0f3d2e')
-                .text('CERTIFICADO DE ORIGINALIDAD', 70, certContentY, { width: 320 });
+                .text('CERTIFICADO DE PERFUMES ORIGINALES', 70, certContentY, { width: 320 });
             
             doc.moveDown(0.4);
             doc.fontSize(9).font('Helvetica').fillColor('#333333')
-                .text('Tu producto llegará junto con el Certificado de Originalidad, respaldado por el sello físico de Lujo & Aroma.', 70, doc.y, { width: 320 });
+                .text('Tu producto llegará junto con el Certificado de Perfumes Originales, respaldado por el sello físico de Lujo & Aroma.', 70, doc.y, { width: 320 });
             
             doc.moveDown(0.5);
             doc.fontSize(8).font('Helvetica-Bold').fillColor('#c9a84c')

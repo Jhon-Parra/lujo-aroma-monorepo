@@ -1,10 +1,14 @@
 <!-- app.component.html -->
 <div class="min-h-screen flex flex-col font-sans bg-cream selection:bg-gold selection:text-white">
-  <!-- Navbar Fijo -->
-  <app-navbar class="sticky top-0 z-50 shadow-sm"></app-navbar>
+  <!-- Navbar -->
+  <app-navbar></app-navbar>
 
-  <!-- Contenido Dinámico de las Páginas -->
-  <main [ngClass]="isAdminRoute ? 'flex-grow min-h-screen' : 'flex-grow mt-28 md:mt-32'">
+  <!-- Contenido Dinámico de las Páginas (El Home omite el top margin para que el navbar flote sobre él) -->
+  <main [ngClass]="{
+    'flex-grow min-h-screen pt-24 md:pt-28': isAdminRoute,
+    'flex-grow relative': isHomeRoute && !isAdminRoute,
+    'flex-grow mt-28 md:mt-32 relative': !isHomeRoute && !isAdminRoute
+  }">
     <router-outlet></router-outlet>
   </main>
 

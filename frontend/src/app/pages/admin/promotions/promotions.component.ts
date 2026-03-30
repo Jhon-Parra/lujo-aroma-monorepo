@@ -340,22 +340,55 @@ export class PromotionsComponent implements OnInit {
 
   toggleActive(promo: Promotion): void {
     const nextActive = !promo.activo;
+
+    // Si se intenta activar una ya vencida, consultamos si quiere reactivarla (añadir 7 días)
     if (nextActive) {
-      const now = Date.now();
-      const end = new Date(promo.fecha_fin).getTime();
-      if (!Number.isFinite(end) || end < now) {
-        this.toastService.warning('La promoción está vencida. Actualiza la fecha de fin antes de activarla.');
-        return;
+      const status = this.getPromotionStatus(promo);
+      if (status === 'EXPIRADA') {
+        const ok = confirm('Esta promoción ya expiró. ¿Deseas reactivarla extendiendo su fecha de fin por 7 días?');
+        if (ok) {
+          this.reactivatePromotion(promo);
+          return;
+        } else {
+          this.toastService.warning('No se puede activar una promoción vencida sin actualizar sus fechas.');
+          return;
+        }
       }
     }
+
     this.promotionService.setActive(promo.id, nextActive).subscribe({
       next: () => {
         promo.activo = nextActive;
         this.load();
+        this.toastService.success(`Promoción ${nextActive ? 'activada' : 'desactivada'} correctamente.`);
       },
       error: (err) => {
         console.error('Error cambiando estado promo:', err);
-        this.error = err?.error?.error || 'No se pudo cambiar el estado.';
+        this.toastService.error(err?.error?.error || 'No se pudo cambiar el estado.');
+      }
+    });
+  }
+
+  reactivatePromotion(promo: Promotion): void {
+    const now = new Date();
+    const newEnd = new Date(now.getTime() + (7 * 24 * 60 * 60 * 1000));
+    const isoEnd = newEnd.toISOString();
+
+    const formData = new FormData();
+    formData.append('fecha_fin', isoEnd);
+    formData.append('activo', 'true');
+
+    this.saving = true;
+    this.promotionService.updatePromotion(promo.id, formData).subscribe({
+      next: () => {
+        this.saving = false;
+        this.toastService.success('Promoción reactivada por 7 días más.');
+        this.load();
+      },
+      error: (err) => {
+        this.saving = false;
+        console.error('Error reactivando promo:', err);
+        this.toastService.error('No se pudo reactivar la promoción.');
       }
     });
   }

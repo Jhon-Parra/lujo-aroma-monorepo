@@ -229,12 +229,12 @@
               (click)="incrementQty()">+</button>
           </div>
           <button type="button" (click)="addToCart()" [disabled]="product.stock <= 0"
-            class="btn-primary w-full sm:w-auto px-6 py-3 text-xs tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed">
+            class="btn-premium-blue-outline w-full sm:w-auto px-6 py-3 text-xs tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed">
             {{ product.stock <= 0 ? 'Sin stock' : 'Añadir al carrito' }}
           </button>
           <!-- Buy Now button -->
           <button type="button" (click)="buyNow()" [disabled]="product.stock <= 0"
-            class="w-full sm:w-auto px-6 py-3 text-xs tracking-widest uppercase font-bold rounded-md bg-charcoal text-white hover:bg-sage transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            class="btn-premium-blue w-full sm:w-auto px-6 py-3 text-xs tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed">
             Comprar ahora
           </button>
         </div>

@@ -1,19 +1,37 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 min-h-[70vh]">
-    <div class="text-center mb-12">
-        <h1 class="font-serif text-4xl text-charcoal tracking-widest mb-4">Contacto & Ubicación</h1>
-        <p class="text-soft-charcoal max-w-2xl mx-auto">Visítanos en nuestra boutique exclusiva en Bogotá o comunícate
-            con nuestros asesores para vivir la experiencia Lujo & Aroma.</p>
-    </div>
+<div class="relative">
+    <!-- Hero (premium) -->
+    <section class="relative overflow-hidden bg-[#07121a]">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(39,76,104,0.55),transparent_55%)]"></div>
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_80%_35%,rgba(181,154,104,0.30),transparent_60%)]"></div>
+        <div class="absolute inset-0 opacity-[0.08] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 md:pt-16 pb-16">
+            <div class="max-w-3xl">
+                <div class="inline-flex items-center gap-3">
+                    <span class="w-10 h-[1px] bg-[#d8c08a]"></span>
+                    <span class="text-[#d8c08a] text-[10px] tracking-[0.35em] font-bold uppercase">Contactanos</span>
+                </div>
+                <h1 class="mt-6 font-serif text-4xl md:text-6xl text-white leading-[1.05]">Contacto y ubicacion</h1>
+                <p class="mt-4 text-white/80 leading-relaxed">
+                    Visitanos en nuestra boutique o escribe a un asesor para elegir tu fragancia con confianza.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 pb-16 min-h-[70vh]">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Módulo de Contacto -->
-        <div class="bg-cream p-10 rounded-xl border border-[#ecece5]">
-            <h3 class="font-serif text-2xl text-charcoal mb-6 border-b border-[#dcdcd4] pb-4">{{
-                settings?.boutique_title || 'Nuestra Boutique' }}</h3>
+        <div class="bg-white p-8 md:p-10 rounded-[2rem] border border-[#ecece5] shadow-xl">
+            <div class="flex items-end justify-between gap-4 border-b border-[#ecece5] pb-5 mb-6">
+                <h3 class="font-serif text-2xl text-charcoal">{{
+                    settings?.boutique_title || 'Nuestra Boutique' }}</h3>
+                <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#b59a68]">Bogota</div>
+            </div>
 
             <div class="space-y-6">
                 <div class="flex items-start space-x-4">
-                    <div class="bg-white p-3 rounded-full text-gold shadow-sm border border-[#ecece5]">
+                    <div class="bg-[#07121a] p-3 rounded-2xl text-[#d8c08a] shadow-sm border border-[#07121a]/30">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -22,7 +40,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h4 class="font-bold text-charcoal tracking-widest text-sm uppercase">Dirección</h4>
+                        <h4 class="font-bold text-charcoal tracking-[0.22em] text-[11px] uppercase">Direccion</h4>
                         <p class="text-soft-charcoal mt-1">
                             {{ settings?.boutique_address_line1 || 'Calle 12 #13-85' }}<br>
                             {{ settings?.boutique_address_line2 || 'Bogotá, Colombia' }}
@@ -31,14 +49,14 @@
                 </div>
 
                 <div class="flex items-start space-x-4">
-                    <div class="bg-white p-3 rounded-full text-gold shadow-sm border border-[#ecece5]">
+                    <div class="bg-[#07121a] p-3 rounded-2xl text-[#d8c08a] shadow-sm border border-[#07121a]/30">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.896-1.596-5.48-4.08-7.074-6.97l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                         </svg>
                     </div>
                     <div>
-                        <h4 class="font-bold text-charcoal tracking-widest text-sm uppercase">Teléfono</h4>
+                        <h4 class="font-bold text-charcoal tracking-[0.22em] text-[11px] uppercase">Telefono</h4>
                         <p class="text-soft-charcoal mt-1">
                             <a *ngIf="settings?.boutique_phone; else defaultPhone"
                                 [href]="'tel:' + settings?.boutique_phone" class="hover:text-gold transition-colors">{{
@@ -49,14 +67,14 @@
                 </div>
 
                 <div class="flex items-start space-x-4">
-                    <div class="bg-white p-3 rounded-full text-gold shadow-sm border border-[#ecece5]">
+                    <div class="bg-[#07121a] p-3 rounded-2xl text-[#d8c08a] shadow-sm border border-[#07121a]/30">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round"
                                 d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
                         </svg>
                     </div>
                     <div>
-                        <h4 class="font-bold text-charcoal tracking-widest text-sm uppercase">Email</h4>
+                        <h4 class="font-bold text-charcoal tracking-[0.22em] text-[11px] uppercase">Email</h4>
                         <p class="text-soft-charcoal mt-1">
                             <a [href]="'mailto:' + (settings?.boutique_email || 'contacto@lujo_aroma.com')"
                                 class="hover:text-gold transition-colors">
@@ -70,19 +88,23 @@
 
         <!-- Mapa de Geolocalización -->
         <div
-            class="w-full h-96 lg:h-auto rounded-xl overflow-hidden border border-[#ecece5] shadow-sm relative min-h-[400px]">
+            class="w-full h-96 lg:h-auto rounded-[2rem] overflow-hidden border border-[#ecece5] shadow-xl relative min-h-[420px] bg-white">
+            <div class="absolute top-6 left-6 z-10 px-4 py-2 rounded-full bg-white/90 backdrop-blur border border-[#ecece5] text-[10px] font-bold uppercase tracking-[0.28em] text-navy-dark">
+                Ver en mapa
+            </div>
             <iframe [src]="mapEmbedUrl" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade" class="absolute inset-0 w-full h-full object-cover">
             </iframe>
         </div>
-    </div>
 
-    <section class="mt-14">
-        <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-8">
+        </div>
+
+        <section class="mt-10">
+        <div class="bg-white rounded-[2rem] shadow-xl border border-[#ecece5] p-8">
             <div
                 class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 border-b border-[#ecece5] pb-4 mb-6">
                 <div>
-                    <h2 class="font-serif text-2xl text-charcoal tracking-wide">Redes Sociales</h2>
+                    <h2 class="font-serif text-2xl text-charcoal tracking-wide">Redes sociales</h2>
                     <p class="text-sm text-soft-charcoal mt-1">Síguenos y escríbenos desde los enlaces configurados en
                         el panel de administrador.</p>
                 </div>
@@ -210,5 +232,6 @@
                 </ng-template>
             </div>
         </div>
-    </section>
+        </section>
+    </div>
 </div>

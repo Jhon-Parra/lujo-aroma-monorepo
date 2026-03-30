@@ -339,25 +339,40 @@
                 {{ p.fecha_fin | date:'d MMM yyyy, HH:mm' }}
               </td>
               <td class="p-4">
-                <span
-                  [class]="'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ' + getStatusClass(p)">
+                <span class="px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5 w-fit border"
+                    [ngClass]="getStatusClass(p)">
+                  <i class="bi" [ngClass]="{
+                    'bi-check-circle-fill text-green-600': getPromotionStatus(p) === 'ACTIVA',
+                    'bi-hourglass-split text-amber-600': getPromotionStatus(p) === 'EXPIRADA',
+                    'bi-calendar-event text-blue-600': getPromotionStatus(p) === 'PROGRAMADA',
+                    'bi-x-circle-fill text-red-600': getPromotionStatus(p) === 'DESACTIVADA'
+                  }"></i>
                   {{ getStatusLabel(p) }}
                 </span>
               </td>
               <td class="p-4 text-right space-x-3">
-                <!-- Botón de Activar/Desactivar con Toast Guard -->
+                <!-- Toggle Active -->
                 <button (click)="toggleActive(p)"
-                  [class]="p.activo ? 'text-amber-600 hover:text-amber-900' : 'text-green-600 hover:text-green-900'"
-                  class="transition-colors" [title]="p.activo ? 'Desactivar Manualmente' : 'Activar'">
-                  <i [class]="p.activo ? 'fas fa-toggle-on' : 'fas fa-toggle-off'"></i>
+                    [title]="p.activo ? 'Desactivar' : 'Activar'"
+                    class="p-2 rounded-lg transition-all"
+                    [ngClass]="p.activo ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'">
+                    <i class="bi" [ngClass]="p.activo ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
                 </button>
 
-                <button (click)="openEdit(p)" class="text-gold hover:text-black transition-colors" title="Editar">
-                  <i class="fas fa-edit"></i>
+                <!-- Reactivar (Solo si expirada) -->
+                <button *ngIf="getPromotionStatus(p) === 'EXPIRADA'"
+                    (click)="reactivatePromotion(p)"
+                    title="Reactivar (Extiende 7 días)"
+                    class="p-2 rounded-lg text-amber-600 hover:bg-amber-50 transition-all">
+                    <i class="bi bi-arrow-clockwise"></i>
                 </button>
 
-                <button (click)="delete(p)" class="text-red-500 hover:text-red-700 transition-colors" title="Eliminar">
-                  <i class="fas fa-trash"></i>
+                <button (click)="openEdit(p)" class="text-gold hover:text-black transition-colors p-2" title="Editar">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+
+                <button (click)="delete(p)" class="text-red-500 hover:text-red-700 transition-colors p-2" title="Eliminar">
+                  <i class="bi bi-trash"></i>
                 </button>
               </td>
             </tr>

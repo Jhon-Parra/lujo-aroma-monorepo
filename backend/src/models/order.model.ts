@@ -682,7 +682,7 @@ export class OrderModel {
                 o.total, o.estado, o.direccion_envio, o.codigo_transaccion, o.creado_en,
                 o.telefono, o.nombre_cliente, o.metodo_pago, o.canal_pago, o.estado_pago, o.referencia_pago
                 ${extraSelect ? `, ${extraSelect}` : ''},
-                JSON_ARRAYAGG(
+                COALESCE(CONCAT('[', GROUP_CONCAT(DISTINCT
                     JSON_OBJECT(
                         'producto_id', ${productoIdRead},
                         'nombre', COALESCE(d.nombre_producto, p.nombre),
@@ -691,8 +691,8 @@ export class OrderModel {
                         'subtotal', COALESCE(d.subtotal_snapshot, d.subtotal),
                         'imagen_url', COALESCE(d.imagen_url, p.imagen_url)
                     )
-                ) AS items,
-                (SELECT JSON_ARRAYAGG(JSON_OBJECT('estado_nuevo', h.estado_nuevo, 'cambio_en', h.cambio_en))
+                ), ']'), '[]') AS items,
+                (SELECT COALESCE(CONCAT('[', GROUP_CONCAT(JSON_OBJECT('estado_nuevo', h.estado_nuevo, 'cambio_en', h.cambio_en)), ']'), '[]')
                  FROM historial_pedido h WHERE h.orden_id = o.id) AS historial,
                 e.transportadora, e.numero_guia, e.fecha_envio, e.link_rastreo
             FROM ordenes o
@@ -774,7 +774,7 @@ export class OrderModel {
                 ${idExprRead} AS id, o.total, o.estado, o.direccion_envio, o.codigo_transaccion, o.creado_en,
                 o.telefono, o.nombre_cliente, o.metodo_pago, o.canal_pago, o.estado_pago
                 ${extraSelect ? `, ${extraSelect}` : ''},
-                JSON_ARRAYAGG(
+                COALESCE(CONCAT('[', GROUP_CONCAT(DISTINCT
                     JSON_OBJECT(
                         'producto_id', ${productoIdRead},
                         'nombre', COALESCE(d.nombre_producto, p.nombre),
@@ -783,7 +783,7 @@ export class OrderModel {
                         'subtotal', COALESCE(d.subtotal_snapshot, d.subtotal),
                         'imagen_url', COALESCE(d.imagen_url, p.imagen_url)
                     )
-                ) AS items,
+                ), ']'), '[]') AS items,
                 e.transportadora, e.numero_guia, e.fecha_envio, e.link_rastreo
             FROM ordenes o
             LEFT JOIN detalleordenes d ON d.orden_id = o.id
@@ -824,7 +824,7 @@ export class OrderModel {
                 CONCAT(COALESCE(u.nombre,''), ' ', COALESCE(u.apellido,'')) AS cliente_nombre,
                 u.email AS cliente_email,
                 COALESCE(o.telefono, u.telefono) AS cliente_telefono,
-                JSON_ARRAYAGG(
+                COALESCE(CONCAT('[', GROUP_CONCAT(DISTINCT
                     JSON_OBJECT(
                         'producto_id', ${productoIdRead},
                         'nombre', COALESCE(d.nombre_producto, p.nombre),
@@ -833,7 +833,7 @@ export class OrderModel {
                         'subtotal', COALESCE(d.subtotal_snapshot, d.subtotal),
                         'imagen_url', COALESCE(d.imagen_url, p.imagen_url)
                     )
-                ) AS items,
+                ), ']'), '[]') AS items,
                 e.transportadora, e.numero_guia, e.fecha_envio, e.link_rastreo, e.observacion AS envio_observacion
             FROM ordenes o
             LEFT JOIN usuarios u ON u.id = o.usuario_id

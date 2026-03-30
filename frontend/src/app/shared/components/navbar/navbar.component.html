@@ -1,4 +1,4 @@
-<div class="w-full bg-navy bg-opacity-95 backdrop-blur-md text-white font-sans sticky top-0 z-[1000] border-b border-white/10 shadow-sm transition-all duration-300" [ngStyle]="getLogoCssVars()">
+<div class="w-full bg-navy/35 backdrop-blur-2xl text-white font-sans fixed top-0 inset-x-0 z-[1000] border-b border-cream/10 shadow-md transition-all duration-500" [ngStyle]="getLogoCssVars()">
   <!-- Top Banner -->
   <div *ngIf="!isAdminRoute && settings?.show_banner"
     (click)="filterByPromotions()"
@@ -219,9 +219,17 @@
             <div
               class="absolute right-0 mt-3 w-[320px] bg-white border border-gray-100 rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
               <div class="p-4">
-                <div class="text-[11px] font-bold uppercase tracking-widest text-soft-charcoal">Mi carrito</div>
+                <div class="flex items-end justify-between">
+                  <div class="text-[11px] font-bold uppercase tracking-widest text-soft-charcoal">Tu carrito</div>
+                  <div class="text-[10px] font-bold uppercase tracking-widest text-gold">Compra segura</div>
+                </div>
                 <ng-container *ngIf="(cartItems$ | async) as cartItems">
-                  <div *ngIf="cartItems.length === 0" class="py-6 text-sm text-gray-500">Tu carrito esta vacio.</div>
+                  <div *ngIf="cartItems.length === 0" class="py-6 text-sm text-gray-500">
+                    Tu carrito esta vacio.
+                    <div class="mt-3">
+                      <a routerLink="/catalog" class="inline-flex items-center justify-center w-full bg-charcoal text-white text-xs uppercase tracking-widest py-3 rounded-md hover:bg-gold transition-colors">Explorar catalogo</a>
+                    </div>
+                  </div>
                   <div *ngIf="cartItems.length > 0" class="mt-3 space-y-3 max-h-60 overflow-y-auto">
                     <div *ngFor="let item of cartItems" class="flex gap-3">
                       <img [src]="getCartItemImage(item)" [alt]="getCartItemName(item)"
@@ -258,7 +266,7 @@
                     <span>{{ getCartSubtotal(cartItems) | currency:'COP':'symbol-narrow':'1.0-0' }}</span>
                   </div>
                   <div class="mt-4 grid grid-cols-1 gap-2">
-                    <a routerLink="/checkout" class="w-full text-center bg-charcoal text-white text-xs uppercase tracking-widest py-3 rounded-md hover:bg-gold transition-colors">Finalizar compra</a>
+                    <a routerLink="/checkout" class="w-full text-center bg-charcoal text-white text-xs uppercase tracking-widest py-3 rounded-md hover:bg-gold transition-colors">Ir a caja</a>
                     <button type="button" (click)="clearCart()" class="w-full text-center border border-red-200 text-red-700 text-xs uppercase tracking-widest py-3 rounded-md hover:bg-red-50 transition-colors">
                       Vaciar carrito
                     </button>

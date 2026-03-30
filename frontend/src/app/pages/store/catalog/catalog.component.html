@@ -1,8 +1,8 @@
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row min-h-[60vh]">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col md:flex-row min-h-[60vh]">
     <!-- Mobile Search & Filter Actions (Sticky) -->
     <div
-        class="md:hidden sticky top-0 z-40 -mx-4 px-4 py-4 bg-white/80 backdrop-blur-md border-b border-[#ecece5] mb-6 flex items-center justify-between">
-        <h3 class="font-serif text-lg text-charcoal">Nuestra Colección</h3>
+        class="md:hidden sticky top-0 z-40 -mx-4 px-4 py-4 bg-white/85 backdrop-blur-md border-b border-[#ecece5] mb-6 flex items-center justify-between">
+        <h3 class="font-serif text-lg text-charcoal">Nuestra Coleccion</h3>
 
         <button (click)="toggleMobileMenu()"
             class="flex items-center gap-2 px-4 py-2 bg-gold text-white rounded-full shadow-md active:scale-95 transition-all">
@@ -19,13 +19,13 @@
     <div *ngIf="isMobileMenuOpen" class="fixed inset-0 z-[60] md:hidden">
         <!-- Backdrop -->
         <div (click)="toggleMobileMenu()"
-            class="absolute inset-0 bg-charcoal/40 backdrop-blur-sm transition-opacity duration-300"></div>
+            class="absolute inset-0 bg-[#07121a]/70 backdrop-blur-sm transition-opacity duration-300"></div>
 
         <!-- Drawer -->
-        <div class="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col animate-slide-in-left">
-            <div class="p-6 border-b border-[#ecece5] flex items-center justify-between bg-cream/30">
-                <h3 class="font-serif text-xl text-charcoal">Colección</h3>
-                <button (click)="toggleMobileMenu()" class="p-2 text-soft-charcoal hover:text-charcoal">
+        <div class="absolute inset-y-0 left-0 w-[84%] max-w-sm bg-[#07121a] shadow-2xl flex flex-col animate-slide-in-left border-r border-white/10">
+            <div class="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
+                <h3 class="font-serif text-xl text-white">Coleccion</h3>
+                <button (click)="toggleMobileMenu()" class="p-2 text-white/70 hover:text-white">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
                         class="bi bi-x-lg" viewBox="0 0 16 16">
                         <path
@@ -35,24 +35,24 @@
             </div>
 
             <div class="flex-1 overflow-y-auto p-6">
-                <ul class="space-y-6 text-sm tracking-[0.15em] text-soft-charcoal uppercase font-medium">
+                <ul class="space-y-6 text-sm tracking-[0.18em] text-white/75 uppercase font-bold">
                     <li>
                         <button (click)="filterCategory('todos')"
-                            [class.text-gold]="selectedCategory === 'todos'"
-                            class="w-full text-left flex items-center justify-between group">
+                            [class.text-[#d8c08a]]="selectedCategory === 'todos'"
+                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors">
                             <span>Todos los Perfumes</span>
-                            <span *ngIf="selectedCategory === 'todos'" class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+                            <span *ngIf="selectedCategory === 'todos'" class="w-1.5 h-1.5 rounded-full bg-[#d8c08a]"></span>
                         </button>
                     </li>
 
                     <ng-container *ngIf="categories.length; else fallbackMobileDrawer">
                         <li *ngFor="let c of categories">
                             <button (click)="filterCategory(c.slug)"
-                                [class.text-gold]="selectedCategory === c.slug"
-                                class="w-full text-left flex items-center justify-between group">
+                                [class.text-[#d8c08a]]="selectedCategory === c.slug"
+                                class="w-full text-left flex items-center justify-between group hover:text-white transition-colors">
                                 <span>{{ c.nombre }}</span>
                                 <span *ngIf="selectedCategory === c.slug"
-                                    class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+                                    class="w-1.5 h-1.5 rounded-full bg-[#d8c08a]"></span>
                             </button>
                         </li>
                     </ng-container>
@@ -60,22 +60,22 @@
                     <ng-template #fallbackMobileDrawer>
                         <li>
                             <button (click)="filterCategory('mujer')"
-                                [class.text-gold]="selectedCategory === 'mujer'"
-                                class="w-full text-left flex items-center justify-between">
+                                [class.text-[#d8c08a]]="selectedCategory === 'mujer'"
+                                class="w-full text-left flex items-center justify-between hover:text-white transition-colors">
                                 <span>Para Mujer</span>
                             </button>
                         </li>
                         <li>
                             <button (click)="filterCategory('hombre')"
-                                [class.text-gold]="selectedCategory === 'hombre'"
-                                class="w-full text-left flex items-center justify-between">
+                                [class.text-[#d8c08a]]="selectedCategory === 'hombre'"
+                                class="w-full text-left flex items-center justify-between hover:text-white transition-colors">
                                 <span>Para Hombre</span>
                             </button>
                         </li>
                         <li>
                             <button (click)="filterCategory('unisex')"
-                                [class.text-gold]="selectedCategory === 'unisex'"
-                                class="w-full text-left flex items-center justify-between">
+                                [class.text-[#d8c08a]]="selectedCategory === 'unisex'"
+                                class="w-full text-left flex items-center justify-between hover:text-white transition-colors">
                                 <span>Unisex</span>
                             </button>
                         </li>
@@ -84,77 +84,157 @@
             </div>
 
             <div
-                class="p-6 border-t border-[#ecece5] bg-cream/10 text-[10px] text-center text-sage tracking-widest uppercase font-bold">
-                Lujo & Aroma · Bogotá, CO
+                class="p-6 border-t border-white/10 bg-white/5 text-[10px] text-center text-white/60 tracking-[0.28em] uppercase font-bold">
+                Lujo & Aroma · Bogota, CO
             </div>
         </div>
     </div>
 
     <!-- Sidebar (Desktop) -->
     <aside
-        class="hidden md:block w-64 md:pr-8 mb-8 md:mb-0 border-r border-[#ecece5] h-fit md:sticky md:top-28 md:max-h-[85vh] overflow-y-auto no-scrollbar animate-fade-in-left">
-        <h3 class="font-serif text-xl text-charcoal mb-4">Colección</h3>
+        class="hidden md:block w-72 lg:w-80 md:pr-6 mb-8 md:mb-0 h-fit md:sticky md:top-28 md:max-h-[85vh] overflow-y-auto no-scrollbar animate-fade-in-left">
+        <div class="rounded-3xl bg-white border border-[#ecece5] shadow-sm overflow-hidden">
+            <div class="px-6 pt-6 pb-5 bg-[radial-gradient(circle_at_20%_0%,rgba(39,76,104,0.10),transparent_55%)]">
+                <div class="flex items-end justify-between">
+                    <h3 class="font-serif text-xl text-charcoal">Coleccion</h3>
+                    <div class="text-[10px] text-[#b59a68] font-bold uppercase tracking-[0.35em]">Filtra</div>
+                </div>
 
-        <ul class="space-y-4 text-sm tracking-widest text-soft-charcoal uppercase">
-            <li>
-                <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
-                    <input type="radio" name="category" value="todos" (change)="filterCategory('todos')"
-                        [checked]="selectedCategory === 'todos'"
-                        class="form-radio text-gold focus:ring-gold accent-gold w-4 h-4">
-                    <span>Ver Todo</span>
-                </label>
-            </li>
+                <div class="mt-2 text-[10px] uppercase tracking-[0.22em] text-soft-charcoal">
+                    Activo: <span class="font-bold text-charcoal">{{ getCategoryLabel(selectedCategory) }}</span>
+                </div>
 
-            <ng-container *ngIf="categories.length; else fallbackCategories">
-                <li *ngFor="let c of categories">
-                    <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
-                        <input type="radio" name="category" [value]="c.slug" (change)="filterCategory(c.slug)"
-                            [checked]="selectedCategory === c.slug"
-                            class="form-radio text-gold focus:ring-gold accent-gold w-4 h-4">
-                        <span>{{ c.nombre }}</span>
-                    </label>
-                </li>
-            </ng-container>
+                <button *ngIf="selectedCategory !== 'todos'" type="button" (click)="filterCategory('todos')"
+                    class="mt-4 w-full rounded-2xl border border-[#ecece5] bg-[#f9f9f6] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.28em] text-charcoal hover:border-[#b59a68]/40 hover:bg-white transition-colors">
+                    Limpiar filtro
+                </button>
+            </div>
 
-            <ng-template #fallbackCategories>
-                <li>
-                    <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
-                        <input type="radio" name="category" value="mujer" (change)="filterCategory('mujer')"
-                            [checked]="selectedCategory === 'mujer'"
-                            class="form-radio text-gold focus:ring-gold accent-gold w-4 h-4">
-                        <span>Para Mujer</span>
-                    </label>
-                </li>
-                <li>
-                    <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
-                        <input type="radio" name="category" value="hombre" (change)="filterCategory('hombre')"
-                            [checked]="selectedCategory === 'hombre'"
-                            class="form-radio text-gold focus:ring-gold accent-gold w-4 h-4">
-                        <span>Para Hombre</span>
-                    </label>
-                </li>
-                <li>
-                    <label class="flex items-center space-x-3 cursor-pointer hover:text-gold transition-colors">
-                        <input type="radio" name="category" value="unisex" (change)="filterCategory('unisex')"
-                            [checked]="selectedCategory === 'unisex'"
-                            class="form-radio text-gold focus:ring-gold accent-gold w-4 h-4">
-                        <span>Unisex</span>
-                    </label>
-                </li>
-            </ng-template>
-        </ul>
+            <div class="px-6 pb-6">
+                <div class="mt-4 text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Intenciones</div>
+
+                <ul class="mt-4 space-y-2">
+                    <li>
+                        <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
+                            <input type="radio" name="category" value="todos" (change)="filterCategory('todos')"
+                                [checked]="selectedCategory === 'todos'" class="sr-only peer">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
+                                    <i class="bi bi-grid text-lg"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal">Todo</div>
+                                    <div class="text-xs text-soft-charcoal">Ver toda la coleccion</div>
+                                </div>
+                            </div>
+                            <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                        </label>
+                    </li>
+
+                    <li>
+                        <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
+                            <input type="radio" name="category" value="mujer" (change)="filterCategory('mujer')"
+                                [checked]="selectedCategory === 'mujer'" class="sr-only peer">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
+                                    <i class="bi bi-gender-female text-lg"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal">Ella</div>
+                                    <div class="text-xs text-soft-charcoal">Elegancia femenina</div>
+                                </div>
+                            </div>
+                            <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                        </label>
+                    </li>
+
+                    <li>
+                        <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
+                            <input type="radio" name="category" value="hombre" (change)="filterCategory('hombre')"
+                                [checked]="selectedCategory === 'hombre'" class="sr-only peer">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
+                                    <i class="bi bi-gender-male text-lg"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal">El</div>
+                                    <div class="text-xs text-soft-charcoal">Define tu presencia</div>
+                                </div>
+                            </div>
+                            <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                        </label>
+                    </li>
+
+                    <li>
+                        <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
+                            <input type="radio" name="category" value="unisex" (change)="filterCategory('unisex')"
+                                [checked]="selectedCategory === 'unisex'" class="sr-only peer">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
+                                    <i class="bi bi-stars text-lg"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal">Unisex</div>
+                                    <div class="text-xs text-soft-charcoal">Versatil y moderna</div>
+                                </div>
+                            </div>
+                            <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                        </label>
+                    </li>
+                </ul>
+
+                <div class="mt-6 pt-5 border-t border-[#ecece5]">
+                    <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Categorias</div>
+
+                    <ul class="mt-4 space-y-2">
+                        <ng-container *ngIf="categories.length; else fallbackCategories">
+                            <li *ngFor="let c of categories">
+                                <label *ngIf="(c.slug || '').toLowerCase() !== 'mujer' && (c.slug || '').toLowerCase() !== 'hombre' && (c.slug || '').toLowerCase() !== 'unisex'"
+                                    class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
+                                    <input type="radio" name="category" [value]="c.slug" (change)="filterCategory(c.slug)"
+                                        [checked]="selectedCategory === c.slug" class="sr-only peer">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <div class="w-10 h-10 rounded-2xl bg-[#f9f9f6] text-[#274C68] flex items-center justify-center border border-[#ecece5] shadow-sm transition-colors peer-checked:bg-[#b59a68]/15 peer-checked:border-[#b59a68]/35 peer-checked:text-[#07121a]">
+                                            <i class="bi bi-droplet-half text-lg"></i>
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal truncate">{{ c.nombre }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                </label>
+                            </li>
+                        </ng-container>
+
+                        <ng-template #fallbackCategories>
+                            <li class="text-xs text-soft-charcoal">Cargando categorias...</li>
+                        </ng-template>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </aside>
 
     <!-- Product Grid -->
     <main class="flex-1 md:pl-8 min-w-0">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <h2 class="font-serif text-3xl text-charcoal tracking-widest uppercase">
-                Catálogo ({{ paginatedProducts.length }} / {{ filteredProducts.length }})
-            </h2>
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+            <div>
+                <div class="text-[#b59a68] text-[10px] font-bold uppercase tracking-[0.35em]">Catalogo</div>
+                <h2 class="font-serif text-3xl text-charcoal tracking-[0.12em] uppercase mt-2">
+                    {{ getCategoryLabel(selectedCategory) }}
+                </h2>
+                <div class="mt-2 text-xs text-soft-charcoal uppercase tracking-[0.22em]">
+                    Mostrando {{ paginatedProducts.length }} de {{ filteredProducts.length }}
+                </div>
+                <div *ngIf="searchTerm" class="mt-2 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.28em] text-navy-dark bg-white border border-[#ecece5] rounded-full px-4 py-2">
+                    <span class="text-[#b59a68]">Busqueda</span>
+                    <span class="truncate max-w-[240px]">{{ searchTerm }}</span>
+                </div>
+            </div>
 
-            <p class="text-xs uppercase tracking-[0.18em] text-soft-charcoal">
-                {{ getCategoryLabel(selectedCategory) }}
-            </p>
+            <div class="text-xs uppercase tracking-[0.22em] text-soft-charcoal">
+                Filtros activos
+            </div>
         </div>
 
         <!-- Loading -->
@@ -165,7 +245,7 @@
         </div>
 
         <!-- Error -->
-        <div *ngIf="error" class="text-red-500 text-center py-10">
+        <div *ngIf="error" class="text-red-700 text-center py-10 bg-red-50 border border-red-200 rounded-2xl">
             {{ error }}
         </div>
 

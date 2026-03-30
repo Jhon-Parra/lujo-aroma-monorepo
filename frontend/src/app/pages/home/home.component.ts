@@ -54,8 +54,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   error = '';
   settings: Settings | null = null;
   promotions: Promotion[] = [];
-  private ambientAudio: HTMLAudioElement | null = null;
-  private interactionListener: () => void;
 
   instagramMedia: InstagramMediaItem[] = [];
   instagramLoading = true;
@@ -88,51 +86,13 @@ export class HomeComponent implements OnInit, OnDestroy {
     private instagramService: InstagramService,
     private seo: SeoService,
     private router: Router
-  ) {
-    this.interactionListener = () => {};
-  }
+  ) {}
 
   ngOnDestroy(): void {
     if (this.carouselTimer) {
       clearInterval(this.carouselTimer);
       this.carouselTimer = undefined;
     }
-    if (this.ambientAudio) {
-      this.ambientAudio.pause();
-      this.ambientAudio.src = '';
-      this.ambientAudio = null;
-    }
-    this.removeInteractionListeners();
-  }
-
-  private removeInteractionListeners(): void {
-    if (this.interactionListener) {
-      document.removeEventListener('click', this.interactionListener);
-      document.removeEventListener('touchstart', this.interactionListener);
-      document.removeEventListener('scroll', this.interactionListener);
-    }
-  }
-
-  private initAmbientAudio(): void {
-    if (typeof window === 'undefined') return;
-    
-    this.ambientAudio = new Audio('https://cdn.pixabay.com/audio/2022/10/25/audio_51a007f300.mp3');
-    this.ambientAudio.loop = true;
-    this.ambientAudio.volume = 0.25; // Softer volume since it's forced background
-
-    this.ambientAudio.play().catch(() => {
-      // Autoplay blocked. Wait for user interaction.
-      this.interactionListener = () => {
-        if (this.ambientAudio) {
-          this.ambientAudio.play().catch(() => {});
-        }
-        this.removeInteractionListeners();
-      };
-
-      document.addEventListener('click', this.interactionListener, { once: true });
-      document.addEventListener('touchstart', this.interactionListener, { once: true });
-      document.addEventListener('scroll', this.interactionListener, { once: true });
-    });
   }
 
   /** Called by (loadeddata) on each video element. */
@@ -277,11 +237,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
 
     this.startCarousel();
-
-    // Init invisible background ambient audio
-    setTimeout(() => {
-      this.initAmbientAudio();
-    }, 1500);
   }
 
   private applySettings(data: Settings): void {

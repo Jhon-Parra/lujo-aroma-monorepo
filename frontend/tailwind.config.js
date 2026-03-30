@@ -7,7 +7,7 @@ module.exports = {
     extend: {
       colors: {
         // Paleta Premium Lujo & Aroma (Mediterranean Blue & Gold)
-        cream: '#F4F4F4', // Ligeramente más blanco perlado
+        cream: '#F7F6F0', // Más cálido y suave para evitar fatiga visual
         gold: '#D4AF37', // Dorado puro brillante
         'gold-muted': '#B59A68', // Dorado sutil
         navy: '#0A192F', // Azul Mediterráneo profundo

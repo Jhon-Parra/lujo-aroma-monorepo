@@ -12,6 +12,7 @@ import { API_CONFIG } from './core/config/api-config';
 import { SeoService } from './core/services/seo/seo.service';
 import { PromotionService, Promotion } from './core/services/promotion/promotion.service';
 import { ConfigService } from './core/services/config.service';
+import { SpraySfxService } from './core/services/sfx/spray-sfx.service';
 
 @Component({
   selector: 'app-root',
@@ -26,6 +27,7 @@ export class AppComponent implements OnInit, OnDestroy {
   whatsappUrl = '';
   promotions: Promotion[] = [];
   isAdminRoute = false;
+  isHomeRoute = false;
   private settingsSub?: Subscription;
   private promoSub?: Subscription;
 
@@ -35,10 +37,14 @@ export class AppComponent implements OnInit, OnDestroy {
     private promotionService: PromotionService,
     private router: Router,
     private seoService: SeoService,
+    private spraySfx: SpraySfxService,
     @Inject(DOCUMENT) private document: Document
   ) {}
 
   ngOnInit(): void {
+    // Play a subtle "spray" sound on each page load (after first user gesture).
+    this.spraySfx.armSprayOnLoad();
+
     // Asegura config en background (si ya esta cacheado, es instantaneo)
     this.configService.loadConfig().catch(() => {});
 
@@ -86,7 +92,9 @@ export class AppComponent implements OnInit, OnDestroy {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       window.scrollTo(0, 0);
-      this.isAdminRoute = event.urlAfterRedirects?.includes('/admin') || false;
+      const url = event.urlAfterRedirects || '/';
+      this.isAdminRoute = url.includes('/admin');
+      this.isHomeRoute = url === '/' || url === '/home' || url.split('?')[0] === '/' || url.split('?')[0] === '/home';
     });
 
     this.settingsSub = this.settingsService.settings$.subscribe({

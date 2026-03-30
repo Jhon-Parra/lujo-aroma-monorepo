@@ -1,4 +1,10 @@
-<div class="w-full bg-[#FAFAF9] relative">
+<div class="w-full bg-[#EBE9E4] min-h-screen relative overflow-hidden">
+    <!-- Difuminados Ambientales (Ambient Background Blurs for reduced eye strain) -->
+    <div class="fixed top-0 left-0 w-[80vw] h-[80vw] md:w-[50vw] md:h-[50vw] -translate-x-1/4 -translate-y-1/4 bg-navy-light/5 rounded-full mix-blend-multiply filter blur-[120px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-0 right-0 w-[90vw] h-[90vw] md:w-[60vw] md:h-[60vw] translate-x-1/4 translate-y-1/4 bg-gold/5 rounded-full mix-blend-multiply filter blur-[130px] pointer-events-none z-0"></div>
+    
+    <!-- Contenedor Principal (elevado sobre los difuminados) -->
+    <div class="relative z-10">
     <!-- HERO / Carrusel estrategico (premium) -->
     <section class="relative w-full min-h-[75vh] md:min-h-[85vh] flex items-center overflow-hidden bg-navy-dark">
         <!-- Slides (media) -->
@@ -90,22 +96,50 @@
     </section>
 
     <!-- Barra de Confianza Estratégica -->
-    <section class="w-full bg-white border-b border-[#ecece5] py-8 relative z-20 shadow-sm">
+    <section class="w-full bg-white/70 backdrop-blur-md border-b border-[#ecece5]/60 py-8 relative z-20 shadow-sm">
         <div class="max-w-7xl mx-auto px-4">
             <div class="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-4 items-center">
+                <!-- Sello de Originalidad (Custom SVG) -->
                 <div class="flex items-center gap-3 justify-center md:justify-start group transition-transform hover:scale-105">
-                    <div class="w-10 h-10 rounded-full bg-cream flex items-center justify-center text-gold shadow-inner">
-                        <i class="bi bi-patch-check text-xl"></i>
-                    </div>
+                    <svg viewBox="0 0 100 100" class="w-12 h-12 md:w-14 md:h-14 drop-shadow-md flex-shrink-0" xmlns="http://www.w3.org/2000/svg">
+                      <!-- Outer scalloped circle (Dark Navy) -->
+                      <path fill="#0A192F" d="M50 2L56 9L65 7L68 15L77 15L78 24L86 27L84 35L91 40L87 48L93 55L86 61L89 69L80 73L80 82L72 84L68 92L59 91L53 98L45 95L38 100L32 93L23 94L20 86L11 84L12 75L4 70L8 62L2 54L8 47L2 39L9 33L6 25L15 22L17 13L26 14L31 6L39 9L45 2Z" />
+                      <!-- Inner circular ring (White/Cream) -->
+                      <circle cx="50" cy="50" r="40" fill="#F4F4F4" />
+                      <!-- Outer thin navy line inside the white ring -->
+                      <circle cx="50" cy="50" r="37.5" fill="none" stroke="#0A192F" stroke-width="1" />
+                      <circle cx="50" cy="50" r="36" fill="none" stroke="#D4AF37" stroke-width="0.5" />
+                      <!-- Inner solid circle (Dark Navy) -->
+                      <circle cx="50" cy="50" r="23" fill="#0A192F" />
+                      <!-- Checkmark -->
+                      <path d="M40 50 L46 56 L62 38" stroke="#F4F4F4" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                      <defs>
+                        <path id="topText" d="M 23, 50 a 27,27 0 1,1 54,0" />
+                        <path id="bottomText" d="M 77, 50 a 27,27 0 1,1 -54,0" />
+                      </defs>
+                      <!-- Text -->
+                      <text fill="#0A192F" font-size="10" font-family="'Montserrat', sans-serif" font-weight="900" letter-spacing="1">
+                        <textPath href="#topText" startOffset="50%" text-anchor="middle">100% ORIGINAL</textPath>
+                      </text>
+                      <text fill="#0A192F" font-size="10" font-family="'Montserrat', sans-serif" font-weight="900" letter-spacing="1">
+                        <textPath href="#bottomText" startOffset="50%" text-anchor="middle">100% ORIGINAL</textPath>
+                      </text>
+                      <!-- Dots -->
+                      <circle cx="18" cy="50" r="2.5" fill="#0A192F" />
+                      <circle cx="82" cy="50" r="2.5" fill="#0A192F" />
+                    </svg>
                     <div class="flex flex-col">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Originalidad</span>
                         <span class="text-[9px] text-navy-light font-medium uppercase tracking-tighter">100% Garantizada</span>
                     </div>
                 </div>
                 
+                <!-- Envío Seguro -->
                 <div class="flex items-center gap-3 justify-center md:justify-start group transition-transform hover:scale-105">
-                    <div class="w-10 h-10 rounded-full bg-cream flex items-center justify-center text-gold shadow-inner">
-                        <i class="bi bi-truck text-xl"></i>
+                    <div class="w-12 h-12 flex-shrink-0 rounded-full bg-navy-dark flex items-center justify-center shadow-lg relative border border-gold/40">
+                        <div class="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center">
+                            <i class="bi bi-truck text-[18px] text-navy-dark"></i>
+                        </div>
                     </div>
                     <div class="flex flex-col">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Envío Seguro</span>
@@ -113,9 +147,12 @@
                     </div>
                 </div>
 
+                <!-- Asesoría VIP -->
                 <div class="flex items-center gap-3 justify-center md:justify-start group transition-transform hover:scale-105">
-                    <div class="w-10 h-10 rounded-full bg-cream flex items-center justify-center text-gold shadow-inner">
-                        <i class="bi bi-whatsapp text-xl"></i>
+                    <div class="w-12 h-12 flex-shrink-0 rounded-full bg-navy-dark flex items-center justify-center shadow-lg relative border border-gold/40">
+                        <div class="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center">
+                            <i class="bi bi-whatsapp text-[18px] text-navy-dark"></i>
+                        </div>
                     </div>
                     <div class="flex flex-col">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Asesoría VIP</span>
@@ -123,9 +160,12 @@
                     </div>
                 </div>
 
+                <!-- Promociones -->
                 <div (click)="filterByPromotions()" class="flex items-center gap-3 justify-center md:justify-start group transition-transform hover:scale-105 cursor-pointer">
-                    <div class="w-10 h-10 rounded-full bg-cream flex items-center justify-center text-gold shadow-inner">
-                        <i class="bi bi-tag text-xl"></i>
+                    <div class="w-12 h-12 flex-shrink-0 rounded-full bg-navy-dark flex items-center justify-center shadow-lg relative border border-gold/40">
+                        <div class="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center">
+                            <i class="bi bi-tag text-[18px] text-navy-dark"></i>
+                        </div>
                     </div>
                     <div class="flex flex-col">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Promociones</span>
@@ -133,9 +173,12 @@
                     </div>
                 </div>
 
+                <!-- Pago Seguro -->
                 <div class="col-span-2 md:col-span-1 flex items-center gap-3 justify-center md:justify-start group transition-transform hover:scale-105">
-                    <div class="w-10 h-10 rounded-full bg-cream flex items-center justify-center text-gold shadow-inner">
-                        <i class="bi bi-shield-lock text-xl"></i>
+                    <div class="w-12 h-12 flex-shrink-0 rounded-full bg-navy-dark flex items-center justify-center shadow-lg relative border border-gold/40">
+                        <div class="w-[34px] h-[34px] rounded-full bg-[#F4F4F4] flex items-center justify-center">
+                            <i class="bi bi-shield-lock text-[18px] text-navy-dark"></i>
+                        </div>
                     </div>
                     <div class="flex flex-col">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-navy-dark">Pago Seguro</span>
@@ -511,4 +554,6 @@
             </div>
         </div>
     </div>
+</div>
+<!-- Cierre del Contenedor Principal z-10 -->
 </div>

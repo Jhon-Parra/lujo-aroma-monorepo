@@ -431,12 +431,20 @@ export const getPromotionsAdmin = async (_req: Request, res: Response): Promise<
                     ${mediaReady ? 'pr.product_gender,' : ''}
                     pr.audience_scope,
                     pr.audience_segment,
-                    COALESCE((SELECT JSON_ARRAYAGG(pp.producto_id) FROM promocionproductos pp WHERE pp.promocion_id = pr.id), '[]') AS product_ids,
-                    COALESCE((SELECT JSON_ARRAYAGG(pu.usuario_id) FROM promocionusuarios pu WHERE pu.promocion_id = pr.id), '[]') AS audience_user_ids
+                    COALESCE((SELECT GROUP_CONCAT(pp.producto_id) FROM promocionproductos pp WHERE pp.promocion_id = pr.id), '') AS product_ids,
+                    COALESCE((SELECT GROUP_CONCAT(pu.usuario_id) FROM promocionusuarios pu WHERE pu.promocion_id = pr.id), '') AS audience_user_ids
                 FROM promociones pr
                 ORDER BY ${advancedReady ? 'pr.priority DESC,' : ''} pr.creado_en DESC
             `);
-            res.status(200).json(rows);
+            
+            // MariaDB workaround: parse GROUP_CONCAT strings into arrays
+            const formatted = rows.map(r => ({
+                ...r,
+                product_ids: r.product_ids ? String(r.product_ids).split(',') : [],
+                audience_user_ids: r.audience_user_ids ? String(r.audience_user_ids).split(',') : []
+            }));
+            
+            res.status(200).json(formatted);
             return;
         }
 

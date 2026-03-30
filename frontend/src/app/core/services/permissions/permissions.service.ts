@@ -11,7 +11,6 @@ export type PermissionId =
   | 'admin.orders'
   | 'admin.promotions'
   | 'admin.settings'
-  | 'admin.payments'
   | 'admin.users';
 
 export type RoleId = 'SUPERADMIN' | 'ADMIN' | 'VENTAS' | 'PRODUCTOS' | 'CUSTOMER';

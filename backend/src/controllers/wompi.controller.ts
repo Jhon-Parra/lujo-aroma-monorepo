@@ -36,7 +36,7 @@ export class WompiController {
                     base_url: 'https://sandbox.wompi.co/v1',
                     has_private_key: false,
                     version: WOMPI_API_VERSION,
-                    message: 'Wompi no está configurado aún. Configura las llaves en el panel de administrador.'
+                    message: 'Wompi no está configurado aún. Configura las llaves en el archivo .env del backend.'
                 });
                 return;
             }

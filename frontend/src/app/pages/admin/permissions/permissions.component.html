@@ -2,8 +2,10 @@
   <aside class="w-64 bg-charcoal text-white flex flex-col hidden md:flex">
     <div class="h-32 flex items-center justify-center border-b border-gray-700 py-4">
       <a routerLink="/" class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300 w-full px-6">
-        <div class="bg-white rounded-md p-2 w-full flex justify-center shadow-sm">
-          <img [src]="getAdminLogoUrl() || '/assets/images/logo.png'" alt="Lujo & Aroma Admin" class="h-12 w-auto object-contain" />
+        <div class="w-full flex justify-center">
+          <span class="brand-logo-badge">
+            <img [src]="getAdminLogoUrl() || '/assets/images/logo.svg'" alt="Lujo & Aroma Admin" class="h-12 w-auto object-contain brand-logo-img" />
+          </span>
         </div>
         <span class="text-[9px] text-gray-400 font-sans tracking-widest mt-3 uppercase font-bold">Panel Admin</span>
       </a>
@@ -17,8 +19,6 @@
       <a routerLink="/admin/promotions" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors"><span>Promociones</span></a>
       <a routerLink="/admin/cart-recovery" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors"><span>Recuperación de carrito</span></a>
       <a routerLink="/admin/intelligence" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors"><span>Inteligencia y Alertas</span></a>
-      <a routerLink="/admin/payments" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors"><span>Pagos</span></a>
-      <a routerLink="/admin/emails" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors"><span>Correos</span></a>
       <a routerLink="/admin/settings" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors"><span>Personalizar Página</span></a>
       <a routerLink="/admin/permissions" class="flex items-center space-x-3 p-3 rounded-md bg-gray-800 text-gold transition-colors"><span>Permisos</span></a>
       <a routerLink="/manual" class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors"><span>Manual de uso</span></a>
@@ -45,8 +45,6 @@
           <a routerLink="/admin/promotions" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Promos</a>
           <a routerLink="/admin/cart-recovery" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Recuperación</a>
           <a routerLink="/admin/intelligence" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Inteligencia</a>
-          <a routerLink="/admin/payments" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pagos</a>
-          <a routerLink="/admin/emails" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Correos</a>
           <a routerLink="/admin/settings" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Apariencia</a>
         </div>
       </div>

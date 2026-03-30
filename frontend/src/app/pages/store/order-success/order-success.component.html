@@ -1,5 +1,73 @@
 <div class="min-h-screen bg-[#f5f5f0] py-12">
   <div class="max-w-4xl mx-auto px-4">
+
+    <!-- Certificado de originalidad: emergente post-compra -->
+    <div *ngIf="showAuthenticityPopup" class="fixed inset-0 z-[1300] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-charcoal/60 backdrop-blur-sm print:hidden"
+      (click)="closeAuthenticityPopup(); $event.stopPropagation()">
+      <div class="w-full max-w-lg bg-white shadow-2xl rounded-[2rem] overflow-hidden animate-in fade-in zoom-in duration-300"
+        (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-label="Certificado de originalidad">
+        <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <div class="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Lujo & Aroma</div>
+            <h3 class="text-xl font-serif font-bold text-charcoal mt-1">Certificado de Originalidad</h3>
+          </div>
+          <button type="button" (click)="closeAuthenticityPopup()"
+            class="p-2 hover:bg-gray-50 rounded-full transition-colors text-gray-400 hover:text-charcoal"
+            aria-label="Cerrar">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-8 bg-gradient-to-b from-white to-[#fbfbf6]">
+          <div class="flex flex-col items-center text-center gap-6">
+            <!-- Sello Premium -->
+            <div class="relative w-32 h-32 flex items-center justify-center">
+              <!-- Glow effect background -->
+              <div class="absolute inset-0 bg-gold/10 rounded-full blur-2xl animate-pulse"></div>
+              
+              <div class="relative w-32 h-32 rounded-full border-[3px] border-gold bg-white shadow-xl flex items-center justify-center transform hover:rotate-6 transition-transform duration-500">
+                <div class="w-[110px] h-[110px] rounded-full border border-gold/40 border-dashed flex items-center justify-center">
+                  <div class="text-center -rotate-12 select-none">
+                    <div class="text-[12px] font-black tracking-[0.3em] text-gold leading-none mb-1">SELLO</div>
+                    <div class="text-[10px] font-black tracking-[0.15em] text-gold leading-none">AUTOENTICIDAD</div>
+                    <div class="mt-1 h-[1px] bg-gold/30 w-3/4 mx-auto"></div>
+                    <div class="text-[8px] font-bold tracking-widest text-[#0f3d2e] mt-1">LUJO & AROMA</div>
+                  </div>
+                </div>
+                
+                <!-- Ribbon overlay (optional, but premium) -->
+                <div class="absolute -bottom-1 -right-1 bg-gold text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm">100% ORIGINAL</div>
+              </div>
+            </div>
+            
+            <div class="space-y-4 max-w-sm">
+              <p class="text-lg font-serif italic text-charcoal leading-relaxed">
+                "Cada gota es una promesa de excelencia."
+              </p>
+              <p class="text-sm text-soft-charcoal leading-relaxed">
+                Tu producto llegará junto con el <strong>Certificado de Originalidad</strong>, respaldado por el sello físico de Lujo & Aroma.
+              </p>
+              <div class="inline-flex items-center gap-2 px-4 py-2 bg-gold/5 rounded-full border border-gold/10">
+                <svg class="w-4 h-4 text-gold" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                  <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+                </svg>
+                <span class="text-[10px] font-bold text-gold uppercase tracking-widest">Incluido en tu factura PDF</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-6 flex flex-wrap gap-3">
+            <button type="button" (click)="closeAuthenticityPopup()"
+              class="px-8 py-3.5 rounded-2xl bg-gold text-white text-[11px] font-bold uppercase tracking-widest hover:bg-charcoal transition-all">
+              Entendido
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
     <nav class="text-sm text-gray-500 mb-8 print:hidden">
       <a routerLink="/" class="hover:text-charcoal transition-colors">Inicio</a>
       <span class="mx-2">›</span>

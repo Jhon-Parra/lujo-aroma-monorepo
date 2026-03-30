@@ -8,7 +8,6 @@ export type PermissionId =
     | 'admin.orders'
     | 'admin.promotions'
     | 'admin.settings'
-    | 'admin.payments'
     | 'admin.users';
 
 export type RolePermissions = Record<string, PermissionId[]>;
@@ -20,13 +19,12 @@ export const ALL_PERMISSIONS: PermissionId[] = [
     'admin.orders',
     'admin.promotions',
     'admin.settings',
-    'admin.payments',
     'admin.users'
 ];
 
 const DEFAULT_ROLE_PERMISSIONS: RolePermissions = {
     SUPERADMIN: ALL_PERMISSIONS,
-    ADMIN: ['admin.dashboard', 'admin.products', 'admin.orders', 'admin.promotions', 'admin.settings', 'admin.payments'],
+    ADMIN: ['admin.dashboard', 'admin.products', 'admin.orders', 'admin.promotions', 'admin.settings'],
     VENTAS: ['admin.dashboard', 'admin.orders'],
     PRODUCTOS: ['admin.dashboard', 'admin.products'],
     CUSTOMER: []

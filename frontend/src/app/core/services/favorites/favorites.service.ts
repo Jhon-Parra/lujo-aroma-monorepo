@@ -14,7 +14,9 @@ export class FavoritesService {
     public favorites$: Observable<Product[]> = this.favoritesSubject.asObservable();
 
     constructor(private http: HttpClient) {
-        this.loadFavoritesFromAPI();
+        // Importante: no llamamos al API en el constructor.
+        // Antes de saber si hay sesion valida, esto genera 401/403 en consola.
+        // AuthService se encarga de llamar refreshFavorites() cuando hay usuario.
     }
 
     clearFavorites(): void {

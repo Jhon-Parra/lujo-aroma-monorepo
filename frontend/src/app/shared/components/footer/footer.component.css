@@ -1,0 +1,10 @@
+.footer-logo {
+  height: clamp(52px, var(--logo-h-mobile, 72px), 220px);
+  width: auto;
+}
+
+@media (min-width: 768px) {
+  .footer-logo {
+    height: clamp(64px, var(--logo-h-desktop, 96px), 320px);
+  }
+}

@@ -333,6 +333,16 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
         if (error || !data?.session || !data?.user) {
             console.error('Supabase Google Auth Error:', error);
             await logSecurityEvent(req, null, 'login_failed');
+
+            // En dev devolvemos detalles para diagnostico (client_id/origins/provider config).
+            if (process.env.NODE_ENV !== 'production') {
+                res.status(401).json({
+                    error: 'Token de Google inválido o expirado',
+                    details: (error as any)?.message || (error as any) || null
+                });
+                return;
+            }
+
             res.status(401).json({ error: 'Token de Google inválido o expirado' });
             return;
         }
@@ -434,7 +444,24 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
 
         setSessionCookies(res, data.session);
 
-        const userPayload = await buildUserResponse(data.user);
+        // Importante: sincronizar usuario en MySQL para que verifyToken pueda resolverlo.
+        const { nombre, apellido } = guessNamesFromMetadata(data.user.user_metadata || {});
+        const ensure = await ensureLocalUser({
+            supabaseUserId: data.user.id,
+            email: data.user.email || '',
+            nombre,
+            apellido,
+            telefono: (data.user.user_metadata as any)?.telefono || null,
+            foto_perfil: (data.user.user_metadata as any)?.avatar_url || (data.user.user_metadata as any)?.picture || null
+        });
+
+        if (!ensure.ok && ensure.conflict) {
+            clearTokenCookies(res);
+            res.status(409).json({ error: 'Usuario existente requiere migración a Supabase' });
+            return;
+        }
+
+        const userPayload = ensure.user || await buildUserResponse(data.user);
 
         res.status(200).json({
             message: 'Token refrescado exitosamente',

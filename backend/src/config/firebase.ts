@@ -1,6 +1,9 @@
 import * as admin from 'firebase-admin';
 import * as dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+
+// Cargar siempre el .env del backend, independiente del working directory.
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 // En desarrollo y para este scaffold, si no hay credenciales completas de Firebase,
 // la app de igual modo inicializará sin romperse, pero fallarán las subidas a menos que

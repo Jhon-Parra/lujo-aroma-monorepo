@@ -493,6 +493,6 @@ export class ProductsComponent implements OnInit {
         }
       } catch (e) {}
     }
-    return '/assets/images/logo.png';
+    return '/assets/images/logo.svg';
   }
 }

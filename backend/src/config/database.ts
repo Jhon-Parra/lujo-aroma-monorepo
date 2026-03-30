@@ -1,7 +1,9 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// Cargar siempre el .env del backend, independiente del working directory.
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const rawHost = process.env.DB_HOST || '127.0.0.1';
 const host = rawHost === 'localhost' ? '127.0.0.1' : rawHost;

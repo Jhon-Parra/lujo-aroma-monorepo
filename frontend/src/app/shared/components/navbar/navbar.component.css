@@ -1,4 +1,7 @@
 :host {
+  --nav-bg: #0a192f;
+  --logo-h-mobile: 80px;
+  --logo-h-desktop: 110px;
   display: block;
   z-index: 1000;
   position: fixed;
@@ -13,50 +16,95 @@
   transition: all 0.3s ease;
 }
 
-nav {
-  /* No hardcoded borders, controlled via Tailwind HTML for glassmorphism */
-}
 
 .navbar-row {
-  /* Navbar fijo: el logo puede sobrepasar este alto si es necesario */
-  height: 72px;
+  /* Alto fijo: el logo no debe agrandar el navbar */
+  height: 80px;
+  /* No ocultar dropdowns (buscador/carrito) */
   overflow: visible;
+}
+
+.navbar-sides {
+  position: relative;
+  z-index: 20;
+}
+
+/* Logo en overlay: no consume ancho en el layout */
+.navbar-logo-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  /* Debe verse por encima de los lados (aunque estos sean transparentes) */
+  z-index: 40;
 }
 
 .navbar-logo-wrap {
   position: relative;
-  height: 100%;
+  /* El logo puede sobreponerse sin agrandar el navbar */
+  height: clamp(74px, var(--logo-h-mobile, 110px), 360px);
+  width: auto;
+
+  /* No bloquear clicks de los botones laterales */
+  max-width: calc(100vw - 220px);
+
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 0;
+  border-radius: 0;
   overflow: visible;
+
+  pointer-events: auto;
+
+  /* 3D stage */
+  perspective: 900px;
+  transform-style: preserve-3d;
 }
 
 .navbar-logo {
-  position: static;
-  transform: none;
-  height: var(--logo-h-mobile, 110px);
-  /* Un poco más grande por defecto */
+  /* El logo debe ocupar casi todo el cuadro */
+  height: 100%;
   width: auto;
+  max-height: 100%;
   max-width: 100%;
+  position: relative;
+  display: block;
   z-index: 20;
-  /* filter: brightness(0) invert(1); */
+  filter:
+    drop-shadow(0 16px 28px rgba(0, 0, 0, 0.70))
+    drop-shadow(0 2px 0 rgba(255, 255, 255, 0.14))
+    drop-shadow(0 0 20px rgba(39, 76, 104, 0.55));
   /* Ensure logo is visible on dark green if it's dark color */
+
+  /* Profundidad 3D */
+  transform: translateZ(18px);
+  backface-visibility: hidden;
+
+  object-position: center center;
+}
+
+.navbar-logo-wrap:hover .navbar-logo {
+  transform: translateZ(22px) rotateX(4deg) rotateY(-10deg) scale(1.01);
+  filter:
+    drop-shadow(0 18px 28px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.14))
+    drop-shadow(0 0 26px rgba(39, 76, 104, 0.65));
 }
 
 @media (min-width: 1024px) {
   .navbar-row {
-    height: 80px;
+    height: 88px;
   }
 
   .navbar-logo-wrap {
-    height: 100%;
-    /* Let grid handle width implicitly */
-    overflow: visible;
+    height: clamp(82px, var(--logo-h-desktop, 140px), 520px);
+    max-width: calc(100vw - 640px);
   }
 
   .navbar-logo {
-    height: var(--logo-h-desktop, 130px);
-    /* 130px en desktop para que destaque mucho más */
+    height: 100%;
   }
 }

@@ -26,7 +26,6 @@ export class PermissionsComponent implements OnInit {
     { id: 'admin.products', label: 'Productos', description: 'Gestion, stock, importacion e IA' },
     { id: 'admin.orders', label: 'Pedidos', description: 'Ver y actualizar estados de pedidos' },
     { id: 'admin.promotions', label: 'Promociones', description: 'Crear y administrar promociones' },
-    { id: 'admin.payments', label: 'Pagos', description: 'Configurar pagos y Wompi' },
     { id: 'admin.settings', label: 'Settings', description: 'Personalizar pagina / ajustes globales' },
     { id: 'admin.users', label: 'Usuarios', description: 'Gestion de usuarios, roles y segmentos' }
   ];
@@ -106,6 +105,6 @@ export class PermissionsComponent implements OnInit {
         }
       } catch (e) {}
     }
-    return '/assets/images/logo.png';
+    return '/assets/images/logo.svg';
   }
 }

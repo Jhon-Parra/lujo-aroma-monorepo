@@ -52,7 +52,7 @@ export class AppComponent implements OnInit, OnDestroy {
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
       "name": "Lujo & Aroma",
-      "image": "https://lujo_aromacol.com/assets/images/logo.png",
+      "image": "https://lujo_aromacol.com/assets/images/logo.svg",
       "@id": "https://lujo_aromacol.com",
       "url": "https://lujo_aromacol.com",
       "telephone": "+573001234567",
@@ -102,6 +102,7 @@ export class AppComponent implements OnInit, OnDestroy {
         if (!s) return;
         this.settings = s;
         this.whatsappUrl = this.buildWhatsappUrl(s.whatsapp_number || '', s.whatsapp_message || '');
+        this.applyLogoCssVars(s);
         this.updateFavicon(s.logo_url);
       }
     });
@@ -110,6 +111,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (s) => {
         this.settings = s;
         this.whatsappUrl = this.buildWhatsappUrl(s?.whatsapp_number || '', s?.whatsapp_message || '');
+        this.applyLogoCssVars(s);
         this.updateFavicon(s?.logo_url);
       },
       error: () => {
@@ -183,13 +185,127 @@ export class AppComponent implements OnInit, OnDestroy {
     const link: HTMLLinkElement | null = this.document.querySelector("link[rel*='icon']");
     if (link) {
       const url = this.getAbsoluteLogoUrl(logoUrl);
-      link.href = url + (url.includes('?') ? '&' : '?') + 'v=' + new Date().getTime();
+
+      // Intentar generar un favicon con fondo (para logos plateados/transparentes)
+      // Si falla por CORS/taint, hacemos fallback al URL directo.
+      this.generateBadgeFaviconPng(url)
+        .then((dataUrl) => {
+          if (dataUrl) {
+            link.type = 'image/png';
+            link.href = dataUrl;
+
+            const apple: HTMLLinkElement | null = this.document.querySelector("link[rel='apple-touch-icon']");
+            if (apple) {
+              apple.href = dataUrl;
+            }
+            return;
+          }
+
+          link.href = url + (url.includes('?') ? '&' : '?') + 'v=' + new Date().getTime();
+        })
+        .catch(() => {
+          link.href = url + (url.includes('?') ? '&' : '?') + 'v=' + new Date().getTime();
+        });
     }
+  }
+
+  private applyLogoCssVars(s: Settings | null | undefined): void {
+    const root = this.document?.documentElement;
+    if (!root) return;
+
+    const mobileRaw = Number((s as any)?.logo_height_mobile);
+    const desktopRaw = Number((s as any)?.logo_height_desktop);
+
+    const clampInt = (n: number, min: number, max: number, fallback: number): number => {
+      if (!Number.isFinite(n)) return fallback;
+      const v = Math.trunc(n);
+      return Math.min(Math.max(v, min), max);
+    };
+
+    // Guardamos el valor real para que footer/admin puedan escalar.
+    // El navbar igual limita visualmente con CSS clamp().
+    const mobile = clampInt(mobileRaw, 24, 600, 72);
+    const desktop = clampInt(desktopRaw, 24, 600, 96);
+
+    root.style.setProperty('--logo-h-mobile', `${mobile}px`);
+    root.style.setProperty('--logo-h-desktop', `${desktop}px`);
+  }
+
+  private generateBadgeFaviconPng(url: string): Promise<string | null> {
+    const src = String(url || '').trim();
+    if (!src) return Promise.resolve(null);
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      // Necesario para dibujar en canvas sin taint (si el host permite CORS)
+      img.crossOrigin = 'anonymous';
+
+      img.onload = () => {
+        try {
+          const size = 96;
+          const canvas = this.document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(null);
+            return;
+          }
+
+          // Background circle (navy) + subtle gold ring
+          const cx = size / 2;
+          const cy = size / 2;
+          const r = (size / 2) - 4;
+
+          const g = ctx.createLinearGradient(0, 0, size, size);
+          g.addColorStop(0, '#07121a');
+          g.addColorStop(1, '#274C68');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = 'rgba(216, 192, 138, 0.65)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+
+          // Fit logo inside
+          const pad = 18;
+          const box = size - pad * 2;
+          const iw = img.naturalWidth || img.width;
+          const ih = img.naturalHeight || img.height;
+          if (!iw || !ih) {
+            resolve(null);
+            return;
+          }
+
+          const scale = Math.min(box / iw, box / ih);
+          const w = iw * scale;
+          const h = ih * scale;
+          const x = (size - w) / 2;
+          const y = (size - h) / 2;
+
+          ctx.drawImage(img, x, y, w, h);
+
+          // Export
+          const dataUrl = canvas.toDataURL('image/png');
+          resolve(dataUrl);
+        } catch {
+          resolve(null);
+        }
+      };
+
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
   }
 
   private getAbsoluteLogoUrl(logoUrl: string | null | undefined): string {
     const url = (logoUrl || '').trim();
-    if (!url) return 'assets/images/logo.png';
+    if (!url) return 'assets/images/logo.svg';
 
     // Allow referencing frontend assets directly from settings
     if (url.startsWith('assets/') || url.startsWith('/assets/')) return url.replace(/^\/+/, '');

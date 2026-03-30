@@ -4,8 +4,14 @@
         <!-- Logo Section -->
         <div class="flex flex-col md:flex-row items-center justify-between mb-8 pb-8 border-b border-[#dcdcd4]/50 gap-6">
             <a routerLink="/" class="inline-block group transition-transform duration-500 hover:scale-105">
-                <img [src]="getLogoUrl()" (error)="onLogoError($event)" [alt]="settings?.boutique_title || 'Lujo & Aroma'"
-                    class="max-h-16 md:max-h-20 w-auto object-contain">
+                <span class="brand-logo-badge">
+                    <img
+                        [src]="getLogoUrl()"
+                        (error)="onLogoError($event)"
+                        [alt]="settings?.boutique_title || 'Lujo & Aroma'"
+                        class="brand-logo-img footer-logo object-contain"
+                    >
+                </span>
             </a>
             <div class="flex items-center space-x-4 text-charcoal">
                 <!-- Instagram -->

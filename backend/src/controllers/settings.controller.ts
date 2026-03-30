@@ -211,18 +211,6 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
             'perfume_lujo_precio',
             'envio_prioritario_image_url',
             'perfume_lujo_image_url',
-            'email_from_name',
-            'email_from_address',
-            'email_reply_to',
-            'email_bcc_orders',
-            'smtp_host',
-            'smtp_port',
-            'smtp_secure',
-            'smtp_user',
-            'smtp_from',
-            'smtp_pass_enc',
-            'smtp_pass_iv',
-            'smtp_pass_tag',
             'instagram_access_token',
             'boutique_title',
             'boutique_address_line1',
@@ -238,11 +226,6 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
             'seller_nequi_number',
             'seller_payment_notes',
 
-            'wompi_env',
-            'wompi_public_key',
-            'wompi_private_key_enc',
-            'wompi_private_key_iv',
-            'wompi_private_key_tag',
             'hero_media_type',
             'hero_media_url',
 
@@ -293,16 +276,6 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
         if (cols.perfume_lujo_precio) selectParts.push('perfume_lujo_precio');
         if (cols.envio_prioritario_image_url) selectParts.push('envio_prioritario_image_url');
         if (cols.perfume_lujo_image_url) selectParts.push('perfume_lujo_image_url');
-        if (cols.email_from_name) selectParts.push('email_from_name');
-        if (cols.email_from_address) selectParts.push('email_from_address');
-        if (cols.email_reply_to) selectParts.push('email_reply_to');
-        if (cols.email_bcc_orders) selectParts.push('email_bcc_orders');
-
-        if (cols.smtp_host) selectParts.push('smtp_host');
-        if (cols.smtp_port) selectParts.push('smtp_port');
-        if (cols.smtp_secure) selectParts.push('smtp_secure');
-        if (cols.smtp_user) selectParts.push('smtp_user');
-        if (cols.smtp_from) selectParts.push('smtp_from');
 
         if (cols.boutique_title) selectParts.push('boutique_title');
         if (cols.boutique_address_line1) selectParts.push('boutique_address_line1');
@@ -317,8 +290,6 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
         if (cols.seller_bank_account_id) selectParts.push('seller_bank_account_id');
         if (cols.seller_nequi_number) selectParts.push('seller_nequi_number');
         if (cols.seller_payment_notes) selectParts.push('seller_payment_notes');
-
-        if (cols.wompi_env) selectParts.push('wompi_env');
 
         if (cols.alert_sales_delta_pct) selectParts.push('alert_sales_delta_pct');
         if (cols.alert_abandoned_delta_pct) selectParts.push('alert_abandoned_delta_pct');
@@ -354,6 +325,14 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
             smtp_configured: false
         };
 
+        // SMTP solo por .env (no exponer credenciales; solo un booleano)
+        settings.smtp_configured = !!(
+            String(process.env.SMTP_HOST || '').trim() &&
+            String(process.env.SMTP_USER || '').trim() &&
+            String(process.env.SMTP_PASS || '').trim() &&
+            String(process.env.SMTP_FROM || '').trim()
+        );
+
         if (cols.home_carousel) {
             const parsed = parseJsonMaybe((rows[0] as any).home_carousel);
             if (parsed !== null) settings.home_carousel = parsed;
@@ -371,22 +350,6 @@ export const getSettings = async (req: Request, res: Response): Promise<void> =>
                 settings.instagram_feed_configured = !!cfgRows?.[0]?.configured;
             } catch {
                 settings.instagram_feed_configured = false;
-            }
-        }
-
-        if (cols.smtp_host && cols.smtp_user && cols.smtp_from && cols.smtp_pass_enc) {
-            try {
-                const [smtpRows] = await pool.query<any[]>(
-                    'SELECT smtp_pass_enc FROM configuracionglobal WHERE id = 1'
-                );
-                settings.smtp_configured = !!(
-                    String((rows[0] as any)?.smtp_host || '').trim() &&
-                    String((rows[0] as any)?.smtp_user || '').trim() &&
-                    String((rows[0] as any)?.smtp_from || '').trim() &&
-                    String(smtpRows?.[0]?.smtp_pass_enc || '').trim()
-                );
-            } catch {
-                settings.smtp_configured = false;
             }
         }
 
@@ -677,18 +640,6 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             'envio_prioritario_image_url',
             'perfume_lujo_image_url',
             'instagram_access_token',
-            'email_from_name',
-            'email_from_address',
-            'email_reply_to',
-            'email_bcc_orders',
-            'smtp_host',
-            'smtp_port',
-            'smtp_secure',
-            'smtp_user',
-            'smtp_from',
-            'smtp_pass_enc',
-            'smtp_pass_iv',
-            'smtp_pass_tag',
             'boutique_title',
             'boutique_address_line1',
             'boutique_address_line2',
@@ -701,11 +652,6 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             'seller_bank_account_id',
             'seller_nequi_number',
             'seller_payment_notes',
-            'wompi_env',
-            'wompi_public_key',
-            'wompi_private_key_enc',
-            'wompi_private_key_iv',
-            'wompi_private_key_tag',
             'hero_media_type',
             'hero_media_url',
 

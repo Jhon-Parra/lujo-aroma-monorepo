@@ -22,22 +22,24 @@ export class ConfigService {
     // Evitar multiples cargas en paralelo
     if (this.inflight) return this.inflight;
 
-    // 1) Usar cache si existe (no bloquea el primer render en cargas repetidas)
+    // Importante: el apiUrl se usa para construir URLs en varios servicios.
+    // Si resolvemos el APP_INITIALIZER usando un valor cacheado y luego lo
+    // cambiamos en background, algunos servicios pueden quedar apuntando al
+    // endpoint viejo durante toda la sesion.
+    // Por eso: usar cache como fallback, pero SIEMPRE intentar cargar de red
+    // (assets/config.json) antes de continuar el bootstrap.
     const cached = this.loadFromLocal();
     if (cached) {
       this.config = cached;
       updateApiConfig(cached.apiUrl, cached.googleClientId);
-      // Refrescar en background sin bloquear
-      this.inflight = this.refreshFromNetwork().finally(() => {
-        this.inflight = undefined;
-      });
-      return;
     }
 
-    // 2) Primera carga: esperar config para no usar endpoints equivocados
-    this.inflight = this.refreshFromNetwork().finally(() => {
+    this.inflight = (async () => {
+      await this.refreshFromNetwork();
+    })().finally(() => {
       this.inflight = undefined;
     });
+
     return this.inflight;
   }
 
@@ -50,7 +52,7 @@ export class ConfigService {
         this.saveToLocal(cfg);
       }
     } catch (error) {
-      console.error('Could not load app config, falling back to defaults', error);
+      console.error('Could not load app config, falling back to cached/defaults', error);
       // Defaults already in api-config.ts
     }
   }

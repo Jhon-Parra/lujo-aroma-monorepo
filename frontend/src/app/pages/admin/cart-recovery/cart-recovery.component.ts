@@ -87,6 +87,6 @@ export class CartRecoveryComponent implements OnInit {
         }
       } catch (e) {}
     }
-    return '/assets/images/logo.png';
+    return '/assets/images/logo.svg';
   }
 }

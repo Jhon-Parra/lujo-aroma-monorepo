@@ -107,18 +107,6 @@ export const updateSettingsSchema = z.object({
     perfume_lujo_image_url: z.string().max(500).optional(),
     empaque_regalo_image_url: z.string().max(500).optional(),
 
-    email_from_name: z.string().max(120).optional(),
-    email_from_address: z.string().max(200).optional(),
-    email_reply_to: z.string().max(200).optional(),
-    email_bcc_orders: z.string().max(500).optional(),
-
-    smtp_host: z.string().max(255).optional(),
-    smtp_port: intOptional(1, 65535),
-    smtp_secure: booleanCoerce().optional(),
-    smtp_user: z.string().max(200).optional(),
-    smtp_from: z.string().max(255).optional(),
-    smtp_pass: z.string().max(300).optional(),
-
     boutique_title: z.string().max(120).optional(),
     boutique_address_line1: z.string().max(200).optional(),
     boutique_address_line2: z.string().max(200).optional(),
@@ -133,9 +121,7 @@ export const updateSettingsSchema = z.object({
     seller_nequi_number: z.string().max(30).optional(),
     seller_payment_notes: z.string().max(500).optional(),
 
-    wompi_env: z.enum(['sandbox', 'production']).optional(),
-    wompi_public_key: z.string().max(200).optional(),
-    wompi_private_key: z.string().max(300).optional()
+    // Email/SMTP y Wompi se configuran solo por variables de entorno (.env)
 });
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;

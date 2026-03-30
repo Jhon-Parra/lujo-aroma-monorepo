@@ -42,8 +42,8 @@
             <ng-container *ngIf="homeSlides[activeSlideIndex] as slide">
                 <div class="max-w-2xl">
                     <div class="inline-flex items-center gap-3 mb-6 animate-fade-in-up" style="animation-delay: 0.05s">
-                        <span class="w-10 h-[1px] bg-gold"></span>
-                        <span class="text-gold tracking-[0.35em] font-bold uppercase text-[10px]">Perfumes originales</span>
+                        <span class="w-12 h-[2px] home-gold-rule"></span>
+                        <span class="home-gold-text tracking-[0.35em] font-extrabold uppercase text-[11px] md:text-xs">Perfumes originales</span>
                     </div>
 
                     <h1 class="font-serif text-5xl md:text-7xl text-white leading-[1.05] mb-6 animate-fade-in-up" style="animation-delay: 0.18s">
@@ -190,11 +190,11 @@
     </section>
 
     <!-- Categorias como embudo de ventas -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16">
         <div class="text-center mb-12">
             <div class="text-navy-light text-[10px] font-bold uppercase tracking-[0.35em]">Explora por intencion</div>
-            <h2 class="font-serif text-4xl text-navy-dark mb-4 uppercase tracking-[0.1em]">Encuentra tu esencia</h2>
-            <p class="text-navy text-sm uppercase tracking-[0.2em] font-medium">Ruta directa hacia compra: menos friccion, mas deseo</p>
+            <h2 class="font-serif text-4xl text-navy-dark mb-2 uppercase tracking-[0.1em]">Encuentra tu esencia</h2>
+            <p class="text-navy text-sm uppercase tracking-[0.2em] font-medium">Ruta directa hacia compra</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -239,7 +239,7 @@
     </section>
 
     <!-- Recomendación Inteligente IA - Buscador Central Épico -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div class="relative rounded-[2.5rem] overflow-hidden bg-navy shadow-2xl p-6 md:p-12 lg:p-20 text-center flex flex-col items-center justify-center min-h-[400px] lg:min-h-[500px] border border-gold/20">
             <!-- Background Magic -->
             <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.15),transparent_70%)] animate-pulse" style="animation-duration: 4s;"></div>
@@ -254,10 +254,10 @@
             </div>
 
             <!-- Titles -->
-            <h2 class="relative z-10 font-serif text-3xl md:text-5xl lg:text-5xl text-white mb-3 sm:mb-4 leading-tight animate-fade-in-up" style="animation-delay: 100ms;">
+            <h2 class="relative z-10 font-serif text-3xl md:text-5xl lg:text-5xl text-white mb-4 sm:mb-6 leading-tight animate-fade-in-up" style="animation-delay: 100ms;">
                 Descubre tu Aroma Ideal
             </h2>
-            <p class="relative z-10 text-cream/70 text-sm md:text-lg max-w-2xl mx-auto mb-8 font-light animate-fade-in-up" style="animation-delay: 200ms;">
+            <p class="relative z-10 text-cream/70 text-sm md:text-lg max-w-2xl mx-auto mb-10 md:mb-12 font-light animate-fade-in-up leading-relaxed" style="animation-delay: 200ms;">
                 Nuestra Inteligencia artificial analiza tus gustos, el clima y la ocasión para recomendarte la fragancia que se convertirá en tu sello personal.
             </p>
 
@@ -294,11 +294,11 @@
     </section>
 
     <!-- Mas Vendidos / Bestsellers -->
-    <section class="w-full bg-white py-12 md:py-20 lg:py-24">
+    <section class="w-full bg-white py-8 md:py-12 lg:py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
                 <div>
-                    <span class="text-gold text-xs font-bold uppercase tracking-[0.3em] mb-2 block">Selección Élite</span>
+                    <span class="text-gold text-xs font-bold uppercase tracking-[0.3em] mb-1 block">Selección Élite</span>
                     <h2 class="font-serif text-4xl md:text-5xl text-charcoal">LOS MÁS VENDIDOS</h2>
                 </div>
                 <a routerLink="/catalog" [queryParams]="{ sort: 'popular' }" class="text-charcoal hover:text-gold font-bold uppercase tracking-widest text-xs flex items-center gap-2 border-b border-charcoal/20 pb-1 hover:border-gold transition-all">
@@ -321,7 +321,7 @@
     </section>
 
     <!-- Highlighted Promotion Section -->
-    <section *ngIf="promotions.length > 0" class="w-full py-10 md:py-16 lg:py-24 bg-[#FAFAF9]">
+    <section *ngIf="promotions.length > 0" class="w-full py-8 md:py-12 lg:py-16 bg-[#FAFAF9]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="relative rounded-[2.5rem] overflow-hidden bg-charcoal aspect-[16/9] md:aspect-[21/7] group shadow-2xl">
                 <img *ngIf="promotions[0].imagen_url" [src]="promotions[0].imagen_url" class="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-[2000ms] group-hover:scale-105">
@@ -366,7 +366,7 @@
     </section>
 
     <!-- Nuevos Ingresos -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20 lg:py-24">
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 lg:py-16">
         <div class="text-center mb-10 md:mb-16">
             <span class="text-gold text-xs font-bold uppercase tracking-[0.3em] mb-2 block">Justo en Tendencia</span>
             <h2 class="font-serif text-4xl md:text-5xl text-charcoal">NUEVOS INGRESOS</h2>
@@ -394,7 +394,7 @@
     </section>
 
     <!-- Social Proof: Reseñas Premium (Dark Mode Marquee) -->
-    <section class="w-full bg-navy border-y border-gold/20 py-16 md:py-24 relative overflow-hidden">
+    <section class="w-full bg-navy border-y border-gold/20 py-10 md:py-16 relative overflow-hidden">
         <!-- Texturas de fondo -->
         <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-[0.03] pointer-events-none"></div>
         <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(212,175,55,0.08),transparent_50%)] pointer-events-none"></div>
@@ -458,9 +458,9 @@
     </section>
 
     <!-- Social Media Feed - Mosaico Asimétrico -->
-    <section class="w-full bg-[#f4f4f0] py-16 md:py-24 pb-24 lg:pb-32 relative">
+    <section class="w-full bg-[#f4f4f0] py-8 md:py-12 pb-12 lg:pb-16 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex flex-col lg:flex-row items-center justify-between mb-16 gap-8 text-center lg:text-left">
+            <div class="flex flex-col lg:flex-row items-center justify-between mb-8 md:mb-10 gap-8 text-center lg:text-left">
                 <div class="max-w-2xl">
                     <span class="text-gold text-xs font-bold uppercase tracking-[0.3em] mb-3 block">Comunidad Exclusiva</span>
                     <h2 class="font-serif text-3xl md:text-5xl text-charcoal leading-tight">INSPIRACIÓN EN CADA GOTA</h2>
@@ -502,7 +502,7 @@
             </ng-container>
 
             <!-- Extra Socials Bottom Border -->
-            <div class="mt-20 flex justify-center items-center gap-6 border-t border-[#ecece5] pt-12">
+            <div class="mt-8 md:mt-10 flex justify-center items-center gap-6 border-t border-[#ecece5] pt-6">
                 <span class="text-[10px] uppercase tracking-[0.3em] font-bold text-sage mr-4 hidden sm:block">Conecta con Nosotros</span>
                 
                 <a *ngIf="tiktokUrl" [href]="tiktokUrl" target="_blank" class="w-12 h-12 rounded-full border border-transparent bg-white shadow-md flex items-center justify-center text-charcoal hover:-translate-y-1 hover:border-gold hover:text-gold transition-all duration-300">

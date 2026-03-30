@@ -5,8 +5,10 @@
         <div class="h-28 flex items-center justify-center border-b border-gray-700 bg-white/5 py-4">
             <a routerLink="/"
                 class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300">
-                <img [src]="getAdminLogoUrl() || '/assets/images/logo.png'" alt="Lujo & Aroma Admin"
-                    class="h-16 w-auto object-contain mx-auto mix-blend-screen" />
+                <span class="brand-logo-badge">
+                    <img [src]="getAdminLogoUrl() || '/assets/images/logo.svg'" alt="Lujo & Aroma Admin"
+                        class="h-16 w-auto object-contain mx-auto brand-logo-img" />
+                </span>
                 <span class="text-[9px] text-gold/80 font-sans tracking-widest mt-2 uppercase font-bold">Panel
                     Admin</span>
             </a>
@@ -69,22 +71,6 @@
                 </svg>
                 <span>Pedidos</span>
             </a>
-            <a routerLink="/admin/payments"
-                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-10V6m0 12v-2m8-4a8 8 0 11-16 0 8 8 0 0116 0z" />
-                </svg>
-                <span>Pagos</span>
-            </a>
-            <a routerLink="/admin/emails"
-                class="flex items-center space-x-3 p-3 rounded-md hover:bg-gray-800 transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 8l9 6 9-6M4 6h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2z"></path>
-                </svg>
-                <span>Correos</span>
-            </a>
             <!-- Link a Configuración Activo -->
             <a routerLink="/admin/settings"
                 class="flex items-center space-x-3 p-3 rounded-md bg-gray-800 text-gold transition-colors">
@@ -140,8 +126,6 @@
                     <a routerLink="/admin/promotions" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Promos</a>
                     <a routerLink="/admin/cart-recovery" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Recuperación</a>
                     <a routerLink="/admin/intelligence" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Inteligencia</a>
-                    <a routerLink="/admin/payments" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Pagos</a>
-                    <a routerLink="/admin/emails" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Correos</a>
                     <a routerLink="/admin/settings" class="px-3 py-2 text-[11px] uppercase tracking-widest font-bold border border-[#dcdcd4] bg-white rounded-md">Apariencia</a>
                 </div>
             </div>
@@ -199,21 +183,26 @@
                                 <p class="text-xs text-gray-500 mt-2">Recomendado: PNG con fondo transparente.</p>
                             </div>
 
-                            <div class="flex items-center justify-center bg-cream border border-[#ecece5] rounded-md p-4">
-                                <img [src]="getAdminLogoUrl() || '/assets/images/logo.png'" alt="Logo Preview" class="object-contain"
-                                    [style.height.px]="settings.logo_height_mobile || 96" />
+                            <div class="flex items-center justify-center border border-[#ecece5] rounded-md p-4 bg-[#0b1f2c]">
+                                <img
+                                    [src]="getAdminLogoUrl() || '/assets/images/logo.svg'"
+                                    alt="Logo Preview"
+                                    class="object-contain drop-shadow-xl"
+                                    [style.height.px]="settings.logo_height_mobile || 96"
+                                    [style.maxHeight.px]="160"
+                                />
                             </div>
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <div>
                                 <label class="block text-xs font-bold text-soft-charcoal tracking-widest uppercase mb-2">Alto (mobile) px</label>
-                                <input type="number" min="24" max="220" [(ngModel)]="settings.logo_height_mobile"
+                                <input type="number" min="24" max="600" [(ngModel)]="settings.logo_height_mobile"
                                     class="w-full border border-[#ecece5] rounded-md px-4 py-2 focus:ring-gold focus:border-gold outline-none">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-soft-charcoal tracking-widest uppercase mb-2">Alto (desktop) px</label>
-                                <input type="number" min="24" max="260" [(ngModel)]="settings.logo_height_desktop"
+                                <input type="number" min="24" max="600" [(ngModel)]="settings.logo_height_desktop"
                                     class="w-full border border-[#ecece5] rounded-md px-4 py-2 focus:ring-gold focus:border-gold outline-none">
                             </div>
                         </div>
@@ -646,93 +635,6 @@
 
                 <div class="mt-6 p-4 bg-cream border border-[#ecece5] rounded-md text-sm text-soft-charcoal">
                     Estos valores se aplican como <strong>extras opcionales</strong> en el carrito/checkout.
-                </div>
-            </div>
-
-            <!-- Email Settings -->
-            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
-                <div class="flex items-center justify-between border-b border-[#ecece5] pb-4 mb-6">
-                    <h3 class="font-serif text-xl">Correo (Remitente)</h3>
-                    <span class="text-xs text-soft-charcoal">
-                        SMTP: <strong>{{ settings.smtp_configured ? 'Configurado' : 'Pendiente' }}</strong>
-                    </span>
-                </div>
-
-                <div class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Nombre remitente</label>
-                            <input type="text" [(ngModel)]="settings.email_from_name" placeholder="Lujo & Aroma"
-                                class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Correo remitente</label>
-                            <input type="email" [(ngModel)]="settings.email_from_address" placeholder="no-reply@tudominio.com"
-                                class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Reply-To (opcional)</label>
-                            <input type="email" [(ngModel)]="settings.email_reply_to" placeholder="soporte@tudominio.com"
-                                class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">BCC pedidos (opcional)</label>
-                            <input type="text" [(ngModel)]="settings.email_bcc_orders" placeholder="ventas@tudominio.com, admin@tudominio.com"
-                                class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
-                        </div>
-                    </div>
-
-                    <div class="p-4 bg-cream border border-[#ecece5] rounded-md text-sm text-soft-charcoal">
-                        Estos campos definen el <strong>remitente</strong> del correo.
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
-                <h3 class="font-serif text-xl border-b border-[#ecece5] pb-4 mb-6">Credenciales SMTP</h3>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">SMTP Host</label>
-                        <input type="text" [(ngModel)]="settings.smtp_host" placeholder="smtp.gmail.com"
-                            class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">SMTP Port</label>
-                        <input type="number" min="1" [(ngModel)]="settings.smtp_port" placeholder="465"
-                            class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">SMTP Secure</label>
-                        <div class="flex items-center gap-3">
-                            <input type="checkbox" [(ngModel)]="settings.smtp_secure"
-                                class="h-4 w-4 text-gold border-[#dcdcd4] rounded">
-                            <span class="text-sm text-soft-charcoal">Usar conexion segura (SSL/TLS)</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">SMTP User</label>
-                        <input type="text" [(ngModel)]="settings.smtp_user" placeholder="tu_correo@gmail.com"
-                            class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">SMTP Pass</label>
-                        <input type="password" [(ngModel)]="settings.smtp_pass" placeholder="tu_contrasena_de_aplicacion"
-                            class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
-                        <p class="text-xs text-gray-500 mt-2">Se guarda cifrada. Deja vacio si no quieres cambiarla.</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">SMTP From</label>
-                        <input type="text" [(ngModel)]="settings.smtp_from" placeholder='"Tu Nombre <tu_correo@gmail.com>"'
-                            class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
-                    </div>
-                </div>
-
-                <div class="p-4 bg-cream border border-[#ecece5] rounded-md text-sm text-soft-charcoal mt-6">
-                    Usa una <strong>contrasena de aplicacion</strong> del proveedor de correo. Para Gmail: SMTP_HOST=smtp.gmail.com, SMTP_PORT=465, SMTP_SECURE=true.
                 </div>
             </div>
 

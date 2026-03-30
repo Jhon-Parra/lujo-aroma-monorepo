@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
@@ -18,6 +18,16 @@ export class OrderSuccessComponent {
   error = '';
   order: Order | null = null;
   syncingPayment = false;
+
+  showAuthenticityPopup = false;
+
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Escape') return;
+    if (!this.showAuthenticityPopup) return;
+    event.preventDefault();
+    this.closeAuthenticityPopup();
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -49,14 +59,25 @@ export class OrderSuccessComponent {
     });
   }
 
+  closeAuthenticityPopup(): void {
+    this.showAuthenticityPopup = false;
+  }
+
   private fetch(id: string): void {
     this.loading = true;
     this.error = '';
     this.order = null;
+    this.showAuthenticityPopup = false;
 
     this.orderService.getMyOrderById(id).subscribe({
       next: (o) => {
         this.order = o;
+        // Mostrar el emergente cada vez que se confirme/registre un pedido.
+        const orderId = String((o as any)?.id || '').trim();
+        const displayStatus = this.orderService.getCustomerDisplayStatus(o as any);
+        if (orderId && displayStatus !== 'CANCELADO') {
+          this.showAuthenticityPopup = true;
+        }
         this.loading = false;
       },
       error: (err) => {

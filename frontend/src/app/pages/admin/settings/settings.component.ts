@@ -56,18 +56,6 @@ export class SettingsComponent implements OnInit {
     perfume_lujo_precio: 0,
     perfume_lujo_nombre: 'Perfumero de lujo (5ml)',
     empaque_regalo_precio: 0,
-    email_from_name: '',
-    email_from_address: '',
-    email_reply_to: '',
-    email_bcc_orders: '',
-
-    smtp_host: '',
-    smtp_port: 465,
-    smtp_secure: true,
-    smtp_user: '',
-    smtp_from: '',
-    smtp_pass: '',
-    smtp_configured: false,
 
     boutique_title: 'Nuestra Boutique',
     boutique_address_line1: 'Calle 12 #13-85',
@@ -348,7 +336,7 @@ export class SettingsComponent implements OnInit {
 
   getLogoUrl(): string {
     const url = (this.settings.logo_url || '').trim();
-    if (!url) return 'assets/images/logo.png';
+    if (!url) return 'assets/images/logo.svg';
 
     if (url.startsWith('assets/') || url.startsWith('/assets/')) return url.replace(/^\/+/, '');
     if (url.startsWith('data:') || url.startsWith('http')) return url;
@@ -465,22 +453,6 @@ export class SettingsComponent implements OnInit {
     formData.append('perfume_lujo_nombre', String((this.settings as any).perfume_lujo_nombre ?? 'Perfumero de lujo (5ml)'));
     formData.append('empaque_regalo_precio', String((this.settings as any).empaque_regalo_precio ?? 0));
 
-    formData.append('email_from_name', this.settings.email_from_name || '');
-    formData.append('email_from_address', this.settings.email_from_address || '');
-    formData.append('email_reply_to', this.settings.email_reply_to || '');
-    formData.append('email_bcc_orders', this.settings.email_bcc_orders || '');
-
-    formData.append('smtp_host', String(this.settings.smtp_host || ''));
-    const smtpPort = Number(this.settings.smtp_port);
-    const safeSmtpPort = Number.isFinite(smtpPort) && smtpPort >= 1 ? smtpPort : 465;
-    formData.append('smtp_port', String(safeSmtpPort));
-    formData.append('smtp_secure', this.settings.smtp_secure ? 'true' : 'false');
-    formData.append('smtp_user', String(this.settings.smtp_user || ''));
-    formData.append('smtp_from', String(this.settings.smtp_from || ''));
-    if (this.settings.smtp_pass && String(this.settings.smtp_pass).trim()) {
-      formData.append('smtp_pass', String(this.settings.smtp_pass).trim());
-    }
-
     formData.append('boutique_title', this.settings.boutique_title || '');
     formData.append('boutique_address_line1', this.settings.boutique_address_line1 || '');
     formData.append('boutique_address_line2', this.settings.boutique_address_line2 || '');
@@ -575,7 +547,6 @@ export class SettingsComponent implements OnInit {
         this.selectedEmpaqueRegalorImageFile = null;
         this.homeSlideFiles = [null, null, null];
         this.homeCategoryFiles = [null, null, null, null];
-        this.settings.smtp_pass = '';
         alert('Configuración actualizada exitosamente');
       },
       error: (err) => {
@@ -615,19 +586,6 @@ export class SettingsComponent implements OnInit {
         tiktok_url: '',
         whatsapp_number: '',
         whatsapp_message: '',
-        email_from_name: '',
-        email_from_address: '',
-        email_reply_to: '',
-        email_bcc_orders: '',
-
-        smtp_host: '',
-        smtp_port: 465,
-        smtp_secure: true,
-        smtp_user: '',
-        smtp_from: '',
-        smtp_pass: '',
-        smtp_configured: false,
-
         boutique_title: 'Nuestra Boutique',
         boutique_address_line1: 'Calle 12 #13-85',
         boutique_address_line2: 'Bogotá, Colombia',
@@ -668,6 +626,6 @@ export class SettingsComponent implements OnInit {
         }
       } catch (e) {}
     }
-    return '/assets/images/logo.png';
+    return '/assets/images/logo.svg';
   }
 }

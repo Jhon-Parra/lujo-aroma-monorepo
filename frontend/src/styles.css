@@ -27,6 +27,25 @@
 
 @layer components {
 
+  /* Badge detrás del logo (sirve para logos plateados/transparentes) */
+  .brand-logo-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 14px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(7, 18, 26, 0.88) 0%, rgba(39, 76, 104, 0.35) 100%);
+    border: 1px solid rgba(216, 192, 138, 0.22);
+    box-shadow: 0 14px 34px rgba(7, 18, 26, 0.18);
+  }
+
+  .brand-logo-img {
+    filter:
+      drop-shadow(0 12px 22px rgba(0, 0, 0, 0.55))
+      drop-shadow(0 1px 0 rgba(255, 255, 255, 0.10))
+      drop-shadow(0 0 18px rgba(39, 76, 104, 0.55));
+  }
+
   /* Botón Principal */
   .btn-primary {
     @apply bg-gold text-white font-medium py-2 px-6 rounded-md hover:bg-opacity-90 transition-all duration-300;

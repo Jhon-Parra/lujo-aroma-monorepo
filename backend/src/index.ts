@@ -22,6 +22,7 @@ import categoryRoutes from './routes/category.routes';
 import emailTemplatesRoutes from './routes/email-templates.routes';
 import intelligenceRoutes from './routes/intelligence.routes';
 import seoRoutes from './routes/seo.routes';
+import { pool } from './config/database';
 import { 
     generalLimiter, 
     authLimiter, 
@@ -33,7 +34,8 @@ import {
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import path from 'path';
 
-dotenv.config();
+// Cargar siempre el .env del backend, independiente del working directory.
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 process.on('uncaughtException', (err) => {
     console.error('🔥 UNCAUGHT EXCEPTION:', err);
@@ -215,8 +217,61 @@ app.use('/api/email-templates', emailTemplatesRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
 app.use('/api/seo', seoRoutes);
 
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK', message: 'Lujo & Aroma API is running' });
+app.get('/health', async (req, res) => {
+    const base = { status: 'OK', message: 'Lujo & Aroma API is running' };
+
+    // En produccion no exponemos detalles internos.
+    if (process.env.NODE_ENV === 'production') {
+        res.status(200).json(base);
+        return;
+    }
+
+    try {
+        const [rows] = await pool.query<any[]>(
+            'SELECT DATABASE() AS db, CURRENT_USER() AS currentUser, @@hostname AS db_host, @@port AS db_port, @@socket AS db_socket, VERSION() AS db_version'
+        );
+        const info = (rows as any[])?.[0] || null;
+        res.status(200).json({
+            ...base,
+            db: info?.db || null,
+            db_user: info?.currentUser || null,
+            db_host: info?.db_host || null,
+            db_port: info?.db_port ?? null,
+            db_socket: info?.db_socket || null,
+            db_version: info?.db_version || null
+        });
+    } catch (e: any) {
+        res.status(200).json({
+            ...base,
+            db: null,
+            db_error: e?.code || e?.message || 'DB_ERROR'
+        });
+    }
+});
+
+app.get('/health/db', async (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        res.status(404).json({ ok: false, error: 'Not Found' });
+        return;
+    }
+
+    try {
+        const [rows] = await pool.query<any[]>(
+            'SELECT DATABASE() AS db, CURRENT_USER() AS currentUser, @@hostname AS db_host, @@port AS db_port, @@socket AS db_socket, VERSION() AS db_version'
+        );
+        const info = (rows as any[])?.[0] || null;
+        res.status(200).json({
+            ok: true,
+            db: info?.db || null,
+            db_user: info?.currentUser || null,
+            db_host: info?.db_host || null,
+            db_port: info?.db_port ?? null,
+            db_socket: info?.db_socket || null,
+            db_version: info?.db_version || null
+        });
+    } catch (e: any) {
+        res.status(500).json({ ok: false, error: e?.code || e?.message || 'DB_ERROR' });
+    }
 });
 
 app.use(notFoundHandler);

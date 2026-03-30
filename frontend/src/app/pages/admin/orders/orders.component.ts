@@ -262,6 +262,6 @@ export class OrdersComponent implements OnInit {
         }
       } catch (e) {}
     }
-    return '/assets/images/logo.png';
+    return '/assets/images/logo.svg';
   }
 }

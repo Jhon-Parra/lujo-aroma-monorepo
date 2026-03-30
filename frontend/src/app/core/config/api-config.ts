@@ -5,7 +5,7 @@
 export const API_CONFIG = {
     serverUrl: 'http://localhost:3000',
     baseUrl: 'http://localhost:3000/api',
-    googleClientId: '129037757547-mvt7e9b254t59dc4s7mu8vnth62lf7lr.apps.googleusercontent.com'
+    googleClientId: '83015258138-h30gb9n5k9le48kt6amfgje39fgfr3dg.apps.googleusercontent.com'
 };
 
 export function updateApiConfig(apiUrl: string, googleClientId: string) {

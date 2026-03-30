@@ -422,6 +422,57 @@ export class OrderController {
             if (costosExtra > 0) printTotal('Adicionales:', costosExtra);
             printTotal('TOTAL:', Number(order.total || 0), true);
 
+            // ── Mensaje de certificado (factura) ────────────────────────────
+            const certBoxHeight = 85;
+            const bottomLimit = doc.page.height - (doc.page.margins?.bottom || 50);
+            if (doc.y + certBoxHeight + 20 > bottomLimit) doc.addPage();
+
+            doc.moveDown(1);
+            const certBoxY = doc.y;
+            
+            // Subtle background box for the certificate
+            doc.save()
+               .roundedRect(50, certBoxY, 495, certBoxHeight, 8)
+               .fillColor('#f9f9f4')
+               .fill()
+               .lineWidth(0.5)
+               .strokeColor('#e5e5e0')
+               .stroke()
+               .restore();
+
+            const certContentY = certBoxY + 15;
+            doc.fontSize(11).font('Helvetica-Bold').fillColor('#0f3d2e')
+                .text('CERTIFICADO DE ORIGINALIDAD', 70, certContentY, { width: 320 });
+            
+            doc.moveDown(0.4);
+            doc.fontSize(9).font('Helvetica').fillColor('#333333')
+                .text('Tu producto llegará junto con el Certificado de Originalidad, respaldado por el sello físico de Lujo & Aroma.', 70, doc.y, { width: 320 });
+            
+            doc.moveDown(0.5);
+            doc.fontSize(8).font('Helvetica-Bold').fillColor('#c9a84c')
+                .text('● CALIDAD GARANTIZADA 100% ORIGINAL', 70, doc.y);
+
+            // Sello (estilo estampilla premium)
+            const stampCx = 475;
+            const stampCy = certBoxY + (certBoxHeight / 2);
+            const stampR = 32;
+            
+            doc.save();
+            // Outer circle
+            doc.circle(stampCx, stampCy, stampR).lineWidth(1.5).strokeColor('#c9a84c').stroke();
+            // Inner dashed circle
+            doc.circle(stampCx, stampCy, stampR - 4).lineWidth(0.5).strokeColor('#c9a84c').dash(2, { space: 2 }).stroke().undash();
+            
+            doc.rotate(-15, { origin: [stampCx, stampCy] });
+            doc.font('Helvetica-Bold').fontSize(9).fillColor('#c9a84c')
+                .text('SELLO', stampCx - stampR, stampCy - 10, { width: stampR * 2, align: 'center' });
+            doc.font('Helvetica-Bold').fontSize(8).fillColor('#c9a84c')
+                .text('AUTENTICIDAD', stampCx - stampR, stampCy + 1, { width: stampR * 2, align: 'center' });
+            doc.restore();
+            
+            doc.fillColor('#000000');
+            doc.moveDown(2);
+
             // ── Envío ───────────────────────────────────────────────────────
             if (order.transportadora || order.numero_guia) {
                 doc.moveDown(0.5);

@@ -1,5 +1,3 @@
-import { pool } from '../config/database';
-import { decryptString } from '../utils/encryption.util';
 import crypto from 'crypto';
 
 type WompiEnv = 'sandbox' | 'production';
@@ -179,65 +177,41 @@ const resolveConfig = async (): Promise<WompiRuntimeConfig> => {
     const privateFromProcess = getEnvVar('WOMPI_PRIVATE_KEY');
     if (publicFromProcess) {
         const apiKey = privateFromProcess || publicFromProcess;
-        cachedCfg = {
+        const cfg: WompiRuntimeConfig = {
             env: envFromProcess,
             publicKey: publicFromProcess,
             apiKey,
             baseUrl: baseUrlForEnv(envFromProcess),
             hasPrivateKey: !!privateFromProcess
         };
+
+        // Validar combinaciones tipicas (evita 401 confusos de Wompi)
+        const pubKind = keyKind(cfg.publicKey);
+        const apiKind = keyKind(cfg.apiKey);
+        if (cfg.env === 'sandbox') {
+            if (pubKind && pubKind !== 'pub_test') {
+                throw new Error('WOMPI_ENV=sandbox requiere WOMPI_PUBLIC_KEY=pub_test_...');
+            }
+            if (cfg.hasPrivateKey && apiKind && apiKind !== 'prv_test') {
+                throw new Error('WOMPI_ENV=sandbox requiere WOMPI_PRIVATE_KEY=prv_test_...');
+            }
+        }
+        if (cfg.env === 'production') {
+            if (pubKind && pubKind !== 'pub_prod') {
+                throw new Error('WOMPI_ENV=production requiere WOMPI_PUBLIC_KEY=pub_prod_...');
+            }
+            if (cfg.hasPrivateKey && apiKind && apiKind !== 'prv_prod') {
+                throw new Error('WOMPI_ENV=production requiere WOMPI_PRIVATE_KEY=prv_prod_...');
+            }
+        }
+
+        cachedCfg = cfg;
         cachedAt = now;
         return cachedCfg;
     }
 
-    // Fallback: leer desde configuracionglobal (si existe)
-    try {
-        const result = await pool.query<any[]>(
-            'SELECT wompi_env, wompi_public_key, wompi_private_key_enc, wompi_private_key_iv, wompi_private_key_tag FROM configuracionglobal WHERE id = 1'
-        );
-        const rows = (result as any)?.[0] || (result as any)?.rows || result;
-        const row = Array.isArray(rows) ? rows[0] : undefined;
-
-        const env = normalizeEnv(row?.wompi_env);
-        const publicKey = String(row?.wompi_public_key || '').trim();
-
-        const enc = String(row?.wompi_private_key_enc || '').trim();
-        const iv = String(row?.wompi_private_key_iv || '').trim();
-        const tag = String(row?.wompi_private_key_tag || '').trim();
-
-        let privateKey = '';
-        if (enc && iv && tag) {
-            privateKey = decryptString({ enc, iv, tag });
-        }
-
-        const apiKey = privateKey || publicKey;
-
-        if (!publicKey) {
-            throw new Error('WOMPI_PUBLIC_KEY no esta configurado');
-        }
-        if (!apiKey) {
-            throw new Error('WOMPI API key no esta configurado');
-        }
-
-        cachedCfg = {
-            env,
-            publicKey,
-            apiKey,
-            baseUrl: baseUrlForEnv(env),
-            hasPrivateKey: !!privateKey
-        };
-        cachedAt = now;
-        return cachedCfg;
-    } catch (e: any) {
-        const msg = String(e?.message || '').trim();
-        if (msg.startsWith('SETTINGS_ENCRYPTION_KEY')) {
-            throw new Error(msg);
-        }
-        if (msg.startsWith('WOMPI_')) {
-            throw new Error(msg);
-        }
-        throw new Error('WOMPI_PUBLIC_KEY no esta configurado');
-    }
+    // Solo se permite configurar Wompi por variables de entorno.
+    throw new Error('WOMPI_PUBLIC_KEY no esta configurado');
 };
 
 const computeIntegritySignature = (reference: string, amountInCents: number, currency: string, secret: string): string => {
@@ -336,9 +310,6 @@ export const WompiService = {
     async getDiagnostics(): Promise<any> {
         const cfg = await resolveConfig();
 
-        // Detect whether config comes from env vars (including the Hostinger no-underscore variants)
-        const fromProcess = !!getEnvVar('WOMPI_PUBLIC_KEY');
-
         const envVars = {
             WOMPI_ENV: !!process.env.WOMPI_ENV,
             WOMPI_PUBLIC_KEY: !!process.env.WOMPI_PUBLIC_KEY,
@@ -414,7 +385,7 @@ export const WompiService = {
         return {
             env: cfg.env,
             base_url: cfg.baseUrl,
-            source: fromProcess ? 'env' : 'db',
+            source: 'env',
             env_vars_present: envVars,
             public_key_kind: publicKind,
             public_key_len: (cfg.publicKey || '').length,

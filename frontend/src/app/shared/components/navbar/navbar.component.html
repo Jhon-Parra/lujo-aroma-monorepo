@@ -1,4 +1,4 @@
-<div class="w-full bg-navy/35 backdrop-blur-2xl text-white font-sans fixed top-0 inset-x-0 z-[1000] border-b border-cream/10 shadow-md transition-all duration-500" [ngStyle]="getLogoCssVars()">
+<div class="w-full bg-navy/55 backdrop-blur-2xl text-white font-sans fixed top-0 inset-x-0 z-[1000] border-b border-cream/10 shadow-md transition-all duration-500" [ngStyle]="getLogoCssVars()">
   <!-- Top Banner -->
   <div *ngIf="!isAdminRoute && settings?.show_banner"
     (click)="filterByPromotions()"
@@ -9,9 +9,10 @@
 
   <!-- Navbar Main -->
   <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid grid-cols-3 items-center navbar-row">
-      <!-- Left: Navigation (Desktop) & Menu (Mobile) -->
-      <div class="flex items-center justify-start gap-8">
+    <div class="navbar-row relative">
+      <div class="navbar-sides flex items-center justify-between h-full gap-6">
+        <!-- Left: Navigation (Desktop) & Menu (Mobile) -->
+        <div class="flex items-center justify-start gap-8 min-w-0">
         <!-- Center Links (Desktop) -->
         <div *ngIf="!isAdminRoute" class="hidden md:flex space-x-8 items-center pt-1">
           <a routerLink="/" routerLinkActive="text-white border-white" [routerLinkActiveOptions]="{exact: true}"
@@ -34,24 +35,15 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-      </div>
+        </div>
 
-      <!-- Center: Logo -->
-      <div class="flex items-center justify-center overflow-visible">
-        <a [routerLink]="isAdminRoute ? '/admin' : '/'"
-          class="navbar-logo-wrap flex items-center justify-center cursor-pointer transition-transform hover:scale-105 duration-500">
-          <img [src]="getLogoUrl()" (error)="onLogoError($event)" alt="Lujo & Aroma Perfumería de Lujo"
-            class="navbar-logo object-contain py-1 transition-all duration-500" />
-        </a>
-      </div>
-
-      <!-- Right: Search & Icons -->
-      <div class="flex items-center justify-end space-x-3 sm:space-x-6">
+        <!-- Right: Search & Icons -->
+        <div class="flex items-center justify-end space-x-3 sm:space-x-6 min-w-0">
 
         <!-- Buscador Móvil (Icono) -->
         <button *ngIf="!isAdminRoute" type="button" (click)="toggleMobileSearch()" aria-label="Abrir buscador"
-          class="md:hidden w-10 h-10 rounded-full border border-white/20 bg-white/5 text-gold flex items-center justify-center hover:bg-gold hover:text-white transition-colors group">
-          <svg class="w-5 h-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+          class="md:hidden w-11 h-11 rounded-full border border-gold/40 bg-gold/10 text-gold flex items-center justify-center hover:bg-gold hover:text-white transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)] group">
+          <svg class="w-6 h-6 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round"
               d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
           </svg>
@@ -129,8 +121,8 @@
 
           <!-- Logged In View -->
           <ng-container *ngIf="authService.isAuthenticated(); else loggedOut">
-            <div class="relative group" [ngClass]="!isAdminRoute ? 'hidden md:block' : ''">
-              <button class="text-cream/90 hover:text-white transition-colors flex items-center gap-2">
+            <div class="relative group" [ngClass]="!isAdminRoute ? 'flex md:block' : 'flex'">
+              <button class="text-cream/90 hover:text-white transition-colors flex items-center gap-1.5 sm:gap-2">
                 <div class="w-8 h-8 rounded-full overflow-hidden bg-gold flex items-center justify-center">
                   <img *ngIf="authService.getUserPhoto()" [src]="authService.getUserPhoto()" alt="Perfil"
                     class="w-full h-full object-cover">
@@ -172,8 +164,7 @@
 
           <ng-template #loggedOut>
             <a routerLink="/login"
-              class="flex items-center justify-center w-9 h-9 rounded-full border border-white/10 bg-white/5 text-gold hover:bg-gold hover:text-white transition-all duration-300 group"
-              [ngClass]="!isAdminRoute ? 'hidden md:flex' : 'flex'">
+              class="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full border border-white/10 bg-white/5 text-gold hover:bg-gold hover:text-white transition-all duration-300 group">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round"
                   d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z">
@@ -184,7 +175,7 @@
 
           <!-- Wishlist -->
           <a *ngIf="!isAdminRoute" routerLink="/favorites"
-            class="hidden md:flex flex-col items-center text-cream/80 hover:text-red-400 transition-colors relative group">
+            class="flex md:flex flex-col items-center text-cream/80 hover:text-red-400 transition-colors relative group">
             <div class="relative">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -281,22 +272,23 @@
 
     <!-- Buscador Móvil Desplegable con Autocompletado -->
     <div *ngIf="!isAdminRoute && mobileSearchOpen"
-      class="md:hidden py-3 border-t border-white/10 animate-fade-in-down">
-      <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-lg px-3 py-2 border border-white/20">
+      class="md:hidden py-4 border-t border-white/20 animate-fade-in-down bg-navy/90 backdrop-blur-xl px-4 shadow-2xl">
+      <div class="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3 border border-white/30 focus-within:border-gold/50 transition-all">
+        <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+        </svg>
         <input
           type="text"
           [(ngModel)]="searchTerm"
           (ngModelChange)="onSearchInput()"
           (keyup.enter)="onSearch()"
-          placeholder="¿Qué perfume buscas?"
+          placeholder="¿Qué aroma buscas hoy?"
           autocomplete="off"
           id="navbar-search-mobile"
-          class="flex-1 bg-transparent text-sm text-white placeholder-cream/60 focus:outline-none"
+          class="flex-1 bg-transparent text-base text-white placeholder-white/50 focus:outline-none"
           autofocus />
-        <button type="button" (click)="onSearch()" class="text-white hover:text-gold transition-colors" aria-label="Buscar">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
-          </svg>
+        <button [disabled]="!searchTerm.trim()" type="button" (click)="onSearch()" class="text-gold disabled:opacity-30" aria-label="Buscar">
+          <i class="bi bi-arrow-right-circle-fill text-2xl"></i>
         </button>
       </div>
 
@@ -332,6 +324,15 @@
             Ver todos los resultados →
           </button>
         </div>
+        </div>
+      </div>
+
+      <!-- Logo: overlay (no afecta layout) -->
+      <div class="navbar-logo-layer" aria-hidden="false">
+        <a [routerLink]="isAdminRoute ? '/admin' : '/'" class="navbar-logo-wrap cursor-pointer" aria-label="Ir al inicio">
+          <img [src]="getLogoUrl()" (error)="onLogoError($event)" alt="Lujo & Aroma Perfumería de Lujo"
+            class="navbar-logo object-contain transition-all duration-500" />
+        </a>
       </div>
     </div>
   </nav>
@@ -356,7 +357,6 @@
             <a routerLink="/" (click)="closeMobileMenu()" class="px-5 py-4 bg-white border border-[#ecece5] rounded-md text-charcoal text-center shadow-sm">Inicio</a>
             <a routerLink="/catalog" (click)="closeMobileMenu()" class="px-5 py-4 bg-white border border-[#ecece5] rounded-md text-charcoal text-center shadow-sm">Catalogo</a>
             <a routerLink="/contact" (click)="closeMobileMenu()" class="px-5 py-4 bg-white border border-[#ecece5] rounded-md text-charcoal text-center shadow-sm">Contacto</a>
-            <a routerLink="/favorites" (click)="closeMobileMenu()" class="px-5 py-4 bg-white border border-[#ecece5] rounded-md text-charcoal text-center shadow-sm">Favoritos</a>
           </div>
 
           <div class="mt-8 pt-6 pb-4 border-t border-[#e5e5e0] flex flex-col gap-3">

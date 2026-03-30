@@ -56,10 +56,15 @@ const resolveLocalUser = async (supabaseUserId: string, email?: string) => {
 
 const verifySupabaseToken = async (token: string): Promise<{ id: string; email?: string; raw?: any }> => {
     if (SUPABASE_JWT_SECRET) {
-        const decoded = jwt.verify(token, SUPABASE_JWT_SECRET) as any;
-        const id = decoded?.sub || decoded?.user_id || decoded?.id;
-        if (!id) throw new Error('Token inválido');
-        return { id: String(id), email: decoded?.email, raw: decoded };
+        try {
+            const decoded = jwt.verify(token, SUPABASE_JWT_SECRET) as any;
+            const id = decoded?.sub || decoded?.user_id || decoded?.id;
+            if (!id) throw new Error('Token inválido');
+            return { id: String(id), email: decoded?.email, raw: decoded };
+        } catch {
+            // Si el secret esta desactualizado/mal configurado, hacemos fallback al endpoint de Supabase.
+            // Esto evita 403 falsos en entornos de desarrollo.
+        }
     }
 
     const { data, error } = await supabasePublic.auth.getUser(token);
@@ -106,7 +111,14 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
             next();
         })
         .catch(() => {
-            res.status(403).json({ error: 'Token inválido o expirado.' });
+            // Token invalido: limpiar cookies para evitar loops de 403 en el cliente.
+            try {
+                res.clearCookie('access_token', { path: '/' });
+                res.clearCookie('refresh_token', { path: '/' });
+            } catch {
+                // ignore
+            }
+            res.status(401).json({ error: 'Token inválido o expirado.' });
         });
 };
 

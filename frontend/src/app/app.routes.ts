@@ -68,20 +68,8 @@ export const routes: Routes = [
         data: { permission: 'admin.orders' }
     },
     {
-        path: 'admin/payments',
-        loadComponent: () => import('./pages/admin/payments/payments.component').then(m => m.PaymentsAdminComponent),
-        canActivate: [authGuard, roleGuard],
-        data: { permission: 'admin.payments' }
-    },
-    {
         path: 'admin/settings',
         loadComponent: () => import('./pages/admin/settings/settings.component').then(m => m.SettingsComponent),
-        canActivate: [authGuard, roleGuard],
-        data: { permission: 'admin.settings' }
-    },
-    {
-        path: 'admin/emails',
-        loadComponent: () => import('./pages/admin/emails/emails.component').then(m => m.EmailsComponent),
         canActivate: [authGuard, roleGuard],
         data: { permission: 'admin.settings' }
     },

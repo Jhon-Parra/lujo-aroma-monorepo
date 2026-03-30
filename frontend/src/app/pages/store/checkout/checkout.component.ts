@@ -787,33 +787,49 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         });
     }
 
-    placeOrder(): void {
+    private validatePlaceOrderInputs(): boolean {
         if (this.cartItems.length === 0) {
             this.errorMsg = 'Tu carrito está vacío. Agrega productos antes de finalizar la compra.';
-            return;
+            return false;
         }
 
         if (!this.shippingAddress.trim()) {
             this.touchedAddress = true;
             this.errorMsg = 'Por favor ingresa tu dirección de envío.';
-            return;
+            return false;
         }
 
         const phoneClean = this.phone.trim().replace(/\D/g, '');
         if (!phoneClean || phoneClean.length < 7) {
             this.touchedPhone = true;
             this.errorMsg = 'Por favor ingresa un número de teléfono válido (mínimo 7 dígitos).';
-            return;
+            return false;
         }
 
         const hasInvalid = this.cartItems.some((i) => !i?.product?.id || !Number.isFinite(Number(i.product.price)));
         if (hasInvalid) {
             this.errorMsg = 'Hay productos inválidos en el carrito. Vacía el carrito y vuelve a intentarlo.';
-            return;
+            return false;
         }
 
-        this.isPlacingOrder = true;
+        return true;
+    }
+
+    placeOrder(): void {
+        if (this.isPlacingOrder) return;
+
         this.errorMsg = '';
+        if (!this.validatePlaceOrderInputs()) return;
+
+        this.placeOrderNow();
+    }
+
+    private placeOrderNow(): void {
+        if (this.isPlacingOrder) return;
+        this.errorMsg = '';
+        if (!this.validatePlaceOrderInputs()) return;
+
+        this.isPlacingOrder = true;
 
         if (this.paymentMethod === 'WOMPI_PSE') {
             this.submitWompiPse();
@@ -963,7 +979,15 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                     if ((status === 401 || status === 403) && !this.attemptedRefresh) {
                         this.attemptedRefresh = true;
                         this.authService.refreshUser().subscribe({
-                            next: () => this.submitWompiCard(),
+                            next: (r) => {
+                                // refreshUser() puede resolver con user:null (sin sesion)
+                                if (r?.user) {
+                                    this.submitWompiCard();
+                                    return;
+                                }
+                                this.isPlacingOrder = false;
+                                this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
+                            },
                             error: () => {
                                 this.isPlacingOrder = false;
                                 this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
@@ -1103,7 +1127,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 if ((status === 401 || status === 403) && !this.attemptedRefresh) {
                     this.attemptedRefresh = true;
                     this.authService.refreshUser().subscribe({
-                        next: () => this.submitWompiNequi(),
+                        next: (r) => {
+                            if (r?.user) {
+                                this.submitWompiNequi();
+                                return;
+                            }
+                            this.isPlacingOrder = false;
+                            this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
+                        },
                         error: () => {
                             this.isPlacingOrder = false;
                             this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
@@ -1166,7 +1197,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 if ((status === 401 || status === 403) && !this.attemptedRefresh) {
                     this.attemptedRefresh = true;
                     this.authService.refreshUser().subscribe({
-                        next: () => this.submitWompiPse(),
+                        next: (r) => {
+                            if (r?.user) {
+                                this.submitWompiPse();
+                                return;
+                            }
+                            this.isPlacingOrder = false;
+                            this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
+                        },
                         error: () => {
                             this.isPlacingOrder = false;
                             this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
@@ -1222,8 +1260,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 if ((status === 401 || status === 403) && !this.attemptedRefresh) {
                     this.attemptedRefresh = true;
                     this.authService.refreshUser().subscribe({
-                        next: () => {
-                            this.submitOrder();
+                        next: (r) => {
+                            if (r?.user) {
+                                this.submitOrder();
+                                return;
+                            }
+                            this.isPlacingOrder = false;
+                            this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
                         },
                         error: () => {
                             this.isPlacingOrder = false;

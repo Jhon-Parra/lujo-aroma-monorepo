@@ -11,8 +11,10 @@ import * as path from 'path';
 
 const BACKEND_ROOT = path.resolve(__dirname, '..', '..');
 const MIGRATION_DIRS = [
-    path.join(BACKEND_ROOT, 'database', 'migrations'),
-    path.join(BACKEND_ROOT, 'src', 'database', 'migrations')
+    // Canonical MySQL migrations live here.
+    path.join(BACKEND_ROOT, 'database', 'migrations', 'mysql'),
+    // Backward-compatible fallbacks (older layouts)
+    path.join(BACKEND_ROOT, 'database', 'migrations')
 ];
 
 // Curated list of MySQL migrations currently used by the codebase.

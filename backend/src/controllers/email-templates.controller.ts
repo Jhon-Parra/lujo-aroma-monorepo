@@ -2,7 +2,10 @@ import { Request, Response } from 'express';
 import { OrderEmailTemplateService } from '../services/order-email-templates.service';
 import { OrderEmailLogsService } from '../services/order-email-logs.service';
 
-const TEMPLATE_MIGRATION_HINT = 'Tu base de datos no soporta plantillas de correo. Ejecuta database/migrations/20260313_order_email_templates.sql en Supabase y vuelve a intentar.';
+const TEMPLATE_MIGRATION_HINT =
+    'Tu base de datos no soporta plantillas/logs de correo. ' +
+    'Si usas MySQL/MariaDB ejecuta backend/database/migrations/mysql/05_create_email_tables.sql. ' +
+    'Si usas Supabase/Postgres ejecuta backend/database/migrations/20260313_order_email_templates.sql y backend/database/migrations/20260313_order_email_logs.sql.';
 
 export const getOrderEmailTemplates = async (_req: Request, res: Response): Promise<void> => {
     try {
@@ -51,10 +54,10 @@ export const getOrderEmailLogs = async (req: Request, res: Response): Promise<vo
         res.status(200).json({ logs: rows });
     } catch (e: any) {
         const msg = String(e?.message || '');
-        if (/orderemaillogs/i.test(msg) && /does not exist|relation/i.test(msg)) {
-            res.status(400).json({ error: 'Tu base de datos no soporta logs de correo. Ejecuta database/migrations/20260313_order_email_logs.sql en Supabase y vuelve a intentar.' });
-            return;
-        }
+            if (/orderemaillogs/i.test(msg) && /does not exist|relation/i.test(msg)) {
+                res.status(400).json({ error: TEMPLATE_MIGRATION_HINT });
+                return;
+            }
         res.status(500).json({ error: 'No se pudieron cargar los logs de correo' });
     }
 };

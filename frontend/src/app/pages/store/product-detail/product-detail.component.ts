@@ -357,16 +357,20 @@ export class ProductDetailComponent implements OnDestroy {
     this.quantity = Math.max(1, Math.trunc(Number(this.quantity || 1)) + 1);
   }
 
-  getCategoryLabel(): string {
+  private getGeneroSlug(): 'mujer' | 'hombre' | 'unisex' {
+    const slug = String((this.product as any)?.genero || '').trim().toLowerCase();
+    if (slug === 'mujer' || slug === 'hombre' || slug === 'unisex') return slug;
+    return 'unisex';
+  }
+
+  private getHouseSlug(): string {
     const anyP: any = this.product as any;
-    const name = String(anyP?.categoria_nombre || '').trim();
-    if (name) return name;
+    return String(anyP?.categoria_slug || anyP?.casa || anyP?.house || '').trim().toLowerCase();
+  }
 
-    const slug = String(anyP?.categoria_slug || this.product?.genero || 'unisex').trim().toLowerCase();
-    if (slug === 'mujer') return 'Para Mujer';
-    if (slug === 'hombre') return 'Para Hombre';
-    if (slug === 'unisex' || !slug) return 'Unisex';
-
+  private titleFromSlug(slugRaw: string): string {
+    const slug = String(slugRaw || '').trim().toLowerCase();
+    if (!slug) return '';
     return slug
       .split('-')
       .filter(Boolean)
@@ -374,19 +378,32 @@ export class ProductDetailComponent implements OnDestroy {
       .join(' ');
   }
 
-  getCategorySlug(): string {
-    const anyP: any = this.product as any;
-    const slug = String(anyP?.categoria_slug || this.product?.genero || 'unisex').trim().toLowerCase();
-    return slug || 'unisex';
+  getGeneroLabel(): string {
+    const g = this.getGeneroSlug();
+    if (g === 'mujer') return 'Mujer';
+    if (g === 'hombre') return 'Hombre';
+    return 'Unisex';
   }
 
-  getCategoryClass(): { [klass: string]: boolean } {
-    const slug = this.getCategorySlug();
+  getHouseLabel(): string {
+    const anyP: any = this.product as any;
+    const name = String(anyP?.categoria_nombre || '').trim();
+    if (name) return name;
+    return this.titleFromSlug(this.getHouseSlug());
+  }
+
+  getProductTagLabel(): string {
+    const house = this.getHouseLabel();
+    const genero = this.getGeneroLabel();
+    return house ? `${genero} · ${house}` : genero;
+  }
+
+  getGeneroClass(): { [klass: string]: boolean } {
+    const slug = this.getGeneroSlug();
     return {
       'bg-pink-50 text-pink-600 border-pink-100': slug === 'mujer',
       'bg-blue-50 text-blue-600 border-blue-100': slug === 'hombre',
-      'bg-gray-100 text-gray-500 border-gray-200': slug === 'unisex',
-      'bg-[#f9f9f6] text-soft-charcoal border-[#e7e7df]': slug !== 'mujer' && slug !== 'hombre' && slug !== 'unisex'
+      'bg-gray-100 text-gray-500 border-gray-200': slug === 'unisex'
     };
   }
 

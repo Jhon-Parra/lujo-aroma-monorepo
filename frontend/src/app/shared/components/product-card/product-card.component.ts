@@ -54,22 +54,21 @@ export class ProductCardComponent {
     private toastService: ToastService
   ) { }
 
-  getCategorySlug(): string {
-    const anyP: any = this.product as any;
-    const slug = String(anyP?.categoria_slug || this.product?.genero || 'unisex').trim().toLowerCase();
-    return slug || 'unisex';
+  private getGeneroSlug(): 'mujer' | 'hombre' | 'unisex' {
+    const slug = String((this.product as any)?.genero || '').trim().toLowerCase();
+    if (slug === 'mujer' || slug === 'hombre' || slug === 'unisex') return slug;
+    return 'unisex';
   }
 
-  getCategoryLabel(): string {
+  private getHouseSlug(): string {
     const anyP: any = this.product as any;
-    const name = String(anyP?.categoria_nombre || '').trim();
-    if (name) return name;
+    const slug = String(anyP?.categoria_slug || anyP?.casa || anyP?.house || '').trim().toLowerCase();
+    return slug;
+  }
 
-    const slug = this.getCategorySlug();
-    if (slug === 'mujer') return 'Para Mujer';
-    if (slug === 'hombre') return 'Para Hombre';
-    if (slug === 'unisex') return 'Unisex';
-
+  private titleFromSlug(slugRaw: string): string {
+    const slug = String(slugRaw || '').trim().toLowerCase();
+    if (!slug) return '';
     return slug
       .split('-')
       .filter(Boolean)
@@ -77,13 +76,32 @@ export class ProductCardComponent {
       .join(' ');
   }
 
-  getCategoryClass(): { [klass: string]: boolean } {
-    const slug = this.getCategorySlug();
+  getGeneroLabel(): string {
+    const g = this.getGeneroSlug();
+    if (g === 'mujer') return 'Mujer';
+    if (g === 'hombre') return 'Hombre';
+    return 'Unisex';
+  }
+
+  getHouseLabel(): string {
+    const anyP: any = this.product as any;
+    const name = String(anyP?.categoria_nombre || '').trim();
+    if (name) return name;
+    return this.titleFromSlug(this.getHouseSlug());
+  }
+
+  getProductTagLabel(): string {
+    const house = this.getHouseLabel();
+    const genero = this.getGeneroLabel();
+    return house ? `${genero} · ${house}` : genero;
+  }
+
+  getGeneroClass(): { [klass: string]: boolean } {
+    const slug = this.getGeneroSlug();
     return {
       'bg-rose-100 text-rose-700 border-rose-200': slug === 'mujer',
       'bg-blue-100 text-blue-700 border-blue-200': slug === 'hombre',
-      'bg-emerald-100 text-emerald-700 border-emerald-200': slug === 'unisex',
-      'bg-amber-100 text-amber-700 border-amber-200': slug !== 'mujer' && slug !== 'hombre' && slug !== 'unisex'
+      'bg-emerald-100 text-emerald-700 border-emerald-200': slug === 'unisex'
     };
   }
 

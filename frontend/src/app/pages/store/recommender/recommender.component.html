@@ -139,7 +139,11 @@
           </div>
 
           <div class="p-4 sm:p-5">
-            <div class="text-[9px] sm:text-xs uppercase tracking-widest text-sage font-bold">{{ r.product.categoria_nombre || (r.product.genero || 'UNISEX') }}</div>
+            <div class="text-[9px] sm:text-xs uppercase tracking-widest text-sage font-bold">
+              {{ (r.product.genero || 'UNISEX') }}<ng-container *ngIf="r.product.categoria_nombre || r.product.categoria_slug">
+                &nbsp;·&nbsp;{{ r.product.categoria_nombre || r.product.categoria_slug }}
+              </ng-container>
+            </div>
             <h3 class="font-serif text-lg sm:text-xl text-charcoal mt-1 line-clamp-1 group-hover:text-gold transition-colors">{{ r.product.nombre }}</h3>
             <div class="text-xs sm:text-sm font-bold text-charcoal mt-2">{{ r.product.precio | currency:'COP':'symbol-narrow':'1.0-0' }}</div>
 

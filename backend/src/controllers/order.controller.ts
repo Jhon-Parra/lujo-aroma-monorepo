@@ -180,8 +180,11 @@ export class OrderController {
                 const canal = String(order?.canal_pago || '').trim().toUpperCase();
                 const estadoPago = String(order?.estado_pago || '').trim().toUpperCase();
                 const isWompi = metodo.startsWith('WOMPI_') || canal === 'WOMPI';
-                if (isWompi && estadoPago && estadoPago !== 'APROBADO') {
-                    res.status(409).json({ message: 'No se puede marcar como ENVIADO/ENTREGADO: el pago aún no está aprobado por Wompi.' });
+
+                if (isWompi && estadoPago !== 'APROBADO') {
+                    res.status(409).json({ 
+                        message: `No se puede marcar como ${estado}: el pago Wompi aún no está aprobado (Estado: ${estadoPago || 'PENDIENTE'}).` 
+                    });
                     return;
                 }
             }
@@ -238,18 +241,17 @@ export class OrderController {
             }
 
             // Validacion: no permitir guia/envio si el pago no esta aprobado (Wompi)
-            try {
-                const order: any = await OrderModel.getAdminOrderById(ordenId);
-                const metodo = String(order?.metodo_pago || '').trim().toUpperCase();
-                const canal = String(order?.canal_pago || '').trim().toUpperCase();
-                const estadoPago = String(order?.estado_pago || '').trim().toUpperCase();
-                const isWompi = metodo.startsWith('WOMPI_') || canal === 'WOMPI';
-                if (isWompi && estadoPago && estadoPago !== 'APROBADO') {
-                    res.status(409).json({ message: 'No se puede registrar guía: el pago aún no está aprobado por Wompi.' });
-                    return;
-                }
-            } catch {
-                // ignore: si no podemos leer estado_pago, no bloqueamos
+            const order: any = await OrderModel.getAdminOrderById(ordenId);
+            const metodo = String(order?.metodo_pago || '').trim().toUpperCase();
+            const canal = String(order?.canal_pago || '').trim().toUpperCase();
+            const estadoPago = String(order?.estado_pago || '').trim().toUpperCase();
+            const isWompi = metodo.startsWith('WOMPI_') || canal === 'WOMPI';
+            
+            if (isWompi && estadoPago !== 'APROBADO') {
+                res.status(409).json({ 
+                    message: `No se puede registrar guía: el pago Wompi aún no está aprobado (Estado: ${estadoPago || 'PENDIENTE'}).` 
+                });
+                return;
             }
 
             const shippingData: RegisterShippingParams = {

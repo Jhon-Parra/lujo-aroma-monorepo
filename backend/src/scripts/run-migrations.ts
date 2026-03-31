@@ -2,79 +2,135 @@ import { pool } from '../config/database';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const MIGRATIONS_DIR = path.join(__dirname, '../../database/migrations');
+/**
+ * IMPORTANT
+ * This backend runs on MySQL/MariaDB.
+ * The repo also contains PostgreSQL/Supabase migrations, but they must NOT be executed
+ * through this script (wrong dialect, different syntax and table naming).
+ */
 
-const migrations = [
-    '20260311_promotions_assignment_rules.sql',
-    '20260312_promotions_image_and_gender.sql',
-    '20260312_promotions_amount_and_priority.sql',
-    '20260312_settings_logo.sql',
-    '20260312_settings_email_sender.sql',
-    '20260312_settings_socials.sql',
-    '20260312_settings_instagram_token.sql',
-    '20260312_settings_boutique_contact.sql',
-    '20260312_reviews.sql',
-    '20260312_orders_add_processing.sql',
-    '20260312_role_permissions.sql',
-    '20260312_settings_payment_accounts.sql',
-    '20260312_settings_wompi_config.sql',
-    '20260312_settings_wompi_secret_encrypted.sql',
-    '20260312_categories.sql',
-    '20260312_products_category_slug_length.sql',
-    '20260312_promotions_category_slug.sql',
-    '20260312_settings_multimedia_hero.sql',
-    '20260312_settings_checkout_addons.sql',
-    '20260312_orders_checkout_addons.sql',
-    '20260312_products_new_badge_expiration.sql',
-    '20260312_settings_checkout_addons_images.sql',
-    '20260312_recommendation_events.sql',
-    '20260312_settings_hero_multimedia.sql',
-    '20260312_settings_banner_accent_color.sql',
-    '20260313_order_email_templates.sql',
-    '20260313_order_email_logs.sql',
-    '20260313_settings_smtp_config.sql',
-    '20260313_settings_tiktok.sql',
-    '20260313_users_supabase_id.sql',
-    '20260313_auth_refresh_tokens.sql',
-    '20260313_admin_audit_logs.sql',
-    '20260314_settings_intelligence_alerts.sql',
-    '20260314_settings_cart_recovery.sql',
-    '20260314_settings_instagram_section.sql',
-    '20260314_orders_cart_recovery_discount.sql',
-    '20260314_search_events.sql',
-    '20260314_product_view_events.sql',
-    '20260314_cart_sessions.sql',
-    '20260314_auth_security_events.sql',
-    '20260328_settings_home_premium.sql',
-    '20260330_promotions_fab_clicks.sql'
+const BACKEND_ROOT = path.resolve(__dirname, '..', '..');
+const MIGRATION_DIRS = [
+    path.join(BACKEND_ROOT, 'database', 'migrations'),
+    path.join(BACKEND_ROOT, 'src', 'database', 'migrations')
 ];
 
-async function runMigrations() {
-    console.log('🚀 Iniciando aplicación de migraciones pendientes...');
+// Curated list of MySQL migrations currently used by the codebase.
+// If a file is missing in one folder, we try the other.
+const MYSQL_MIGRATIONS = [
+    // Settings
+    '20260319_settings_smtp_config_mysql.sql',
+    '20260328_settings_home_premium_mysql.sql',
+    '20260330_promotions_fab_clicks_mysql.sql',
 
-    for (const file of migrations) {
-        const filePath = path.join(MIGRATIONS_DIR, file);
-        if (!fs.existsSync(filePath)) {
-            console.warn(`⚠️ Archivo no encontrado: ${file}, saltando...`);
+    // Orders schema fixes
+    '20260329_fix_orders_schema.sql',
+
+    // Email templates/logs (MySQL)
+    '05_create_email_tables.sql',
+
+    // Indexes
+    'add_product_indexes.sql'
+];
+
+const resolveMigrationPath = (filename: string): string | null => {
+    for (const dir of MIGRATION_DIRS) {
+        const p = path.join(dir, filename);
+        if (fs.existsSync(p)) return p;
+    }
+    return null;
+};
+
+const stripComments = (sql: string): string => {
+    // Remove /* ... */ comments
+    let s = sql.replace(/\/\*[\s\S]*?\*\//g, '');
+    // Remove full-line -- comments and # comments
+    s = s
+        .split(/\r?\n/)
+        .filter((line) => {
+            const t = line.trim();
+            if (!t) return true;
+            if (t.startsWith('--')) return false;
+            if (t.startsWith('#')) return false;
+            return true;
+        })
+        .join('\n');
+    return s;
+};
+
+const splitStatements = (sql: string): string[] => {
+    const cleaned = stripComments(sql);
+    return cleaned
+        .split(';')
+        .map((s) => s.trim())
+        .filter(Boolean);
+};
+
+const isIgnorableMysqlError = (error: any): boolean => {
+    const code = String(error?.code || '');
+    // Common idempotency errors
+    return [
+        'ER_DUP_FIELDNAME',
+        'ER_DUP_KEYNAME',
+        'ER_TABLE_EXISTS_ERROR',
+        'ER_DUP_ENTRY',
+        'ER_CANT_DROP_FIELD_OR_KEY'
+    ].includes(code);
+};
+
+async function runMigrations() {
+    console.log('🚀 Iniciando aplicación de migraciones MySQL...');
+
+    // Track applied migrations to avoid re-running full files.
+    await pool.query(
+        `CREATE TABLE IF NOT EXISTS schema_migrations (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            filename VARCHAR(255) NOT NULL,
+            applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_schema_migrations_filename (filename)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`
+    );
+
+    const [appliedRows] = await pool.query<any[]>('SELECT filename FROM schema_migrations');
+    const applied = new Set((appliedRows || []).map((r: any) => String(r?.filename || '').trim()).filter(Boolean));
+
+    for (const file of MYSQL_MIGRATIONS) {
+        const filePath = resolveMigrationPath(file);
+        if (!filePath) {
+            console.warn(`⚠️ Archivo no encontrado: ${file} (buscado en: ${MIGRATION_DIRS.join(', ')}), saltando...`);
+            continue;
+        }
+
+        if (applied.has(file)) {
+            console.log(`↩️  Ya aplicado: ${file}`);
             continue;
         }
 
         console.log(`📄 Ejecutando: ${file}...`);
         const sql = fs.readFileSync(filePath, 'utf8');
+        const statements = splitStatements(sql);
+        if (!statements.length) {
+            console.log(`ℹ️ ${file}: sin sentencias (vacio), marcando como aplicado.`);
+            await pool.query('INSERT IGNORE INTO schema_migrations (filename) VALUES (?)', [file]);
+            continue;
+        }
 
-        try {
-            await pool.query(sql);
-            console.log(`✅ ${file} aplicado con éxito.`);
-        } catch (error: any) {
-            // Ignorar errores de columnas duplicadas o constraints que ya existen
-            if (error.code === '42701') { // duplicate_column
-                console.log(`ℹ️ ${file}: Algunas columnas ya existen, continuando...`);
-            } else if (error.code === '42P07') { // duplicate_table
-                console.log(`ℹ️ ${file}: La tabla ya existe, continuando...`);
-            } else {
-                console.error(`❌ Error en ${file}:`, error.message);
+        for (const stmt of statements) {
+            try {
+                await pool.query(stmt);
+            } catch (error: any) {
+                if (isIgnorableMysqlError(error)) {
+                    console.log(`ℹ️  Ignorado (${error.code}) en ${file}`);
+                    continue;
+                }
+                console.error(`❌ Error en ${file}:`, error?.message || error);
+                throw error;
             }
         }
+
+        await pool.query('INSERT IGNORE INTO schema_migrations (filename) VALUES (?)', [file]);
+        console.log(`✅ ${file} aplicado con éxito.`);
     }
 
     console.log('🏁 Proceso de migración finalizado.');

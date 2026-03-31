@@ -101,11 +101,21 @@ export class ProductService {
     return this.http.get<Product[]>(`${this.publicUrl}`);
   }
 
-  getPublicCatalog(page = 1, limit = 12, query = ''): Observable<PaginatedResponse<Product>> {
+  getPublicCatalog(
+    page = 1,
+    limit = 12,
+    query = '',
+    filters?: { category?: string | null; house?: string | null; gender?: string | null }
+  ): Observable<PaginatedResponse<Product>> {
     const q = encodeURIComponent(query.trim());
-    return this.http.get<any>(
-      `${this.publicUrl}/catalog?page=${page}&limit=${limit}&q=${q}`
-    ).pipe(
+    const category = String(filters?.category ?? filters?.house ?? '').trim();
+    const gender = String(filters?.gender ?? '').trim();
+
+    let url = `${this.publicUrl}/catalog?page=${page}&limit=${limit}&q=${q}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    if (gender) url += `&gender=${encodeURIComponent(gender)}`;
+
+    return this.http.get<any>(url).pipe(
       map(res => this.normalizePaginatedResponse<Product>(res, limit))
     );
   }

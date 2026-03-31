@@ -204,7 +204,9 @@ export class CatalogComponent implements OnInit {
 
   private fetchProducts(): void {
     this.loading = true;
-    this.productService.getPublicCatalog(this.currentPage, this.effectivePageSize, this.searchTerm).subscribe({
+    const category = this.selectedCategory !== 'todos' ? this.selectedCategory : null;
+    const gender = this.selectedGender !== 'all' ? this.selectedGender : null;
+    this.productService.getPublicCatalog(this.currentPage, this.effectivePageSize, this.searchTerm, { category, gender }).subscribe({
       next: (res) => {
         const items = Array.isArray((res as any)?.items) ? (res as any).items : [];
         this.products = items.map((ap: any) => ({

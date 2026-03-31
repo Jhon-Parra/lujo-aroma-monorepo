@@ -365,7 +365,7 @@
                                     class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
 
                                 <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2 mt-4">Link</label>
-                                <input type="text" [(ngModel)]="c.link" placeholder="/catalog?category=hombre"
+                                <input type="text" [(ngModel)]="c.link" placeholder="/catalog?gender=hombre"
                                     class="w-full border border-[#ecece5] rounded-md px-3 py-2 text-sm focus:ring-gold focus:border-gold outline-none bg-white" />
 
                                 <div class="grid grid-cols-1 gap-3 mt-4">
@@ -387,6 +387,15 @@
                                         <input type="file" (change)="onHomeCategoryMediaSelected(i, $event)" [accept]="getHomeAccept(c.mediaType)"
                                             class="w-full border border-[#ecece5] rounded-md px-3 py-2 focus:ring-gold focus:border-gold outline-none bg-white" />
                                     </div>
+
+                                    <div *ngIf="c?.mediaType === 'video'">
+                                        <label class="block text-[10px] font-bold text-soft-charcoal tracking-widest uppercase mb-2">Poster (imagen, opcional)</label>
+                                        <input type="file" accept="image/*" (change)="onHomeCategoryPosterSelected(i, $event)"
+                                            class="w-full border border-[#ecece5] rounded-md px-3 py-2 focus:ring-gold focus:border-gold outline-none bg-white" />
+                                        <div class="mt-2 text-[10px] text-gray-500">
+                                            Se muestra en movil y antes del hover (para ahorrar memoria).
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div *ngIf="c?.mediaUrl" class="mt-4">
@@ -398,11 +407,17 @@
                                         [src]="getHomeMediaUrl(c.mediaUrl)" alt="Categoria preview"
                                         class="h-32 w-full object-cover rounded-lg border border-[#ecece5]" />
                                 </div>
+
+                                <div *ngIf="c?.mediaType === 'video' && c?.posterUrl" class="mt-4">
+                                    <div class="text-[10px] font-bold uppercase tracking-widest text-soft-charcoal mb-2">Poster Preview</div>
+                                    <img [src]="getHomeMediaUrl(c.posterUrl)" alt="Poster preview"
+                                        class="h-32 w-full object-cover rounded-lg border border-[#ecece5]" />
+                                </div>
                             </div>
                         </div>
 
                         <div class="text-xs text-gray-500 mt-4">
-                            Rutas sugeridas: <code>/catalog?category=hombre</code>, <code>/catalog?category=mujer</code>, <code>/catalog?category=arabe</code>, <code>/catalog?promo=true</code>
+                            Rutas sugeridas: <code>/catalog?gender=hombre</code>, <code>/catalog?gender=mujer</code>, <code>/catalog?category=arabe</code>, <code>/catalog?promo=true</code>
                         </div>
                     </div>
                 </div>

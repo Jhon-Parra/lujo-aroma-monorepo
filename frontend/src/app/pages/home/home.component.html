@@ -14,16 +14,16 @@
                     [class.opacity-100]="i === activeSlideIndex" [class.opacity-0]="i !== activeSlideIndex"
                     [style.pointer-events]="i === activeSlideIndex ? 'auto' : 'none'" [attr.aria-hidden]="i !== activeSlideIndex">
 
-                    <!-- Video slide: always loaded, play() called programmatically -->
-                    <video *ngIf="isVideoSlide(s)"
+                    <!-- Video slide: load only for active slide (huge RAM saver) -->
+                    <video *ngIf="isVideoSlide(s) && i === activeSlideIndex"
                         class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom"
                         [attr.data-slide-index]="i"
                         [src]="getHomeSlideMediaUrl(s, i)"
-                        preload="auto"
+                        preload="metadata"
                         [muted]="true"
                         playsinline
                         loop
-                        (loadeddata)="onVideoLoaded($event, i)">
+                        (loadedmetadata)="onVideoLoaded($event, i)">
                     </video>
 
                     <img *ngIf="!isVideoSlide(s)" class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom"
@@ -215,12 +215,19 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <a *ngFor="let c of homeCategories; let i = index" href="#" (click)="$event.preventDefault(); navigateCta(c?.link)"
+            <a *ngFor="let c of homeCategories; let i = index" href="#"
+                (mouseenter)="onCategoryEnter(i)" (mouseleave)="onCategoryLeave(i)"
+                (click)="$event.preventDefault(); navigateCta(c?.link)"
                 class="relative group overflow-hidden rounded-2xl bg-navy-dark shadow-xl border border-[#ecece5] aspect-[16/10] md:aspect-[16/9]">
 
-                <video *ngIf="isVideoSlide(c)" class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.04]"
-                    [src]="getHomeSlideMediaUrl(c, i)" [muted]="true" playsinline loop autoplay>
+                <video *ngIf="isVideoSlide(c) && shouldLoadCategoryVideo(i)"
+                    class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.04]"
+                    [src]="getHomeSlideMediaUrl(c, i)" preload="metadata" [muted]="true" playsinline loop autoplay>
                 </video>
+
+                <img *ngIf="isVideoSlide(c) && !shouldLoadCategoryVideo(i)"
+                    class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.06]"
+                    [src]="getHomeCategoryPosterUrl(c, i)" loading="lazy" decoding="async" />
 
                 <img *ngIf="!isVideoSlide(c)" class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.06]"
                     [src]="getHomeSlideMediaUrl(c, i)" loading="lazy" decoding="async" />

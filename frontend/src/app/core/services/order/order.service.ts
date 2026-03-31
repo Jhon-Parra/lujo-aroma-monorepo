@@ -107,7 +107,7 @@ export interface RegisterShippingDto {
 // ─── Función normalizadora de órdenes ─────────────────────────────────────────
 const normalizeEstado = (raw: any): string => {
   const v = String(raw || '').trim().toUpperCase();
-  if (v === 'PENDIENTE' || v === 'PROCESANDO') return 'PAGADO';
+  if (v === 'PROCESANDO') return 'PAGADO';
   if (!v) return 'PAGADO';
   return v;
 };
@@ -220,13 +220,15 @@ export class OrderService {
    */
   getCustomerDisplayStatus(order: Partial<Order>): string {
     const estado = normalizeEstado((order as any)?.estado);
-    if (estado === 'CANCELADO' || estado === 'ENVIADO' || estado === 'ENTREGADO') return estado;
+    if (estado === 'CANCELADO' || estado === 'ENVIADO' || estado === 'ENTREGADO' || estado === 'PENDIENTE') return estado;
 
     const metodo = String((order as any)?.metodo_pago || '').trim().toUpperCase();
     const canal = String((order as any)?.canal_pago || '').trim().toUpperCase();
     const isWompi = metodo.startsWith('WOMPI_') || canal === 'WOMPI' || !!(order as any)?.codigo_transaccion;
     const pago = normalizeEstadoPago((order as any)?.estado_pago);
     if (isWompi && pago && pago !== 'APROBADO') return 'PENDIENTE';
+    
+    // Si llegamos aquí y el estado es PAGADO, o es un método no-Wompi, se muestra como PAGADO.
     return 'PAGADO';
   }
 

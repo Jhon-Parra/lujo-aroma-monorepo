@@ -25,6 +25,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Map to track video elements by slide index for programmatic control
   private videoElements = new Map<number, HTMLVideoElement>();
 
+  // Load category videos only on hover (desktop) to avoid huge memory usage.
+  hoveredCategoryIndex: number | null = null;
+
   // Home premium (carousel)
   homeSlides: any[] = [];
   homeCategories: any[] = [];
@@ -118,9 +121,44 @@ export class HomeComponent implements OnInit, OnDestroy {
       if (idx !== activeIndex) {
         video.pause();
         video.currentTime = 0;
-        video.style.opacity = '1';
+
+        // Drop source to free decoder/buffer memory.
+        try {
+          video.removeAttribute('src');
+          video.load();
+        } catch {
+          // ignore
+        }
+
+        this.videoElements.delete(idx);
       }
     });
+  }
+
+  onCategoryEnter(index: number): void {
+    this.hoveredCategoryIndex = index;
+  }
+
+  onCategoryLeave(index: number): void {
+    if (this.hoveredCategoryIndex === index) this.hoveredCategoryIndex = null;
+  }
+
+  shouldLoadCategoryVideo(index: number): boolean {
+    // Desktop hover only; on touch devices we prefer static images.
+    const isTouch = (navigator as any)?.maxTouchPoints > 0;
+    if (isTouch) return false;
+    return this.hoveredCategoryIndex === index;
+  }
+
+  getHomeCategoryPosterUrl(category: any, index: number): string {
+    const poster = String(category?.posterUrl || category?.poster_url || '').trim();
+    if (poster) return poster;
+
+    // Local lightweight fallback images (only if no poster is configured).
+    if (index === 0) return 'assets/images/home_category_caballero_v3_1774016267276.png';
+    if (index === 1) return 'assets/images/home_category_dama_v3_1774016281790.png';
+    if (index === 2) return 'assets/images/home_category_arabe_v2_1774016227682.png';
+    return 'assets/images/home_category_sale_promo_1774014946002.png';
   }
 
 
@@ -299,7 +337,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         title: 'Para El',
         subtitle: 'Fresco. Intenso. Memorables.',
         emotion: 'Define tu presencia',
-        link: '/catalog?category=hombre',
+        link: '/catalog?gender=hombre',
         mediaType: 'image',
         mediaUrl: 'https://images.unsplash.com/photo-1526045478516-99145907023c?q=80&w=1600&auto=format&fit=crop'
       },
@@ -307,7 +345,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         title: 'Para Ella',
         subtitle: 'Elegancia que se siente cerca.',
         emotion: 'Elegancia femenina',
-        link: '/catalog?category=mujer',
+        link: '/catalog?gender=mujer',
         mediaType: 'image',
         mediaUrl: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=1600&auto=format&fit=crop'
       },

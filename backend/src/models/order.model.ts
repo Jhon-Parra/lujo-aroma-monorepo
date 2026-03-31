@@ -103,13 +103,12 @@ export type CreateOrderResult = {
 // Solo manejamos estados de cumplimiento/logística: PAGADO → ENVIADO → ENTREGADO | CANCELADO.
 // El estado del pago (en verificación/aprobado/rechazado) se refleja en `estado_pago` cuando existe.
 const VALID_TRANSITIONS: Record<string, string[]> = {
+    PENDIENTE: ['PAGADO', 'CANCELADO'],
     PAGADO:    ['ENVIADO', 'CANCELADO'],
     ENVIADO:   ['ENTREGADO', 'CANCELADO'],
     ENTREGADO: [],   // terminal
     CANCELADO: [],   // terminal
-    // Compatibilidad con pedidos legacy que puedan tener estos estados:
-    // legacy (no usar en flujo nuevo)
-    PENDIENTE:  ['PAGADO', 'ENVIADO', 'CANCELADO'],
+    // Compatibilidad con pedidos legacy
     PROCESANDO: ['ENVIADO', 'CANCELADO'],
 };
 
@@ -300,7 +299,7 @@ export class OrderModel {
             const paymentCols = await detectPaymentColumns();
             const idExpr = binary ? 'UUID_TO_BIN(?)' : '?';
 
-            const initialEstado = 'PAGADO';
+            const initialEstado = 'PENDIENTE';
 
             const cols: string[] = ['id', 'usuario_id', 'total', 'direccion_envio', 'estado', 'codigo_transaccion', 'telefono', 'nombre_cliente', 'metodo_pago', 'canal_pago'];
             const vals: any[] = [
@@ -383,7 +382,7 @@ export class OrderModel {
             await connection.query(
                 `INSERT INTO historial_pedido (id, orden_id, estado_anterior, estado_nuevo, observacion)
                  VALUES (${binary ? 'UUID_TO_BIN(?)' : '?'}, ${binary ? 'UUID_TO_BIN(?)' : '?'}, NULL, ?, ?)`,
-                [uuidv4(), orderId, initialEstado, 'Pedido creado. Pago en verificacion.']
+                [uuidv4(), orderId, initialEstado, 'Pedido creado. Esperando confirmación de pago.']
             );
 
             await connection.query('COMMIT');
@@ -864,5 +863,32 @@ export class OrderModel {
         // Adjuntar historial
         const historial = await this.getHistorial(orderId);
         return { ...order, historial };
+    }
+
+    // ── Cancelar pedidos expirados (24h) ──────────────────────────────────────
+    static async cancelExpiredOrders(): Promise<number> {
+        const binary = await detectIdType();
+        const idRead = binary ? 'BIN_TO_UUID(id)' : 'id';
+        
+        // Buscar pedidos Pendientes creados hace más de 24 horas
+        const [rows] = await pool.query<any[]>(
+            `SELECT ${idRead} AS id FROM ordenes 
+             WHERE estado = 'PENDIENTE' 
+             AND creado_en < DATE_SUB(NOW(), INTERVAL 24 HOUR)`
+        );
+
+        const expiredOrders = rows || [];
+        console.log(`🕒 Verificando pedidos expirados: ${expiredOrders.length} encontrados.`);
+
+        let count = 0;
+        for (const o of expiredOrders) {
+            try {
+                await this.cancelAndRestock(o.id, 'Cancelación automática: Pago no completado en 24 horas.');
+                count++;
+            } catch (err) {
+                console.error(`❌ Error cancelando pedido expirado ${o.id}:`, err);
+            }
+        }
+        return count;
     }
 }

@@ -465,6 +465,12 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             files?.['home_category_3_media']?.[0],
             files?.['home_category_4_media']?.[0]
         ];
+        const categoryPosterFiles = [
+            files?.['home_category_1_poster']?.[0],
+            files?.['home_category_2_poster']?.[0],
+            files?.['home_category_3_poster']?.[0],
+            files?.['home_category_4_poster']?.[0]
+        ];
 
         let hero_image_url: string | undefined = undefined;
         let hero_media_url: string | undefined = undefined;
@@ -676,12 +682,14 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
 
         const anySlideUpload = slideFiles.some(Boolean);
         const anyCategoryUpload = categoryFiles.some(Boolean);
+        const anyCategoryPosterUpload = categoryPosterFiles.some(Boolean);
 
         const wantsHomePremium =
             home_carousel !== undefined ||
             home_categories !== undefined ||
             anySlideUpload ||
-            anyCategoryUpload;
+            anyCategoryUpload ||
+            anyCategoryPosterUpload;
 
         if (wantsHomePremium && (!columns.home_carousel || !columns.home_categories)) {
             res.status(400).json({
@@ -691,7 +699,7 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
         }
 
         // Home premium: si hay archivos pero no hay JSON en body, cargar actual desde DB.
-        const needsHomeFromDb = (anySlideUpload || anyCategoryUpload) && (home_carousel === undefined || home_categories === undefined);
+        const needsHomeFromDb = (anySlideUpload || anyCategoryUpload || anyCategoryPosterUpload) && (home_carousel === undefined || home_categories === undefined);
         let homeCarouselWork: any = home_carousel;
         let homeCategoriesWork: any = home_categories;
 
@@ -823,6 +831,47 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
                     ...(categoriesArr[i] || {}),
                     mediaType,
                     mediaUrl: publicData.publicUrl
+                };
+            }
+        }
+
+        // Upload category posters (image placeholders) and patch JSON
+        if (columns.home_categories && categoriesArr && anyCategoryPosterUpload) {
+            for (let i = 0; i < categoryPosterFiles.length; i++) {
+                const f = categoryPosterFiles[i];
+                if (!f) continue;
+
+                // Poster must be an image (not video)
+                if (!String(f.mimetype || '').toLowerCase().startsWith('image/')) {
+                    res.status(400).json({ error: 'El poster debe ser una imagen (JPEG/PNG/GIF/WebP).' });
+                    return;
+                }
+                if (f.size > MAX_HERO_IMAGE_BYTES) {
+                    res.status(400).json({ error: 'La imagen del poster supera el limite de 10MB.' });
+                    return;
+                }
+
+                const uniqueFilename = sanitizeFilename(f.originalname);
+                const filePath = `settings/home/categories/posters/${Date.now()}_${i + 1}_${uniqueFilename}`;
+                const { error } = await supabase.storage
+                    .from('perfumissimo_bucket')
+                    .upload(filePath, f.buffer, {
+                        contentType: f.mimetype,
+                        upsert: true
+                    });
+
+                if (error) {
+                    console.error('Supabase upload error (home_category_poster):', error);
+                    throw new Error('Error subiendo poster de categorias home a Supabase');
+                }
+
+                const { data: publicData } = supabase.storage
+                    .from('perfumissimo_bucket')
+                    .getPublicUrl(filePath);
+
+                categoriesArr[i] = {
+                    ...(categoriesArr[i] || {}),
+                    posterUrl: publicData.publicUrl
                 };
             }
         }

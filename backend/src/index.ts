@@ -33,6 +33,7 @@ import {
 } from './middleware/security.middleware';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import path from 'path';
+import { OrderModel } from './models/order.model';
 
 // Cargar siempre el .env del backend, independiente del working directory.
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -279,4 +280,23 @@ app.use(errorHandler);
 
 app.listen(Number(PORT), HOST, () => {
     console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
+
+    // Tarea de mantenimiento: cancelar pedidos expirados (24h) cada hora
+    const ONE_HOUR = 60 * 60 * 1000;
+    setInterval(async () => {
+        try {
+            console.log('🕒 Iniciando limpieza de pedidos expirados...');
+            const count = await OrderModel.cancelExpiredOrders();
+            if (count > 0) {
+                console.log(`✅ Se cancelaron ${count} pedidos expirados.`);
+            }
+        } catch (err) {
+            console.error('❌ Error en el job de limpieza de pedidos:', err);
+        }
+    }, ONE_HOUR);
+
+    // Primera ejecución al arrancar (opcional, para limpiar remanentes)
+    setTimeout(() => {
+        OrderModel.cancelExpiredOrders().catch(e => console.error('Error inicial en limpieza:', e));
+    }, 5000);
 });

@@ -13,7 +13,19 @@ services:
       - ./backend/.env
     environment:
       PORT: 3000
+      # En Docker necesitamos escuchar en todas las interfaces (no solo IPv6).
+      HOST: 0.0.0.0
       NODE_ENV: development
+      # El .env del repo usa DB_SOCKET_PATH (XAMPP) que no existe en el contenedor.
+      # Forzamos conexion TCP hacia MySQL del host.
+      DB_SOCKET_PATH: ''
+      # Nota: para usar MySQL dentro de Docker, usa docker-compose.localdb.yml
+      DB_HOST: host.docker.internal
+      DB_PORT: 33065
+      DB_USER: root
+      # En XAMPP/MySQL local muchas veces root no tiene password.
+      DB_PASSWORD: ''
+      DB_NAME: lujo_aroma
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
       JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_please_change}
       REFRESH_SECRET: ${REFRESH_SECRET:-refresh_secret_key_please_change_in_production}

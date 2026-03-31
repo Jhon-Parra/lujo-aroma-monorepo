@@ -381,8 +381,30 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             return s.replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
         };
 
+        const normalizeSlug = (raw: any): string | null => {
+            const v = String(raw ?? '').trim().toLowerCase();
+            if (!v || v === 'todos' || v === 'all' || v === 'null' || v === 'undefined') return null;
+            return v;
+        };
+
+        const parseGenderFilter = (raw: any): 'mujer' | 'hombre' | 'unisex' | null => {
+            const v = String(raw ?? '').trim().toLowerCase();
+            if (!v || v === 'all' || v === 'todos') return null;
+            if (v === 'mujer' || v === 'hombre' || v === 'unisex') return v;
+            return null;
+        };
+
         const qRaw = String(req.query['q'] || '').trim();
         const q = normalizeSearch(qRaw);
+
+        // Filtros
+        const categoryRaw = req.query['category'] ?? req.query['house'];
+        const categorySlug = normalizeSlug(categoryRaw);
+        let gender = parseGenderFilter(req.query['gender']);
+        // Compat: links antiguos usaban category=mujer|hombre|unisex
+        if (!gender && (categorySlug === 'mujer' || categorySlug === 'hombre' || categorySlug === 'unisex')) {
+            gender = categorySlug;
+        }
         const limitRaw = Number(req.query['limit'] || req.query['pageSize'] || 12);
         const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(100, Math.trunc(limitRaw))) : 12;
         const pageRaw = Number(req.query['page'] || 1);
@@ -392,7 +414,10 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         // ── Cache: serve anonymous requests from cache (TTL 5 min) ───────────
         let anonCacheKey: string | null = null;
         if (!userId) {
-            anonCacheKey = `${CACHE_KEYS.CATALOG_ANON}:q=${encodeURIComponent(q)}:page=${page}:limit=${limit}`;
+            const houseForKey = categorySlug && categorySlug !== 'mujer' && categorySlug !== 'hombre' && categorySlug !== 'unisex'
+                ? categorySlug
+                : '';
+            anonCacheKey = `${CACHE_KEYS.CATALOG_ANON}:q=${encodeURIComponent(q)}:house=${encodeURIComponent(houseForKey)}:gender=${encodeURIComponent(gender || '')}:page=${page}:limit=${limit}`;
             const cached = appCache.get<any>(anonCacheKey);
             if (cached) {
                 res.setHeader('X-Cache', 'HIT');
@@ -419,6 +444,10 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         const newUntilOk = await detectProductNewUntilSchema();
         const casaOk = await detectProductCasaSchema();
 
+        const house = (categorySlug && categorySlug !== 'mujer' && categorySlug !== 'hombre' && categorySlug !== 'unisex')
+            ? categorySlug
+            : null;
+
         const esNuevoExpr = newUntilOk
             ? `CASE
                 WHEN COALESCE(p.es_nuevo, false) = false THEN false
@@ -437,12 +466,26 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         // 1. Fetch total count for pagination
         let countQuery = 'SELECT COUNT(*) as total FROM productos p WHERE p.stock > 0';
         const queryParams: any[] = [];
+
+        if (gender) {
+            countQuery += ' AND p.genero = ?';
+            queryParams.push(gender);
+        }
+        if (house && casaOk) {
+            countQuery += ' AND LOWER(p.casa) = ?';
+            queryParams.push(house);
+        }
         if (q) {
             // Very basic SQL search for total count, more robust filtering happens later if needed
             // However, with indices, we can do some filtering here too.
-            countQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)';
             const qLike = `%${q}%`;
-            queryParams.push(qLike, qLike, qLike, qLike);
+            if (casaOk) {
+                countQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)';
+                queryParams.push(qLike, qLike, qLike, qLike);
+            } else {
+                countQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
+                queryParams.push(qLike, qLike, qLike);
+            }
         }
         const [countRows] = await pool.query<any[]>(countQuery, queryParams);
         const total = countRows?.[0]?.total || 0;
@@ -455,11 +498,22 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
                     ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
-             WHERE p.stock > 0
+              WHERE p.stock > 0
         `;
         const productsParams: any[] = [...queryParams];
+
+        if (gender) {
+            productsQuery += ' AND p.genero = ?';
+        }
+        if (house && casaOk) {
+            productsQuery += ' AND LOWER(p.casa) = ?';
+        }
         if (q) {
-            productsQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)';
+            if (casaOk) {
+                productsQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)';
+            } else {
+                productsQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
+            }
         }
         productsQuery += ' ORDER BY p.creado_en DESC LIMIT ? OFFSET ?';
         productsParams.push(limit, offset);

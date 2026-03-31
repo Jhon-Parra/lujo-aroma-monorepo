@@ -1,0 +1,41 @@
+version: '3.8'
+
+# Opcion 2 (mejorada): MySQL dentro de Docker con seed automatico.
+# Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.localdb.yml up -d
+# Reset completo (borra datos):
+#   docker compose -f docker-compose.yml -f docker-compose.localdb.yml down -v
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lujo_aroma_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: lujo_aroma
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - '33066:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/mysql_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./backend/database/seed_localdb.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+    networks:
+      - lujo_aroma_net
+
+  backend:
+    environment:
+      # Fuerza TCP al contenedor mysql
+      DB_SOCKET_PATH: ''
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: lujo_aroma
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data:

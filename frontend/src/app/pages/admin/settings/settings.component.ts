@@ -104,7 +104,7 @@ export class SettingsComponent implements OnInit {
         title: 'Para El',
         subtitle: 'Fresco. Intenso. Memorables.',
         emotion: 'Define tu presencia',
-        link: '/catalog?category=hombre',
+        link: '/catalog?gender=hombre',
         mediaType: 'image',
         mediaUrl: ''
       },
@@ -112,7 +112,7 @@ export class SettingsComponent implements OnInit {
         title: 'Para Ella',
         subtitle: 'Elegancia que se siente cerca.',
         emotion: 'Elegancia femenina',
-        link: '/catalog?category=mujer',
+        link: '/catalog?gender=mujer',
         mediaType: 'image',
         mediaUrl: ''
       },
@@ -143,6 +143,7 @@ export class SettingsComponent implements OnInit {
 
   homeSlideFiles: Array<File | null> = [null, null, null];
   homeCategoryFiles: Array<File | null> = [null, null, null, null];
+  homeCategoryPosterFiles: Array<File | null> = [null, null, null, null];
   saving = false;
   logoError: string | null = null;
 
@@ -259,6 +260,31 @@ export class SettingsComponent implements OnInit {
       };
       reader.readAsDataURL(file);
     }
+
+    const arr = (this.settings as any).home_categories;
+    if (Array.isArray(arr)) arr[index] = card;
+  }
+
+  onHomeCategoryPosterSelected(index: number, event: any) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const mime = String(file.type || '').toLowerCase();
+    if (!mime.startsWith('image/')) {
+      alert('El poster debe ser una imagen (JPEG/PNG/WebP/GIF).');
+      event.target.value = '';
+      return;
+    }
+
+    this.homeCategoryPosterFiles[index] = file;
+
+    // Preview in UI
+    const card = this.getHomeCategory(index) || {};
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      (card as any).posterUrl = e.target.result;
+    };
+    reader.readAsDataURL(file);
 
     const arr = (this.settings as any).home_categories;
     if (Array.isArray(arr)) arr[index] = card;
@@ -511,6 +537,11 @@ export class SettingsComponent implements OnInit {
       if (f) formData.append(`home_category_${i + 1}_media`, f);
     }
 
+    for (let i = 0; i < this.homeCategoryPosterFiles.length; i++) {
+      const f = this.homeCategoryPosterFiles[i];
+      if (f) formData.append(`home_category_${i + 1}_poster`, f);
+    }
+
     this.settingsService.updateSettings(formData).subscribe({
       next: (res) => {
         this.saving = false;
@@ -547,6 +578,7 @@ export class SettingsComponent implements OnInit {
         this.selectedEmpaqueRegalorImageFile = null;
         this.homeSlideFiles = [null, null, null];
         this.homeCategoryFiles = [null, null, null, null];
+        this.homeCategoryPosterFiles = [null, null, null, null];
         alert('Configuración actualizada exitosamente');
       },
       error: (err) => {

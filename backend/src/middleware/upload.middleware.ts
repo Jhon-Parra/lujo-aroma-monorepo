@@ -77,7 +77,7 @@ export const uploadSettingsAssets = (req: any, res: any, next: any) => {
         storage,
         limits: {
             fileSize: MAX_SETTINGS_MEDIA_SIZE,
-            files: 12
+            files: 20
         },
         fileFilter: (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
             const field = String(file.fieldname || '');
@@ -129,7 +129,13 @@ export const uploadSettingsAssets = (req: any, res: any, next: any) => {
         { name: 'home_category_1_media', maxCount: 1 },
         { name: 'home_category_2_media', maxCount: 1 },
         { name: 'home_category_3_media', maxCount: 1 },
-        { name: 'home_category_4_media', maxCount: 1 }
+        { name: 'home_category_4_media', maxCount: 1 },
+
+        // Optional posters (images) for video cards
+        { name: 'home_category_1_poster', maxCount: 1 },
+        { name: 'home_category_2_poster', maxCount: 1 },
+        { name: 'home_category_3_poster', maxCount: 1 },
+        { name: 'home_category_4_poster', maxCount: 1 }
     ]);
 
     settingsUpload(req, res, (err: any) => {

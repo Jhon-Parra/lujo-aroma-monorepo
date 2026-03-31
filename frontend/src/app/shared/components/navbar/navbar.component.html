@@ -16,11 +16,11 @@
         <!-- Center Links (Desktop) -->
         <div *ngIf="!isAdminRoute" class="hidden md:flex space-x-8 items-center pt-1">
           <a routerLink="/" routerLinkActive="text-white border-white" [routerLinkActiveOptions]="{exact: true}"
-            class="text-cream/80 hover:text-white transition-colors duration-300 text-[11px] uppercase font-bold tracking-[0.2em] border-b border-transparent pb-1 hover:border-gold">INICIO</a>
+            class="text-cream/80 hover:text-white transition-colors duration-300 text-[12px] lg:text-[13px] uppercase font-extrabold tracking-[0.22em] border-b-2 border-transparent pb-1.5 px-1 hover:border-gold">INICIO</a>
           <a routerLink="/catalog" routerLinkActive="text-white border-gold"
-            class="text-cream/80 hover:text-white transition-colors duration-300 text-[11px] uppercase font-bold tracking-[0.2em] border-b border-transparent pb-1 hover:border-gold">CATÁLOGO</a>
+            class="text-cream/80 hover:text-white transition-colors duration-300 text-[12px] lg:text-[13px] uppercase font-extrabold tracking-[0.22em] border-b-2 border-transparent pb-1.5 px-1 hover:border-gold">CATÁLOGO</a>
           <a routerLink="/contact" routerLinkActive="text-white border-gold"
-            class="text-cream/80 hover:text-white transition-colors duration-300 text-[11px] uppercase font-bold tracking-[0.2em] border-b border-transparent pb-1 hover:border-gold">CONTACTO</a>
+            class="text-cream/80 hover:text-white transition-colors duration-300 text-[12px] lg:text-[13px] uppercase font-extrabold tracking-[0.22em] border-b-2 border-transparent pb-1.5 px-1 hover:border-gold">CONTACTO</a>
         </div>
 
         <!-- Mobile Hamburger (Store only) -->
@@ -187,7 +187,7 @@
                 {{ favoritesCount$ | async }}
               </span>
             </div>
-            <span class="text-[10px] mt-1 hidden lg:block tracking-widest uppercase">Favoritos</span>
+            <span class="text-[10px] mt-1 hidden lg:block tracking-widest uppercase font-extrabold">Favoritos</span>
           </a>
 
           <!-- Cart Dropdown -->
@@ -204,7 +204,7 @@
                   {{ count }}
                 </span>
               </div>
-              <span class="text-[10px] mt-1 hidden lg:block tracking-widest uppercase">CARRITO</span>
+              <span class="text-[10px] mt-1 hidden lg:block tracking-widest uppercase font-extrabold">CARRITO</span>
             </a>
 
             <div
@@ -353,7 +353,7 @@
             </button>
           </div>
 
-          <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-bold uppercase tracking-widest">
+          <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm font-extrabold uppercase tracking-widest">
             <a routerLink="/" (click)="closeMobileMenu()" class="px-5 py-4 bg-white border border-[#ecece5] rounded-md text-charcoal text-center shadow-sm">Inicio</a>
             <a routerLink="/catalog" (click)="closeMobileMenu()" class="px-5 py-4 bg-white border border-[#ecece5] rounded-md text-charcoal text-center shadow-sm">Catalogo</a>
             <a routerLink="/contact" (click)="closeMobileMenu()" class="px-5 py-4 bg-white border border-[#ecece5] rounded-md text-charcoal text-center shadow-sm">Contacto</a>

@@ -37,8 +37,12 @@
                 {{ getCategoryLabel() }}
             </span>
 
+            <div *ngIf="product.casa || product.house" 
+                class="text-[9px] text-gold font-bold uppercase tracking-[0.2em] mb-1">
+                {{ product.casa || product.house }}
+            </div>
             <h3
-                class="font-sans font-bold text-charcoal text-xs sm:text-sm uppercase tracking-widest mt-1 mb-1 line-clamp-2">
+                class="font-sans font-bold text-charcoal text-xs sm:text-sm uppercase tracking-widest mb-1 line-clamp-2">
                 {{ product.name }}</h3>
 
             <p class="text-[10px] sm:text-[11px] text-soft-charcoal mb-3 font-medium line-clamp-2"

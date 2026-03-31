@@ -467,7 +467,7 @@ export class OrderController {
             doc.font('Helvetica-Bold').fontSize(9).fillColor('#B59A68')
                 .text('SELLO', stampCx - stampR, stampCy - 10, { width: stampR * 2, align: 'center' });
             doc.font('Helvetica-Bold').fontSize(8).fillColor('#B59A68')
-                .text('ORIGINALIDAD', stampCx - stampR, stampCy + 1, { width: stampR * 2, align: 'center' });
+                .text('ORIGINALES', stampCx - stampR, stampCy + 1, { width: stampR * 2, align: 'center' });
             doc.restore();
             
             doc.fillColor('#000000');

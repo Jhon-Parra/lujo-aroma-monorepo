@@ -27,12 +27,13 @@ export class ProductsComponent implements OnInit {
   productSort: 'name_asc' | 'price_desc' | 'price_asc' | 'stock_asc' | 'stock_desc' = 'name_asc';
   private readonly lowStockThreshold = 5;
 
-  categories: Category[] = [];
-  categoriesSupported = false;
+  houseCategories: Category[] = [];
+  houseCategoriesSupported = false;
 
   newProduct = {
     nombre: '',
     genero: 'unisex',
+    casa: '',
     notas: '',
     precio: 0,
     stock: 0,
@@ -63,37 +64,31 @@ export class ProductsComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.loadCategories();
+    this.loadHouseCategories();
     this.loadProducts();
   }
 
-  loadCategories(): void {
+  loadHouseCategories(): void {
     this.categoryService.getAdminCategories().subscribe({
       next: (rows) => {
-        this.categories = (rows || []).slice().sort((a, b) => String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es'));
-        this.categoriesSupported = this.categories.length > 0;
-
-        if (this.categoriesSupported) {
-          const active = this.getActiveCategories();
-          const slugs = new Set((active || []).map(c => String(c.slug || '').toLowerCase()).filter(Boolean));
-          const current = String((this.newProduct as any)?.genero || '').toLowerCase();
-          if (!current || !slugs.has(current)) {
-            const first = active?.[0]?.slug;
-            if (first) (this.newProduct as any).genero = first;
-          }
-        }
+        this.houseCategories = (rows || []).slice().sort((a, b) => String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es'));
+        this.houseCategoriesSupported = this.houseCategories.length > 0;
       },
       error: () => {
-        // Si la migración no está aplicada, el backend responde 400. Mantener fallback (mujer/hombre/unisex).
-        this.categories = [];
-        this.categoriesSupported = false;
+        this.houseCategories = [];
+        this.houseCategoriesSupported = false;
       }
     });
   }
 
-  getActiveCategories(): Category[] {
-    if (!this.categoriesSupported) return [];
-    return (this.categories || []).filter(c => c.activo !== false);
+  getActiveHouseCategories(): Category[] {
+    const blocked = new Set(['mujer', 'hombre', 'unisex']);
+    return (this.houseCategories || []).filter((c) => {
+      if (c.activo === false) return false;
+      const slug = String(c.slug || '').toLowerCase();
+      if (blocked.has(slug)) return false;
+      return true;
+    });
   }
 
   loadProducts() {
@@ -309,6 +304,7 @@ export class ProductsComponent implements OnInit {
     const formData = new FormData();
     formData.append('nombre', this.newProduct.nombre);
     formData.append('genero', this.newProduct.genero);
+    formData.append('casa', String((this.newProduct as any).casa ?? '').trim());
     formData.append('notas', this.newProduct.notas); // Optional frontend detail conceptually mapped to descripcion if needed
     formData.append('descripcion', this.newProduct.descripcion);
     formData.append('precio', this.newProduct.precio.toString());
@@ -363,7 +359,8 @@ export class ProductsComponent implements OnInit {
     this.editingProductId = product.id || null;
     this.newProduct = {
       nombre: product.nombre,
-      genero: (product as any).categoria_slug || product.genero || 'unisex',
+      genero: product.genero || 'unisex',
+      casa: (product as any).categoria_slug || (product as any).casa || (product as any).house || '',
       notas: (product as any).notas_olfativas || '',
       precio: typeof product.precio === 'string' ? parseFloat(product.precio) : (product.precio || 0),
       stock: product.stock,
@@ -455,7 +452,7 @@ export class ProductsComponent implements OnInit {
   }
 
   resetForm() {
-    this.newProduct = { nombre: '', genero: 'unisex', notas: '', precio: 0, stock: 0, descripcion: '', esNuevo: false, nuevoHasta: '' };
+    this.newProduct = { nombre: '', genero: 'unisex', casa: '', notas: '', precio: 0, stock: 0, descripcion: '', esNuevo: false, nuevoHasta: '' };
     this.selectedFile = null;
     this.selectedFile2 = null;
     this.selectedFile3 = null;

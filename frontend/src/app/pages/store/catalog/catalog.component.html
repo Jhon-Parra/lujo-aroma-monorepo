@@ -34,54 +34,56 @@
                 </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-6">
-                <ul class="space-y-6 text-sm tracking-[0.18em] text-white/75 uppercase font-bold">
-                    <li>
+             <div class="flex-1 overflow-y-auto p-6">
+                <div class="mb-8">
+                    <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-white/60 mb-3">Categorias (Casa)</div>
+                    <div class="space-y-2">
                         <button (click)="filterCategory('todos')"
                             [class.text-[#d8c08a]]="selectedCategory === 'todos'"
-                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors">
-                            <span>Todos los Perfumes</span>
+                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors text-xs tracking-[0.18em] uppercase font-bold">
+                            <span>Todas</span>
                             <span *ngIf="selectedCategory === 'todos'" class="w-1.5 h-1.5 rounded-full bg-[#d8c08a]"></span>
                         </button>
-                    </li>
-
-                    <ng-container *ngIf="categories.length; else fallbackMobileDrawer">
-                        <li *ngFor="let c of categories">
-                            <button (click)="filterCategory(c.slug)"
-                                [class.text-[#d8c08a]]="selectedCategory === c.slug"
-                                class="w-full text-left flex items-center justify-between group hover:text-white transition-colors">
-                                <span>{{ c.nombre }}</span>
-                                <span *ngIf="selectedCategory === c.slug"
-                                    class="w-1.5 h-1.5 rounded-full bg-[#d8c08a]"></span>
-                            </button>
-                        </li>
-                    </ng-container>
-
-                    <ng-template #fallbackMobileDrawer>
-                        <li>
-                            <button (click)="filterCategory('mujer')"
-                                [class.text-[#d8c08a]]="selectedCategory === 'mujer'"
-                                class="w-full text-left flex items-center justify-between hover:text-white transition-colors">
-                                <span>Para Mujer</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button (click)="filterCategory('hombre')"
-                                [class.text-[#d8c08a]]="selectedCategory === 'hombre'"
-                                class="w-full text-left flex items-center justify-between hover:text-white transition-colors">
-                                <span>Para Hombre</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button (click)="filterCategory('unisex')"
-                                [class.text-[#d8c08a]]="selectedCategory === 'unisex'"
-                                class="w-full text-left flex items-center justify-between hover:text-white transition-colors">
-                                <span>Unisex</span>
-                            </button>
-                        </li>
-                    </ng-template>
-                </ul>
-            </div>
+                        <button *ngFor="let c of categories" (click)="filterCategory(c.slug)"
+                            [class.text-[#d8c08a]]="selectedCategory === c.slug"
+                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors text-xs tracking-[0.18em] uppercase font-bold">
+                            <span class="truncate">{{ c.nombre }}</span>
+                            <span *ngIf="selectedCategory === c.slug" class="w-1.5 h-1.5 rounded-full bg-[#d8c08a]"></span>
+                        </button>
+                    </div>
+                </div>
+                 <ul class="space-y-6 text-sm tracking-[0.18em] text-white/75 uppercase font-bold">
+                     <li>
+                         <button (click)="filterGender('all')"
+                             [class.text-[#d8c08a]]="selectedGender === 'all'"
+                             class="w-full text-left flex items-center justify-between group hover:text-white transition-colors">
+                             <span>Todo</span>
+                             <span *ngIf="selectedGender === 'all'" class="w-1.5 h-1.5 rounded-full bg-[#d8c08a]"></span>
+                         </button>
+                     </li>
+                     <li>
+                         <button (click)="filterGender('mujer')"
+                             [class.text-[#d8c08a]]="selectedGender === 'mujer'"
+                             class="w-full text-left flex items-center justify-between hover:text-white transition-colors">
+                             <span>Para Mujer</span>
+                         </button>
+                     </li>
+                     <li>
+                         <button (click)="filterGender('hombre')"
+                             [class.text-[#d8c08a]]="selectedGender === 'hombre'"
+                             class="w-full text-left flex items-center justify-between hover:text-white transition-colors">
+                             <span>Para Hombre</span>
+                         </button>
+                     </li>
+                     <li>
+                         <button (click)="filterGender('unisex')"
+                             [class.text-[#d8c08a]]="selectedGender === 'unisex'"
+                             class="w-full text-left flex items-center justify-between hover:text-white transition-colors">
+                             <span>Unisex</span>
+                         </button>
+                     </li>
+                 </ul>
+             </div>
 
             <div
                 class="p-6 border-t border-white/10 bg-white/5 text-[10px] text-center text-white/60 tracking-[0.28em] uppercase font-bold">
@@ -101,30 +103,30 @@
                 </div>
 
                 <div class="mt-2 text-[10px] uppercase tracking-[0.22em] text-soft-charcoal">
-                    Activo: <span class="font-bold text-charcoal">{{ getCategoryLabel(selectedCategory) }}</span>
+                    Categoria: <span class="font-bold text-charcoal">{{ getCategoryLabel(selectedCategory) }}</span>
                 </div>
 
-                <button *ngIf="selectedCategory !== 'todos'" type="button" (click)="filterCategory('todos')"
+                <button *ngIf="selectedCategory !== 'todos' || selectedGender !== 'all'" type="button" (click)="clearFilters()"
                     class="mt-4 w-full rounded-2xl border border-[#ecece5] bg-[#f9f9f6] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.28em] text-charcoal hover:border-[#b59a68]/40 hover:bg-white transition-colors">
-                    Limpiar filtro
+                    Limpiar filtros
                 </button>
             </div>
 
-            <div class="px-6 pb-6">
-                <div class="mt-4 text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Intenciones</div>
+             <div class="px-6 pb-6">
+                    <div class="mt-4 text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Genero</div>
 
                 <ul class="mt-4 space-y-2">
                     <li>
                         <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                            <input type="radio" name="category" value="todos" (change)="filterCategory('todos')"
-                                [checked]="selectedCategory === 'todos'" class="sr-only peer">
+                            <input type="radio" name="gender" value="all" (change)="filterGender('all')"
+                                [checked]="selectedGender === 'all'" class="sr-only peer">
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
                                     <i class="bi bi-grid text-lg"></i>
                                 </div>
                                 <div class="min-w-0">
                                     <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal">Todo</div>
-                                    <div class="text-xs text-soft-charcoal">Ver toda la coleccion</div>
+                                    <div class="text-xs text-soft-charcoal">Sin filtro de genero</div>
                                 </div>
                             </div>
                             <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
@@ -133,8 +135,8 @@
 
                     <li>
                         <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                            <input type="radio" name="category" value="mujer" (change)="filterCategory('mujer')"
-                                [checked]="selectedCategory === 'mujer'" class="sr-only peer">
+                            <input type="radio" name="gender" value="mujer" (change)="filterGender('mujer')"
+                                [checked]="selectedGender === 'mujer'" class="sr-only peer">
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
                                     <i class="bi bi-gender-female text-lg"></i>
@@ -150,8 +152,8 @@
 
                     <li>
                         <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                            <input type="radio" name="category" value="hombre" (change)="filterCategory('hombre')"
-                                [checked]="selectedCategory === 'hombre'" class="sr-only peer">
+                            <input type="radio" name="gender" value="hombre" (change)="filterGender('hombre')"
+                                [checked]="selectedGender === 'hombre'" class="sr-only peer">
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
                                     <i class="bi bi-gender-male text-lg"></i>
@@ -167,8 +169,8 @@
 
                     <li>
                         <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                            <input type="radio" name="category" value="unisex" (change)="filterCategory('unisex')"
-                                [checked]="selectedCategory === 'unisex'" class="sr-only peer">
+                            <input type="radio" name="gender" value="unisex" (change)="filterGender('unisex')"
+                                [checked]="selectedGender === 'unisex'" class="sr-only peer">
                             <div class="flex items-center gap-3 min-w-0">
                                 <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
                                     <i class="bi bi-stars text-lg"></i>
@@ -181,34 +183,41 @@
                             <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
                         </label>
                     </li>
-                </ul>
+                 </ul>
 
                 <div class="mt-6 pt-5 border-t border-[#ecece5]">
-                    <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Categorias</div>
-
+                    <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Categorias (Casa)</div>
                     <ul class="mt-4 space-y-2">
-                        <ng-container *ngIf="categories.length; else fallbackCategories">
-                            <li *ngFor="let c of categories">
-                                <label *ngIf="(c.slug || '').toLowerCase() !== 'mujer' && (c.slug || '').toLowerCase() !== 'hombre' && (c.slug || '').toLowerCase() !== 'unisex'"
-                                    class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                                    <input type="radio" name="category" [value]="c.slug" (change)="filterCategory(c.slug)"
-                                        [checked]="selectedCategory === c.slug" class="sr-only peer">
-                                    <div class="flex items-center gap-3 min-w-0">
-                                        <div class="w-10 h-10 rounded-2xl bg-[#f9f9f6] text-[#274C68] flex items-center justify-center border border-[#ecece5] shadow-sm transition-colors peer-checked:bg-[#b59a68]/15 peer-checked:border-[#b59a68]/35 peer-checked:text-[#07121a]">
-                                            <i class="bi bi-droplet-half text-lg"></i>
-                                        </div>
-                                        <div class="min-w-0">
-                                            <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal truncate">{{ c.nombre }}</div>
-                                        </div>
+                        <li>
+                            <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
+                                <input type="radio" name="category" value="todos" (change)="filterCategory('todos')"
+                                    [checked]="selectedCategory === 'todos'" class="sr-only peer">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-10 h-10 rounded-2xl bg-[#f9f9f6] text-[#274C68] flex items-center justify-center border border-[#ecece5] shadow-sm transition-colors peer-checked:bg-[#b59a68]/15 peer-checked:border-[#b59a68]/35 peer-checked:text-[#07121a]">
+                                        <i class="bi bi-grid text-lg"></i>
                                     </div>
-                                    <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                                </label>
-                            </li>
-                        </ng-container>
-
-                        <ng-template #fallbackCategories>
-                            <li class="text-xs text-soft-charcoal">Cargando categorias...</li>
-                        </ng-template>
+                                    <div class="min-w-0">
+                                        <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal truncate">Todas</div>
+                                    </div>
+                                </div>
+                                <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                            </label>
+                        </li>
+                        <li *ngFor="let c of categories">
+                            <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
+                                <input type="radio" name="category" [value]="c.slug" (change)="filterCategory(c.slug)"
+                                    [checked]="selectedCategory === c.slug" class="sr-only peer">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-10 h-10 rounded-2xl bg-[#f9f9f6] text-[#274C68] flex items-center justify-center border border-[#ecece5] shadow-sm transition-colors peer-checked:bg-[#b59a68]/15 peer-checked:border-[#b59a68]/35 peer-checked:text-[#07121a]">
+                                        <i class="bi bi-droplet-half text-lg"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal truncate">{{ c.nombre }}</div>
+                                    </div>
+                                </div>
+                                <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                            </label>
+                        </li>
                     </ul>
                 </div>
             </div>

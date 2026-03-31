@@ -49,6 +49,26 @@ const detectCategoriesSchema = async (): Promise<boolean> => {
     }
 };
 
+let productCasaReady: boolean | null = null;
+const detectProductCasaSchema = async (): Promise<boolean> => {
+    if (productCasaReady !== null) return productCasaReady;
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT COUNT(*) AS ok
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND LOWER(table_name) = 'productos'
+               AND column_name = 'casa'
+             LIMIT 1`
+        );
+        productCasaReady = Number(rows?.[0]?.ok || 0) > 0;
+        return productCasaReady;
+    } catch {
+        productCasaReady = false;
+        return false;
+    }
+};
+
 // Detecta si productos.id es BINARY (UUID) o VARCHAR
 let productIdIsBinary: boolean | null = null;
 const detectProductIdType = async (): Promise<boolean> => {
@@ -207,8 +227,10 @@ const computeHeuristicScore = (p: ProductRow, tokens: string[], preferGenero?: s
 
 const selectCandidates = async (opts: { preferGenero?: string | null }): Promise<ProductRow[]> => {
     const hasCategories = await detectCategoriesSchema();
-    const join = hasCategories ? 'LEFT JOIN categorias c ON c.slug = p.genero' : '';
-    const categorySelect = hasCategories ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
+    const hasCasa = await detectProductCasaSchema();
+    const canJoin = hasCategories && hasCasa;
+    const join = canJoin ? 'LEFT JOIN categorias c ON c.slug = p.casa' : '';
+    const categorySelect = canJoin ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
 
     const idRead = await productIdReadExpr();
 
@@ -553,8 +575,10 @@ export const recommendSimilar = async (req: Request, res: Response): Promise<voi
         }
 
         const hasCategories = await detectCategoriesSchema();
-        const join = hasCategories ? 'LEFT JOIN categorias c ON c.slug = p.genero' : '';
-        const categorySelect = hasCategories ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
+        const hasCasa = await detectProductCasaSchema();
+        const canJoin = hasCategories && hasCasa;
+        const join = canJoin ? 'LEFT JOIN categorias c ON c.slug = p.casa' : '';
+        const categorySelect = canJoin ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
         const idRead = await productIdReadExpr();
         const idWhere = await productIdWhereExpr();
         const [rows] = await pool.query<ProductRow[]>(

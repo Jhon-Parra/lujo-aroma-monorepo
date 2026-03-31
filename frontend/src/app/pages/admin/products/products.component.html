@@ -172,37 +172,50 @@
             <h3 class="font-serif text-xl mb-4 text-charcoal border-b pb-2">{{ editingProductId ? 'Editar Producto ✏️' :
                 'Añadir con Asistente IA ✨' }}</h3>
             <form class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                         <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Nombre
+                             Sensación</label>
+                         <input type="text" name="nombre" [(ngModel)]="newProduct.nombre"
+                             class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
+                             placeholder="Ej: Aqua di Roma">
+                     </div>
+                     <div>
+                         <label
+                             class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Género</label>
+                         <select name="genero" [(ngModel)]="newProduct.genero"
+                             class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold bg-white">
+                             <option value="unisex">Unisex</option>
+                             <option value="mujer">Para Mujer</option>
+                             <option value="hombre">Para Hombre</option>
+                         </select>
+                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Nombre
-                            Sensación</label>
-                        <input type="text" name="nombre" [(ngModel)]="newProduct.nombre"
-                            class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
-                            placeholder="Ej: Aqua di Roma">
+                        <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Categoría (Casa / Marca)</label>
+                        <ng-container *ngIf="houseCategoriesSupported; else casaFallback">
+                            <select name="casa" [(ngModel)]="newProduct.casa"
+                                class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold bg-white">
+                                <option value="">Sin categoría</option>
+                                <option *ngFor="let c of getActiveHouseCategories()" [value]="c.slug">{{ c.nombre }}</option>
+                            </select>
+                        </ng-container>
+                        <ng-template #casaFallback>
+                            <input type="text" name="casa" [(ngModel)]="newProduct.casa"
+                                class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
+                                placeholder="Ej: Dior, Lattafa, Versace">
+                        </ng-template>
+                        <p class="text-[11px] text-gray-500 mt-2">
+                            Crea y administra categorías en <a routerLink="/admin/categories" class="text-gold font-bold">Admin &gt; Categorías</a>.
+                        </p>
                     </div>
-                    <div>
-                        <label
-                            class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Categoría</label>
-                        <select name="genero" [(ngModel)]="newProduct.genero"
-                            class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold bg-white">
-                            <ng-container *ngIf="categoriesSupported; else generoFallback">
-                                <option *ngFor="let c of getActiveCategories()" [value]="c.slug">{{ c.nombre }}</option>
-                            </ng-container>
-                            <ng-template #generoFallback>
-                                <option value="unisex">Unisex</option>
-                                <option value="mujer">Para Mujer</option>
-                                <option value="hombre">Para Hombre</option>
-                            </ng-template>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Notas
-                            Olfativas</label>
-                        <input type="text" name="notas" [(ngModel)]="newProduct.notas"
-                            class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
-                            placeholder="Ej: Bergamota, Pachulí, Cedro">
-                    </div>
-                </div>
+                     <div>
+                         <label class="block text-xs font-bold text-soft-charcoal uppercase tracking-widest mb-1">Notas
+                             Olfativas</label>
+                         <input type="text" name="notas" [(ngModel)]="newProduct.notas"
+                             class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold"
+                             placeholder="Ej: Bergamota, Pachulí, Cedro">
+                     </div>
+                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -315,19 +328,14 @@
                                 placeholder="Nombre o descripcion"
                                 class="w-full border border-[#dcdcd4] rounded-sm p-2.5 text-sm focus:outline-none focus:border-gold bg-white" />
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-soft-charcoal uppercase tracking-widest mb-1">Categoría</label>
+                         <div>
+                            <label class="block text-[10px] font-bold text-soft-charcoal uppercase tracking-widest mb-1">Género</label>
                             <select [(ngModel)]="productFilterGender" (ngModelChange)="applyProductFilters()"
                                 class="w-full border border-[#dcdcd4] rounded-sm p-2.5 text-sm focus:outline-none focus:border-gold bg-white">
                                 <option value="all">Todos</option>
-                                <ng-container *ngIf="categoriesSupported; else filterFallback">
-                                    <option *ngFor="let c of categories" [value]="c.slug">{{ c.nombre }}</option>
-                                </ng-container>
-                                <ng-template #filterFallback>
-                                    <option value="mujer">Mujer</option>
-                                    <option value="hombre">Hombre</option>
-                                    <option value="unisex">Unisex</option>
-                                </ng-template>
+                                <option value="mujer">Mujer</option>
+                                <option value="hombre">Hombre</option>
+                                <option value="unisex">Unisex</option>
                             </select>
                         </div>
                         <div>
@@ -366,7 +374,7 @@
                     class="bg-cream border-b border-[#ecece5] text-xs uppercase tracking-widest font-bold text-charcoal">
                     <tr>
                         <th class="p-4">Producto</th>
-                        <th class="p-4">Categoría</th>
+                        <th class="p-4">Género</th>
                         <th class="p-4">Notas</th>
                         <th class="p-4 text-right">Precio</th>
                         <th class="p-4 text-center">Stock</th>
@@ -374,14 +382,19 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @for (product of filteredProducts; track product.id) {
-                    <tr class="border-b border-[#ecece5] hover:bg-[#EAE8E3]">
-                        <td class="p-4 flex items-center space-x-3">
-                            <img [src]="product.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?w=100&q=80'"
-                                alt="Imagen Fragancia" class="w-10 h-10 rounded-sm object-cover">
-                            <span class="font-bold text-charcoal">{{ product.nombre }}</span>
-                        </td>
-                        <td class="p-4 uppercase text-[10px] tracking-widest font-bold text-gold">{{ product.categoria_nombre || (product.genero || 'UNISEX') }}</td>
+                     @for (product of filteredProducts; track product.id) {
+                     <tr class="border-b border-[#ecece5] hover:bg-[#EAE8E3]">
+                         <td class="p-4 flex items-center space-x-3">
+                             <img [src]="product.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?w=100&q=80'"
+                                 alt="Imagen Fragancia" class="w-10 h-10 rounded-sm object-cover">
+                            <div class="min-w-0">
+                                <div class="font-bold text-charcoal truncate">{{ product.nombre }}</div>
+                                <div *ngIf="product.categoria_nombre || product.casa || product.house" class="text-[10px] uppercase tracking-widest text-soft-charcoal truncate">
+                                    {{ product.categoria_nombre || product.casa || product.house }}
+                                </div>
+                            </div>
+                          </td>
+                        <td class="p-4 uppercase text-[10px] tracking-widest font-bold text-gold">{{ product.genero || 'UNISEX' }}</td>
                         <td class="p-4 truncate max-w-xs">{{ product.notas_olfativas || product.descripcion }}</td>
                         <td class="p-4 text-right font-bold text-charcoal">{{ product.precio | currency }}</td>
                         <td class="p-4 text-center cursor-pointer" (click)="!editingStockId && startEditStock(product)"

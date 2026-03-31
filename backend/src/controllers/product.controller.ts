@@ -73,22 +73,27 @@ type CategorySqlParts = { categorySelect: string; categoryJoin: string };
 const getCategorySqlParts = async (): Promise<CategorySqlParts> => {
     const ok = await detectCategoriesSchema();
     if (!ok) return { categorySelect: '', categoryJoin: '' };
+
+    // Evitar JOIN si la columna casa no existe (migración pendiente)
+    const casaOk = await detectProductCasaSchema();
+    if (!casaOk) return { categorySelect: '', categoryJoin: '' };
     return {
         categorySelect: ', c.nombre AS categoria_nombre, c.slug AS categoria_slug',
-        categoryJoin: 'LEFT JOIN categorias c ON c.slug = p.genero'
+        // categorias ahora se usan como "Casa" (marca)
+        categoryJoin: 'LEFT JOIN categorias c ON c.slug = p.casa'
     };
 };
 
-const ensureCategoryExists = async (slug: string): Promise<boolean> => {
-    try {
-        const [rows] = await pool.query<any[]>(
-            'SELECT 1 AS ok FROM categorias WHERE slug = ? LIMIT 1',
-            [slug]
-        );
-        return !!rows?.[0]?.ok;
-    } catch {
-        return false;
-    }
+const normalizeGeneroInput = (raw: any): 'mujer' | 'hombre' | 'unisex' => {
+    const v = String(raw ?? '').trim().toLowerCase();
+    if (!v) return 'unisex';
+    if (['mujer', 'ella', 'dama', 'female', 'woman', 'women'].includes(v)) return 'mujer';
+    if (['hombre', 'el', 'caballero', 'male', 'man', 'men'].includes(v)) return 'hombre';
+    if (['unisex', 'mix', 'mixto', 'uni'].includes(v)) return 'unisex';
+    // fallback seguro
+    if (v.includes('muj')) return 'mujer';
+    if (v.includes('hom') || v.includes('cab')) return 'hombre';
+    return 'unisex';
 };
 
 let productSlugReady: boolean | null = null;
@@ -127,6 +132,26 @@ const detectProductNewUntilSchema = async (): Promise<boolean> => {
         return productNewUntilReady;
     } catch {
         productNewUntilReady = false;
+        return false;
+    }
+};
+
+let productCasaReady: boolean | null = null;
+const detectProductCasaSchema = async (): Promise<boolean> => {
+    if (productCasaReady === true) return true;
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT COUNT(*) AS ok
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND lower(table_name) = 'productos'
+               AND column_name = 'casa'
+             LIMIT 1`
+        );
+        productCasaReady = !!rows?.[0]?.ok;
+        return productCasaReady;
+    } catch {
+        productCasaReady = false;
         return false;
     }
 };
@@ -219,19 +244,12 @@ const getPromotionAdvancedSqlParts = async (): Promise<PromotionAdvancedSqlParts
 
 export const createProduct = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { nombre, genero, descripcion, notas_olfativas, notas, precio, stock, unidades_vendidas, es_nuevo, nuevo_hasta } = req.body;
+        const { nombre, genero, casa, descripcion, notas_olfativas, notas, precio, stock, unidades_vendidas, es_nuevo, nuevo_hasta } = req.body;
         const notasFinal = notas_olfativas || notas;
 
-        const categoriesOk = await detectCategoriesSchema();
         const newUntilOk = await detectProductNewUntilSchema();
-        const generoNormalized = normalizeCategorySlug(genero) || 'unisex';
-        if (categoriesOk) {
-            const exists = await ensureCategoryExists(generoNormalized);
-            if (!exists) {
-                res.status(400).json({ error: 'Categoria invalida. Crea la categoria primero en Admin > Categorias.' });
-                return;
-            }
-        }
+        const casaOk = await detectProductCasaSchema();
+        const generoNormalized = normalizeGeneroInput(genero);
 
         const nuevoHastaParsed = parseNuevoHastaInput(nuevo_hasta);
         if (nuevoHastaParsed !== undefined && !newUntilOk) {
@@ -260,6 +278,8 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         const slug = generateSlug(nombre);
         const slugOk = await detectSlugSchema();
 
+        const casaNormalized = normalizeCategorySlug(casa);
+
         // Convert UUID to BINARY(16) in MySQL logic
         const cols: string[] = ['id', 'nombre', 'genero', 'descripcion', 'notas_olfativas', 'precio', 'stock', 'unidades_vendidas', 'imagen_url', 'imagen_url_2', 'imagen_url_3', 'es_nuevo'];
         const vals: any[] = [
@@ -276,6 +296,11 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
             imagen_url_3,
             !!es_nuevo
         ];
+
+        if (casaOk) {
+            cols.push('casa');
+            vals.push(casaNormalized ? casaNormalized : null);
+        }
 
         if (slugOk) {
             cols.push('slug');
@@ -310,6 +335,7 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
     try {
         const { categorySelect, categoryJoin } = await getCategorySqlParts();
         const newUntilOk = await detectProductNewUntilSchema();
+        const casaOk = await detectProductCasaSchema();
         const esNuevoExpr = newUntilOk
             ? `CASE
                 WHEN COALESCE(p.es_nuevo, false) = false THEN false
@@ -322,13 +348,14 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
         const slugOk = await detectSlugSchema();
         const slugSelect = slugOk ? 'p.slug, ' : '';
         const extraSelect = newUntilOk ? ', p.nuevo_hasta' : '';
+        const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
 
         const [rows] = await pool.query<any[]>(
             `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
                     p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
-                    ${esNuevoExpr}${extraSelect}, p.creado_en
+                    ${esNuevoExpr}${extraSelect}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
              ORDER BY p.creado_en DESC`
@@ -346,13 +373,24 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         const authReq = req as any;
         const userId: string | null = authReq?.user?.id || null;
 
+        const normalizeSearch = (raw: any): string => {
+            const s = String(raw ?? '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+            return s.replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
+        };
+
+        const qRaw = String(req.query['q'] || '').trim();
+        const q = normalizeSearch(qRaw);
+        const limitRaw = Number(req.query['limit']);
+        const limit = Number.isFinite(limitRaw) ? Math.max(0, Math.trunc(limitRaw)) : 0;
+
         // ── Cache: serve anonymous requests from cache (TTL 5 min) ───────────
         // Authenticated users may see personalised promotions → skip cache.
         let anonCacheKey: string | null = null;
         if (!userId) {
-            const q = String(req.query['q'] || '').trim().toLowerCase();
-            const limit = String(req.query['limit'] || '');
-            anonCacheKey = `${CACHE_KEYS.CATALOG_ANON}:q=${q}:limit=${limit}`;
+            anonCacheKey = `${CACHE_KEYS.CATALOG_ANON}:q=${encodeURIComponent(q)}:limit=${limit}`;
             const cached = appCache.get<any[]>(anonCacheKey);
             if (cached) {
                 res.setHeader('X-Cache', 'HIT');
@@ -377,6 +415,7 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         const assignmentReady = await detectPromotionAssignmentSchema();
         const genderReady = await detectPromotionGenderSchema();
         const newUntilOk = await detectProductNewUntilSchema();
+        const casaOk = await detectProductCasaSchema();
 
         const esNuevoExpr = newUntilOk
             ? `CASE
@@ -391,13 +430,14 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         const { advancedReady } = await getPromotionAdvancedSqlParts();
         const slugOk = await detectSlugSchema();
         const slugSelect = slugOk ? 'p.slug, ' : '';
+        const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
 
         // 1. Fetch all products
         const [pRows] = await pool.query<any[]>(
             `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
-                    ${esNuevoExpr}, p.creado_en
+                    ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
              WHERE p.stock > 0
@@ -432,7 +472,7 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         const userPromos = new Set(puRows.map(r => r.promocion_id));
 
         // 4. Match and apply logic in JS (Robust across MySQL versions)
-        const products = pRows.map(p => {
+        let products = pRows.map(p => {
             let bestPromo: any = null;
             let maxMontoDescuento = 0;
 
@@ -488,6 +528,31 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             };
         });
 
+        // Optional search and limit (used by navbar suggestions).
+        if (q) {
+            const tokens = q.split(' ').filter(Boolean);
+            products = products.filter((p: any) => {
+                const blob = normalizeSearch([
+                    p?.nombre,
+                    p?.name,
+                    p?.descripcion,
+                    p?.description,
+                    p?.notas_olfativas,
+                    p?.notes,
+                    p?.categoria_nombre,
+                    p?.categoria_slug,
+                    p?.genero,
+                    p?.casa,
+                    p?.house,
+                ].filter(Boolean).join(' '));
+                if (!blob) return false;
+                return tokens.every(t => blob.includes(t));
+            });
+        }
+        if (limit && limit > 0) {
+            products = products.slice(0, limit);
+        }
+
         // ── Cache: store result for anonymous requests ────────────────────────
         if (anonCacheKey) {
             appCache.set(anonCacheKey, products);
@@ -526,6 +591,7 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
 
         const { advancedReady } = await getPromotionAdvancedSqlParts();
         const newUntilOk = await detectProductNewUntilSchema();
+        const casaOk = await detectProductCasaSchema();
 
         const esNuevoExpr = newUntilOk
             ? `CASE
@@ -539,6 +605,7 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
         const { categorySelect, categoryJoin } = await getCategorySqlParts();
         const slugOk = await detectSlugSchema();
         const slugSelect = slugOk ? 'p.slug, ' : '';
+        const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
 
         let rows: any[] = [];
 
@@ -547,7 +614,7 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
             `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
                     p.precio AS price, p.precio, p.stock, p.unidades_vendidas AS soldCount, p.unidades_vendidas,
                     p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
-                    ${esNuevoExpr}, p.creado_en
+                    ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
              WHERE p.stock > 0
@@ -661,6 +728,7 @@ export const getBestsellers = async (req: Request, res: Response): Promise<void>
 
         const { advancedReady } = await getPromotionAdvancedSqlParts();
         const newUntilOk = await detectProductNewUntilSchema();
+        const casaOk = await detectProductCasaSchema();
 
         const esNuevoExpr = newUntilOk
             ? `CASE
@@ -674,13 +742,14 @@ export const getBestsellers = async (req: Request, res: Response): Promise<void>
         const { categorySelect, categoryJoin } = await getCategorySqlParts();
         const slugOk = await detectSlugSchema();
         const slugSelect = slugOk ? 'p.slug, ' : '';
+        const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
 
         // 1. Fetch bestsellers (ordered by unidades_vendidas)
         const [pRows] = await pool.query<any[]>(
             `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
                     p.precio AS price, p.precio, p.stock, p.unidades_vendidas AS soldCount, p.unidades_vendidas,
                     p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
-                    ${esNuevoExpr}, p.creado_en
+                    ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
              WHERE p.stock > 0
@@ -794,6 +863,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
         const advancedParts = await getPromotionAdvancedSqlParts();
         const advancedReady = advancedParts.advancedReady;
         const newUntilOk = await detectProductNewUntilSchema();
+        const casaOk = await detectProductCasaSchema();
 
         const esNuevoExpr = newUntilOk
             ? `CASE
@@ -809,6 +879,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
         const slugSelect = slugOk ? 'p.slug, ' : '';
         const whereClause = slugOk ? 'WHERE p.id = ? OR p.slug = ?' : 'WHERE p.id = ?';
         const queryParams = slugOk ? [id, id] : [id];
+        const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
 
         // 1. Fetch product
         const [pRows] = await pool.query<any[]>(
@@ -816,7 +887,7 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
                     p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
-                    p.promocion_id, ${esNuevoExpr}, p.creado_en
+                    p.promocion_id, ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
              ${whereClause}`,
@@ -929,6 +1000,7 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
         const advancedParts = await getPromotionAdvancedSqlParts();
         const advancedReady = advancedParts.advancedReady;
         const newUntilOk = await detectProductNewUntilSchema();
+        const casaOk = await detectProductCasaSchema();
 
         const esNuevoExpr = newUntilOk
             ? `CASE
@@ -954,12 +1026,13 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
 
         const slugOk = await detectSlugSchema();
         const slugSelect = slugOk ? 'p.slug, ' : '';
+        const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
 
         // 2. Fetch related products
         const [pRows] = await pool.query<any[]>(
             `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
                     p.precio AS price, p.precio, p.stock, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
-                    ${esNuevoExpr}, p.creado_en, p.unidades_vendidas AS soldCount, p.unidades_vendidas
+                    ${esNuevoExpr}${casaSelect}, p.creado_en, p.unidades_vendidas AS soldCount, p.unidades_vendidas
              FROM productos p
              ${categoryJoin}
              WHERE p.id <> ?
@@ -1061,7 +1134,7 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
 export const updateProduct = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const { nombre, genero, descripcion, notas_olfativas, notas, precio, stock, es_nuevo, nuevo_hasta } = req.body;
+        const { nombre, genero, casa, descripcion, notas_olfativas, notas, precio, stock, es_nuevo, nuevo_hasta } = req.body;
 
         const hasValue = (val: any) => val !== undefined && val !== null && val !== '';
         const notasFinal = hasValue(notas_olfativas) ? notas_olfativas : (hasValue(notas) ? notas : undefined);
@@ -1089,8 +1162,8 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         const updates: string[] = [];
         const params: any[] = [];
 
-        const categoriesOk = await detectCategoriesSchema();
         const newUntilOk = await detectProductNewUntilSchema();
+        const casaOk = await detectProductCasaSchema();
 
         const slugOk = await detectSlugSchema();
 
@@ -1103,20 +1176,15 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
             }
         }
         if (hasValue(genero)) {
-            const generoNormalized = normalizeCategorySlug(genero);
-            if (!generoNormalized) {
-                res.status(400).json({ error: 'Categoria invalida' });
-                return;
-            }
-            if (categoriesOk) {
-                const exists = await ensureCategoryExists(generoNormalized);
-                if (!exists) {
-                    res.status(400).json({ error: 'Categoria invalida. Crea la categoria primero en Admin > Categorias.' });
-                    return;
-                }
-            }
+            const generoNormalized = normalizeGeneroInput(genero);
             updates.push('genero = ?');
             params.push(generoNormalized);
+        }
+
+        if (casaOk && casa !== undefined) {
+            updates.push('casa = ?');
+            const casaNormalized = normalizeCategorySlug(casa);
+            params.push(casaNormalized ? casaNormalized : null);
         }
         if (hasValue(descripcion)) { updates.push('descripcion = ?'); params.push(descripcion); }
         if (notasFinal !== undefined) { updates.push('notas_olfativas = ?'); params.push(notasFinal); }
@@ -1326,6 +1394,8 @@ export const downloadProductImportTemplate = async (req: Request, res: Response)
             'nombre',
             // slug de categoria (ej: mujer, hombre, unisex)
             'categoria',
+            // casa / marca (ej: Dior, Lattafa)
+            'casa',
             'notas_olfativas',
             'descripcion',
             'precio',
@@ -1337,6 +1407,7 @@ export const downloadProductImportTemplate = async (req: Request, res: Response)
         const example = [
             'Aqua di Roma',
             'unisex',
+            'Lujo & Aroma',
             'Bergamota, Cedro, Ambar',
             'Fragancia fresca y elegante. Notas: Bergamota, Cedro, Ambar',
             159900,
@@ -1371,6 +1442,7 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
 
     try {
         const categoriesSchemaOk = await detectCategoriesSchema();
+        const casaOk = await detectProductCasaSchema();
         const validSlugs = new Set<string>();
         if (categoriesSchemaOk) {
             try {
@@ -1427,6 +1499,7 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
             id: string;
             nombre: string;
             genero: string;
+            casa?: string | null;
             descripcion: string;
             notas_olfativas: string | null;
             precio: number;
@@ -1448,6 +1521,7 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
             const notasRaw = getRowValue(r, ['notas_olfativas', 'notas', 'notes', 'notasolfativas']);
             const generoRaw = getRowValue(r, ['genero', 'gender']);
             const categoriaRaw = getRowValue(r, ['categoria', 'category', 'categoria_slug']);
+            const casaRaw = getRowValue(r, ['casa', 'house', 'marca', 'brand']);
             const stockRaw = getRowValue(r, ['stock', 'inventario', 'cantidad']);
             const imagenRaw = getRowValue(r, ['imagen_url', 'image_url', 'imagen', 'image', 'url_imagen', 'imageurl']);
             const vendidasRaw = getRowValue(r, ['unidades_vendidas', 'vendidas', 'ventas', 'unidades']);
@@ -1500,10 +1574,14 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
             const imagen_url = String(imagenRaw ?? '').trim() || null;
             const es_nuevo = String(nuevoRaw ?? '').toLowerCase() === 'true' || nuevoRaw === 1 || nuevoRaw === true;
 
+            const casaVal = String(casaRaw ?? '').trim();
+            const casaFinal = casaVal ? (casaVal.length > 120 ? casaVal.slice(0, 120) : casaVal) : null;
+
             toInsert.push({
                 id: uuidv4(),
                 nombre,
                 genero,
+                casa: casaOk ? casaFinal : undefined,
                 descripcion,
                 notas_olfativas: notas || null,
                 precio: precioN,
@@ -1528,11 +1606,19 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
         try {
             await connection.query('BEGIN');
             for (const p of toInsert) {
-                await connection.query(
-                    `INSERT INTO productos (id, nombre, genero, descripcion, notas_olfativas, precio, stock, unidades_vendidas, imagen_url, es_nuevo)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [p.id, p.nombre, p.genero, p.descripcion, p.notas_olfativas, p.precio, p.stock, p.unidades_vendidas, p.imagen_url, p.es_nuevo]
-                );
+                if (casaOk) {
+                    await connection.query(
+                        `INSERT INTO productos (id, nombre, genero, casa, descripcion, notas_olfativas, precio, stock, unidades_vendidas, imagen_url, es_nuevo)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [p.id, p.nombre, p.genero, (p as any).casa ?? null, p.descripcion, p.notas_olfativas, p.precio, p.stock, p.unidades_vendidas, p.imagen_url, p.es_nuevo]
+                    );
+                } else {
+                    await connection.query(
+                        `INSERT INTO productos (id, nombre, genero, descripcion, notas_olfativas, precio, stock, unidades_vendidas, imagen_url, es_nuevo)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [p.id, p.nombre, p.genero, p.descripcion, p.notas_olfativas, p.precio, p.stock, p.unidades_vendidas, p.imagen_url, p.es_nuevo]
+                    );
+                }
             }
             await connection.query('COMMIT');
         } catch (e) {

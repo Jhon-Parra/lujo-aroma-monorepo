@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS Productos (
     promocion_id UUID NULL,
     -- slug de categoria (antes genero)
     genero VARCHAR(120),
+    casa VARCHAR(120),
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_producto_promocion FOREIGN KEY (promocion_id) REFERENCES Promociones (id) ON DELETE SET NULL

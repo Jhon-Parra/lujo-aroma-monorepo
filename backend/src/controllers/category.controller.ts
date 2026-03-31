@@ -29,6 +29,22 @@ const ensureCategoriesSchema = async (): Promise<boolean> => {
     }
 };
 
+const ensureProductsCasaSchema = async (): Promise<boolean> => {
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT COUNT(*) AS ok
+             FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND lower(table_name) = 'productos'
+               AND column_name = 'casa'
+             LIMIT 1`
+        );
+        return Number(rows?.[0]?.ok || 0) > 0;
+    } catch {
+        return false;
+    }
+};
+
 export const getCategories = async (_req: Request, res: Response): Promise<void> => {
     try {
         const ok = await ensureCategoriesSchema();
@@ -58,6 +74,9 @@ export const getCategoriesAdmin = async (_req: Request, res: Response): Promise<
             return;
         }
 
+        const casaOk = await ensureProductsCasaSchema();
+        const productCol = casaOk ? 'p.casa' : 'p.genero';
+
         const [rows] = await pool.query<any[]>(
             `SELECT
                 c.id,
@@ -65,7 +84,7 @@ export const getCategoriesAdmin = async (_req: Request, res: Response): Promise<
                 c.slug,
                 c.activo,
                 c.creado_en,
-                (SELECT COUNT(*) FROM productos p WHERE p.genero = c.slug) AS total_productos
+                (SELECT COUNT(*) FROM productos p WHERE ${productCol} = c.slug) AS total_productos
              FROM categorias c
              ORDER BY c.nombre ASC`
         );
@@ -170,6 +189,9 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
             return;
         }
 
+        const casaOk = await ensureProductsCasaSchema();
+        const productCol = casaOk ? 'casa' : 'genero';
+
         const { id } = req.params;
         const [rows] = await pool.query<any[]>('SELECT slug FROM categorias WHERE id = ?', [id]);
         const slug = rows?.[0]?.slug;
@@ -178,7 +200,7 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
             return;
         }
 
-        const [countRows] = await pool.query<any[]>('SELECT COUNT(*) AS n FROM productos WHERE genero = ?', [slug]);
+        const [countRows] = await pool.query<any[]>(`SELECT COUNT(*) AS n FROM productos WHERE ${productCol} = ?`, [slug]);
         const n = Number(countRows?.[0]?.n || 0);
         if (n > 0) {
             res.status(409).json({ error: 'No puedes eliminar una categoria con productos asociados.' });

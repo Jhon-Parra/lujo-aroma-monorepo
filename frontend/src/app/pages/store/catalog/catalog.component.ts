@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { ProductCardComponent, Product } from '../../../shared/components/product-card/product-card.component';
 import { ProductService } from '../../../core/services/product/product.service';
 import { SeoService } from '../../../core/services/seo/seo.service';
@@ -11,7 +12,7 @@ import { SkeletonCardComponent } from '../../../shared/components/skeleton-card/
 @Component({
   selector: 'app-catalog',
   standalone: true,
-  imports: [CommonModule, ProductCardComponent, SkeletonCardComponent],
+  imports: [CommonModule, FormsModule, ProductCardComponent, SkeletonCardComponent],
   templateUrl: './catalog.component.html'
 })
 export class CatalogComponent implements OnInit {
@@ -19,11 +20,16 @@ export class CatalogComponent implements OnInit {
   filteredProducts: Product[] = [];
   loading = true;
   error = '';
+  // category = Casa (marca)
   selectedCategory = 'todos';
+  // gender filter
+  selectedGender: 'all' | 'mujer' | 'hombre' | 'unisex' = 'all';
   searchTerm = '';
   selectedPromotionId = '';
   isMobileMenuOpen = false;
   private lastTrackedSearch = '';
+
+  categories: Category[] = [];
 
   // Paginacion (cliente)
   // En categorias (filtro activo): 4 columnas (lg) x 3 filas = 12 productos.
@@ -43,7 +49,6 @@ export class CatalogComponent implements OnInit {
   }
 
 
-  categories: Category[] = [];
   private searchIndexCache = new Map<string, string>();
 
   private normalizeSlug(raw: any): string {
@@ -74,6 +79,8 @@ export class CatalogComponent implements OnInit {
       anyP?.notes,
       anyP?.notas_olfativas,
       anyP?.descripcion,
+      anyP?.casa,
+      anyP?.house,
       anyP?.categoria_nombre,
       anyP?.categoria_slug,
       anyP?.genero,
@@ -162,16 +169,15 @@ export class CatalogComponent implements OnInit {
     this.categoryService.getPublicCategories().subscribe({
       next: (rows) => {
         const seen = new Set<string>();
+        const blocked = new Set(['mujer', 'hombre', 'unisex']);
         this.categories = (rows || [])
           .map((c) => {
             const slug = this.normalizeSlug((c as any)?.slug);
-            return {
-              ...c,
-              slug,
-            } as Category;
+            return { ...c, slug } as Category;
           })
           .filter((c) => {
             if (!c?.slug || c.slug === 'todos') return false;
+            if (blocked.has(String(c.slug || '').toLowerCase())) return false;
             if (seen.has(c.slug)) return false;
             seen.add(c.slug);
             return true;
@@ -197,6 +203,8 @@ export class CatalogComponent implements OnInit {
           soldCount: (ap.soldCount || ap.unidades_vendidas || 0).toString(),
           isNew: !!(ap.isNew ?? ap.es_nuevo),
           genero: ap.genero,
+          casa: (ap as any).casa ?? (ap as any).house ?? null,
+          house: (ap as any).house ?? (ap as any).casa ?? null,
           categoria_nombre: (ap as any).categoria_nombre ?? null,
           categoria_slug: (ap as any).categoria_slug ?? null,
           precio: (() => {
@@ -212,11 +220,14 @@ export class CatalogComponent implements OnInit {
 
         this.route.queryParams.subscribe(params => {
           this.searchTerm = params['q'] || '';
-          this.selectedCategory = this.normalizeSlug(params['category']);
+          // Casa: support legacy `house` param too.
+          this.selectedCategory = this.normalizeSlug(params['category'] ?? params['house']);
           this.selectedPromotionId = params['promo'] || '';
+          const g = String(params['gender'] || '').trim().toLowerCase();
+          this.selectedGender = (g === 'mujer' || g === 'hombre' || g === 'unisex') ? (g as any) : 'all';
 
           // si cambian filtros, resetear pagina
-          const nextFilterKey = `${this.searchTerm}|${this.selectedCategory}|${this.selectedPromotionId}`;
+          const nextFilterKey = `${this.searchTerm}|${this.selectedCategory}|${this.selectedGender}|${this.selectedPromotionId}`;
           const rawPage = Math.trunc(Number(params['page'] || 1));
           const safeRawPage = Number.isFinite(rawPage) ? Math.max(1, rawPage) : 1;
           const filtersChanged = !!this.lastFilterKey && this.lastFilterKey !== nextFilterKey;
@@ -253,6 +264,9 @@ export class CatalogComponent implements OnInit {
           if (this.selectedCategory && this.selectedCategory !== 'todos') {
             parts.push(this.getCategoryLabel(this.selectedCategory));
           }
+          if (this.selectedGender !== 'all') {
+            parts.push(`Genero: ${this.getGenderLabel(this.selectedGender)}`);
+          }
           if (this.searchTerm && String(this.searchTerm).trim()) {
             parts.push(`Busqueda: ${String(this.searchTerm).trim()}`);
           }
@@ -281,6 +295,15 @@ export class CatalogComponent implements OnInit {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }
 
+  clearFilters(): void {
+    this.isMobileMenuOpen = false;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { category: null, gender: null, page: null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
   filterCategory(category: string) {
     this.isMobileMenuOpen = false; // Close menu on selection
     const normalized = this.normalizeSlug(category);
@@ -291,12 +314,30 @@ export class CatalogComponent implements OnInit {
     });
   }
 
+  filterGender(gender: 'all' | 'mujer' | 'hombre' | 'unisex') {
+    this.isMobileMenuOpen = false;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { gender: gender !== 'all' ? gender : null, page: null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
   getCategoryLabel(slugRaw: string): string {
     const slug = String(slugRaw || '').trim().toLowerCase();
     if (!slug || slug === 'todos') return 'Todo';
-
     const match = (this.categories || []).find(c => String(c.slug || '').toLowerCase() === slug);
     if (match?.nombre) return match.nombre;
+    return slug
+      .split('-')
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+
+  getGenderLabel(slugRaw: string): string {
+    const slug = String(slugRaw || '').trim().toLowerCase();
+    if (!slug || slug === 'todos' || slug === 'all') return 'Todo';
 
     if (slug === 'mujer') return 'Mujer';
     if (slug === 'hombre') return 'Hombre';
@@ -320,33 +361,17 @@ export class CatalogComponent implements OnInit {
       }
     }
 
+    if (this.selectedGender !== 'all') {
+      const g = this.selectedGender;
+      result = result.filter(p => String(p.genero || '').toLowerCase() === g);
+    }
+
     if (this.selectedCategory && this.selectedCategory !== 'todos') {
-      const category = this.selectedCategory.toLowerCase();
+      const cat = String(this.selectedCategory).toLowerCase();
       result = result.filter(p => {
-        const productGenero = (p.genero || '').toLowerCase();
-        // Mapeo de sinónimos para intenciones comerciales
-        if (category === 'caballero' || category === 'hombre') {
-          return productGenero === 'hombre' || productGenero === 'caballero';
-        }
-        if (category === 'dama' || category === 'mujer') {
-          return productGenero === 'mujer' || productGenero === 'dama';
-        }
-        if (category === 'unisex') {
-          return productGenero === 'unisex';
-        }
-        // Para categorías especiales, filtramos por nombre/descripción/categoría si está disponible
-        if (category === 'arabe') {
-          return (p.name || '').toLowerCase().includes('arabe') || 
-                 (p.notes || '').toLowerCase().includes('arabe') ||
-                 (p.categoria_slug || '').includes('arabe');
-        }
-        if (category === 'kits' || category === 'kits-de-perfumes') {
-          return (p.name || '').toLowerCase().includes('kit') || 
-                 (p.notes || '').toLowerCase().includes('kit') ||
-                 (p.categoria_slug || '').includes('kit');
-        }
-        
-        return productGenero === category || (p.categoria_slug || '') === category;
+        const anyP: any = p as any;
+        const house = String(anyP?.categoria_slug || anyP?.casa || anyP?.house || '').trim().toLowerCase();
+        return !!house && house === cat;
       });
     }
 

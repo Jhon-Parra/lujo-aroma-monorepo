@@ -25,6 +25,7 @@ const booleanOptional = z.preprocess((val) => {
 export const createProductSchema = z.object({
     nombre: z.string().min(2, 'Nombre debe tener al menos 2 caracteres').max(200),
     genero: z.string().min(1).max(120).optional(),
+    casa: z.string().max(120).optional(),
     descripcion: z.string().min(10, 'Descripción debe tener al menos 10 caracteres'),
     notas_olfativas: stringOptional,
     notas: stringOptional,
@@ -42,6 +43,7 @@ export const createProductSchema = z.object({
 export const updateProductSchema = z.object({
     nombre: stringMin2Optional,
     genero: z.string().min(1).max(120).optional(),
+    casa: z.string().max(120).optional(),
     descripcion: stringMin10Optional.or(z.literal('')),
     notas_olfativas: stringOptional,
     notas: stringOptional,

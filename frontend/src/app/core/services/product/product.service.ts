@@ -8,6 +8,8 @@ export interface Product {
   nombre: string;
   name?: string; // Alias
   genero?: string;
+  casa?: string | null;
+  house?: string | null; // Alias
   categoria_nombre?: string | null;
   categoria_slug?: string | null;
   descripcion: string;

@@ -63,6 +63,7 @@ CREATE TABLE productos (
     id VARCHAR(36) NOT NULL,
     nombre VARCHAR(255) NOT NULL,
     genero VARCHAR(100) DEFAULT 'unisex',
+    casa VARCHAR(120) DEFAULT NULL,
     descripcion TEXT NOT NULL,
     notas_olfativas VARCHAR(500),
     precio DECIMAL(15,2) NOT NULL,

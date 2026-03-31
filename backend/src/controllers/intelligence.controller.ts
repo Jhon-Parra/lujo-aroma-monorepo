@@ -431,16 +431,15 @@ export const getIntelligenceSummary = async (req: AuthRequest, res: Response): P
         const [salesData] = await pool.query<any[]>(
             `SELECT 
                 p.genero AS category_slug,
-                COALESCE(c.nombre, p.genero, 'Sin categoria') AS category_name,
+                COALESCE(p.genero, 'Sin categoria') AS category_name,
                 p.nombre AS product_name,
                 SUM(d.cantidad) as units,
                 SUM(d.subtotal) as revenue
              FROM detalleordenes d
              JOIN ordenes o ON o.id = d.orden_id
              JOIN productos p ON p.id = d.producto_id
-             LEFT JOIN categorias c ON c.slug = p.genero
              WHERE ${salesWhere}
-             GROUP BY p.genero, c.nombre, p.nombre`,
+             GROUP BY p.genero, p.nombre`,
             salesParams
         );
 

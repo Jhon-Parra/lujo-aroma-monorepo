@@ -12,6 +12,8 @@ export interface Product {
   name: string;
   notes: string;
   genero?: string;
+  casa?: string | null;
+  house?: string | null;
   categoria_nombre?: string | null;
   categoria_slug?: string | null;
   price: number;

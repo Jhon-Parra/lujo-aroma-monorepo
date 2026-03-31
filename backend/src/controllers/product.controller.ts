@@ -515,7 +515,8 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
                 productsQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
             }
         }
-        productsQuery += ' ORDER BY p.creado_en DESC LIMIT ? OFFSET ?';
+        // Stable ordering avoids duplicates/missing items across pages when creado_en ties.
+        productsQuery += ' ORDER BY p.creado_en DESC, p.id DESC LIMIT ? OFFSET ?';
         productsParams.push(limit, offset);
 
         const [pRows] = await pool.query<any[]>(productsQuery, productsParams);

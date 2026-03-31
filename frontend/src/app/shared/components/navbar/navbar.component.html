@@ -3,7 +3,7 @@
   <div *ngIf="!isAdminRoute && settings?.show_banner"
     (click)="filterByPromotions()"
     class="w-full bg-gold py-2.5 flex justify-center items-center text-[10px] sm:text-xs tracking-[0.25em] font-bold text-white cursor-pointer hover:bg-gold/90 transition-all uppercase px-4 text-center">
-    ✨ {{ settings?.banner_text || 'BIENVENIDOS A LUJO & AROMA' }} ✨
+    ✨ {{ settings?.banner_text || 'BIENVENIDOS A LUJO&AROMA | PERFUMES BOGOTÁ' }} ✨
     <span class="ml-2 underline decoration-white/50 underline-offset-4 hover:decoration-white transition-all whitespace-nowrap">VER OFERTAS</span>
   </div>
 
@@ -330,7 +330,7 @@
       <!-- Logo: overlay (no afecta layout) -->
       <div class="navbar-logo-layer" aria-hidden="false">
         <a [routerLink]="isAdminRoute ? '/admin' : '/'" class="navbar-logo-wrap cursor-pointer" aria-label="Ir al inicio">
-          <img [src]="getLogoUrl()" (error)="onLogoError($event)" alt="Lujo & Aroma Perfumería de Lujo"
+          <img [src]="getLogoUrl()" (error)="onLogoError($event)" alt="Lujo&Aroma | Perfumes Bogotá - Perfumería de Lujo"
             class="navbar-logo object-contain transition-all duration-500" />
         </a>
       </div>

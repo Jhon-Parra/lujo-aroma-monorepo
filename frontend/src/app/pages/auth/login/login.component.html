@@ -1,7 +1,7 @@
 <div class="min-h-screen flex items-center justify-center bg-[#F9F9F6] px-4">
     <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#ecece5]">
         <div class="text-center mb-8">
-            <h1 class="font-serif text-3xl tracking-widest text-charcoal mb-2">LUJO & AROMA</h1>
+            <h1 class="font-serif text-3xl tracking-widest text-charcoal mb-2">LUJO&AROMA | PERFUMES BOGOTÁ</h1>
             <p class="text-sm font-light text-soft-charcoal uppercase tracking-widest">
                 {{ isLoginMode ? 'Panel de Acceso' : 'Crea tu Cuenta' }}
             </p>
@@ -49,12 +49,12 @@
                 <input *ngIf="isLoginMode" type="email" id="email_login" name="email_login"
                     [(ngModel)]="credentials.email" required autocomplete="new-password"
                     class="w-full border border-[#dcdcd4] rounded-sm p-3 text-sm focus:outline-none focus:border-gold transition-colors"
-                    placeholder="usuario@lujo_aroma.com">
+                    placeholder="usuario@perfumesbogota.com.co">
                 <!-- Email para registro -->
                 <input *ngIf="!isLoginMode" type="email" id="email_reg" name="email_reg"
                     [(ngModel)]="registerData.email" required
                     class="w-full border border-[#dcdcd4] rounded-sm p-3 text-sm focus:outline-none focus:border-gold transition-colors"
-                    placeholder="usuario@lujo_aroma.com">
+                    placeholder="usuario@perfumesbogota.com.co">
             </div>
 
             <!-- Campo Password para ambos -->

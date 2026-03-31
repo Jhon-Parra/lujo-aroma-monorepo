@@ -291,7 +291,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   // =========================================================
   getLogoUrl(): string {
     const src = this.forceLocalLogo
-      ? 'assets/images/logo.svg'
+      ? 'assets/images/logo.png'
       : this.resolveLogoUrl(this.settings?.logo_url);
 
     // Si ya lo recortamos (sin espacios transparentes), usarlo.
@@ -333,14 +333,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
   onLogoError(event: Event): void {
     const img = event.target as HTMLImageElement | null;
 
-    if (img?.src?.includes('/assets/images/logo.svg')) return;
+    if (img?.src?.includes('/assets/images/logo.png')) return;
 
     this.forceLocalLogo = true;
     this.trimmedLogoUrl = null;
     this.trimmedLogoSrc = null;
 
     if (img) {
-      img.src = 'assets/images/logo.svg';
+      img.src = 'assets/images/logo.png';
     }
   }
 

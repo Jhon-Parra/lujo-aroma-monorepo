@@ -466,6 +466,44 @@
                 </div>
             </div>
 
+            <!-- Email Sender Settings -->
+            <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
+                <h3 class="font-serif text-xl border-b border-[#ecece5] pb-4 mb-6">Correos Automaticos</h3>
+
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Remitente (Nombre)</label>
+                            <input type="text" [(ngModel)]="settings.email_from_name" placeholder="Lujo & Aroma"
+                                class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Remitente (Correo)</label>
+                            <input type="email" [(ngModel)]="settings.email_from_address" placeholder="tienda@tu-dominio.com"
+                                class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">Reply-To (opcional)</label>
+                            <input type="email" [(ngModel)]="settings.email_reply_to" placeholder="soporte@tu-dominio.com"
+                                class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-soft-charcoal tracking-widest uppercase mb-2">BCC Pedidos (opcional)</label>
+                            <input type="text" [(ngModel)]="settings.email_bcc_orders" placeholder="ventas@tu-dominio.com, admin@tu-dominio.com"
+                                class="w-full border border-[#ecece5] rounded-md px-4 py-2 text-sm focus:ring-gold focus:border-gold outline-none">
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-soft-charcoal bg-cream border border-[#ecece5] rounded-md p-4">
+                        Esto afecta los correos por estado del pedido (Pagado/Enviado/Entregado/Cancelado).
+                        El SMTP se configura en <code>backend/.env</code>.
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
                 <h3 class="font-serif text-xl border-b border-[#ecece5] pb-4 mb-6">Inteligencia y Alertas</h3>
 

@@ -17,9 +17,9 @@ type SeoConfig = {
   providedIn: 'root'
 })
 export class SeoService {
-  private defaultTitle = 'Lujo & Aroma | Perfumería Árabe';
-  private defaultDescription = 'Perfumería árabe y perfumes originales. Fragancias exclusivas para mujer, hombre y unisex con envíos a toda Colombia. Compra en Lujo & Aroma.';
-  private defaultKeywords = 'perfumería árabe, perfumes árabes, perfumes originales, oud, fragancias, Lujo & Aroma, perfumes Bogotá';
+  private defaultTitle = 'Lujo&Aroma | Perfumes Bogotá';
+  private defaultDescription = 'Perfumes originales y fragancias exclusivas en Lujo&Aroma | Perfumes Bogotá. Los mejores aromas árabes y de diseñador con envíos a todo el país.';
+  private defaultKeywords = 'Lujo&Aroma, Perfumes Bogotá, perfumes originales, fragancias, perfumes colombia';
 
   constructor(
     private title: Title,

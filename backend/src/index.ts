@@ -219,7 +219,7 @@ app.use('/api/intelligence', intelligenceRoutes);
 app.use('/api/seo', seoRoutes);
 
 app.get('/health', async (req, res) => {
-    const base = { status: 'OK', message: 'Lujo & Aroma API is running' };
+    const base = { status: 'OK', message: 'Perfumes Bogotá API is running' };
 
     // En produccion no exponemos detalles internos.
     if (process.env.NODE_ENV === 'production') {

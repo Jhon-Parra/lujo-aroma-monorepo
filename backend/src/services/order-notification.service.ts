@@ -1,11 +1,41 @@
 import { OrderModel } from '../models/order.model';
+import { pool } from '../config/database';
 import { sendEmail } from './email.service';
 import { OrderEmailLogsService } from './order-email-logs.service';
 import { OrderEmailTemplateService, OrderEmailStatus } from './order-email-templates.service';
 
 const FRONTEND_URL = String(process.env.FRONTEND_URL || 'https://lujo_aromacol.com').replace(/\/$/, '');
-const BRAND_NAME = 'Lujo & Aroma';
-const BRAND_LOGO_URL = `${FRONTEND_URL}/assets/images/logo.png`;
+const BRAND_NAME = 'Perfumes Bogotá';
+
+let cachedLogoUrl: { value: string; expiresAt: number } | null = null;
+const LOGO_CACHE_MS = 60_000;
+
+const resolveLogoUrl = async (): Promise<string> => {
+    const now = Date.now();
+    if (cachedLogoUrl && cachedLogoUrl.expiresAt > now) return cachedLogoUrl.value;
+
+    // Prefer configured logo_url (often a PNG in Supabase) because many email clients
+    // don't render SVG reliably.
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT logo_url
+             FROM configuracionglobal
+             WHERE id = 1
+             LIMIT 1`
+        );
+        const url = String(rows?.[0]?.logo_url || '').trim();
+        if (url) {
+            cachedLogoUrl = { value: url, expiresAt: now + LOGO_CACHE_MS };
+            return url;
+        }
+    } catch {
+        // ignore
+    }
+
+    const fallback = `${FRONTEND_URL}/assets/images/logo.svg`;
+    cachedLogoUrl = { value: fallback, expiresAt: now + LOGO_CACHE_MS };
+    return fallback;
+};
 
 /** MariaDB JSON_ARRAYAGG devuelve strings — parsear siempre antes de usar */
 const parseOrderJson = (val: any, fallback: any = []): any => {
@@ -237,6 +267,8 @@ const buildTemplatePayload = async (status: OrderEmailStatus, order: any) => {
           </div>`;
     })();
 
+    const logoUrl = await resolveLogoUrl();
+
     const textMap: Record<string, string> = {
         ...common,
         items_text: itemsText,
@@ -247,7 +279,7 @@ const buildTemplatePayload = async (status: OrderEmailStatus, order: any) => {
         year,
         brand_name: BRAND_NAME,
         store_url: FRONTEND_URL,
-        logo_url: BRAND_LOGO_URL
+        logo_url: logoUrl
     };
 
     // Para HTML: escapar todos los tokens de texto para evitar inyeccion via direccion/nombres.
@@ -257,7 +289,7 @@ const buildTemplatePayload = async (status: OrderEmailStatus, order: any) => {
     }, {} as Record<string, string>);
     // URLs en atributos
     htmlTextMap.store_url = escapeAttr(FRONTEND_URL);
-    htmlTextMap.logo_url = escapeAttr(BRAND_LOGO_URL);
+    htmlTextMap.logo_url = escapeAttr(logoUrl);
     htmlTextMap.link_rastreo = escapeAttr(String(order?.link_rastreo || '').trim());
 
     const htmlMap: Record<string, string> = {

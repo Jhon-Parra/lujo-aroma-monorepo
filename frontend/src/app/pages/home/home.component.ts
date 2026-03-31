@@ -19,8 +19,8 @@ import { SkeletonCardComponent } from '../../shared/components/skeleton-card/ske
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  private readonly HOME_VIDEO_AUTOPLAY_KEY = 'lujo_aroma_home_video_autoplay_done_v1';
-  private readonly EXIT_OFFER_KEY = 'lujo_aroma_exit_offer_seen_v1';
+  private readonly HOME_VIDEO_AUTOPLAY_KEY = 'perfumes_bogota_home_video_autoplay_done_v1';
+  private readonly EXIT_OFFER_KEY = 'perfumes_bogota_exit_offer_seen_v1';
 
   // Map to track video elements by slide index for programmatic control
   private videoElements = new Map<number, HTMLVideoElement>();
@@ -65,7 +65,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private instagramRequested = false;
 
   instagramUrl = '';
-  instagramLabel = '@lujo_aroma.col';
+  instagramLabel = '@perfumesbogota.oficial';
 
   facebookUrl = '';
   whatsappUrl = '';
@@ -186,19 +186,19 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // SEO & JSON-LD
     this.seo.set({
-      title: 'Lujo & Aroma | Perfumería Árabe',
-      description: 'Perfumería árabe y perfumes originales en Bogotá y Colombia. Fragancias para hombre, mujer y unisex con envíos rápidos. Descubre Lujo & Aroma.',
-      keywords: 'perfumería árabe, perfumes árabes, perfumes originales, oud, perfumes bogota, fragancias originales, perfumes colombia'
+      title: 'Lujo&Aroma | Perfumes Bogotá',
+      description: 'Lujo&Aroma | Perfumes Bogotá: Perfumería árabe y perfumes originales en Bogotá y Colombia. Fragancias para hombre, mujer y unisex con envíos rápidos.',
+      keywords: 'Lujo&Aroma, Perfumes Bogotá, perfumería árabe, perfumes árabes, perfumes originales, oud, perfumes bogota, fragancias originales, perfumes colombia'
     });
 
     this.seo.setJsonLd({
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "Lujo & Aroma",
-      "url": "https://lujo_aromacol.com/",
+      "name": "Lujo&Aroma | Perfumes Bogotá",
+      "url": "https://perfumesbogota.com.co/",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://lujo_aromacol.com/catalog?q={search_term_string}",
+        "target": "https://perfumesbogota.com.co/catalog?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     });
@@ -510,7 +510,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private buildInstagramLabel(normalizedUrl: string, raw: string): string {
-    const fallback = '@lujo_aroma.col';
+    const fallback = '@perfumesbogota.oficial';
     const rawValue = (raw || '').trim();
     if (!rawValue && !normalizedUrl) return fallback;
 

@@ -31,22 +31,13 @@ export class CatalogComponent implements OnInit {
 
   categories: Category[] = [];
 
-  // Paginacion (cliente)
-  // En categorias (filtro activo): 4 columnas (lg) x 3 filas = 12 productos.
-  // En "Ver todo": se muestran mas por pagina.
-  pageSizeAll = 24;
-  pageSizeCategory = 12;
+  // Paginacion: siempre 12 por pagina.
+  itemsPerPage = 12;
   currentPage = 1;
   totalPages = 1;
   pages: number[] = [];
   private lastFilterKey = '';
-  skeletonCards: number[] = Array.from({ length: 24 }, (_, i) => i);
-
-  private get effectivePageSize(): number {
-    return (this.selectedCategory && this.selectedCategory !== 'todos')
-      ? this.pageSizeCategory
-      : this.pageSizeAll;
-  }
+  skeletonCards: number[] = Array.from({ length: 12 }, (_, i) => i);
 
 
   private searchIndexCache = new Map<string, string>();
@@ -162,7 +153,7 @@ export class CatalogComponent implements OnInit {
 
   ngOnInit(): void {
     this.seo.set({
-      title: 'Catálogo de Perfumes en Bogotá | Lujo & Aroma',
+      title: 'Catálogo de Perfumes en Bogotá | Perfumes Bogotá',
       description: 'Explora nuestra colección exclusiva de perfumes originales en Bogotá. Envíos a toda Colombia. Filtra por categoría y encuentra tu aroma ideal.'
     });
 
@@ -198,6 +189,9 @@ export class CatalogComponent implements OnInit {
       this.selectedGender = (g === 'mujer' || g === 'hombre' || g === 'unisex') ? (g as any) : 'all';
       this.currentPage = Math.max(1, Math.trunc(Number(params['page'] || 1)));
 
+      // Make skeleton count match the requested page size.
+      this.skeletonCards = Array.from({ length: this.itemsPerPage }, (_, i) => i);
+
       this.fetchProducts();
     });
   }
@@ -206,7 +200,7 @@ export class CatalogComponent implements OnInit {
     this.loading = true;
     const category = this.selectedCategory !== 'todos' ? this.selectedCategory : null;
     const gender = this.selectedGender !== 'all' ? this.selectedGender : null;
-    this.productService.getPublicCatalog(this.currentPage, this.effectivePageSize, this.searchTerm, { category, gender }).subscribe({
+    this.productService.getPublicCatalog(this.currentPage, this.itemsPerPage, this.searchTerm, { category, gender }).subscribe({
       next: (res) => {
         const items = Array.isArray((res as any)?.items) ? (res as any).items : [];
         this.products = items.map((ap: any) => ({
@@ -233,7 +227,14 @@ export class CatalogComponent implements OnInit {
 
         this.filteredProducts = this.products; // Server already filtered
         this.totalProducts = Number((res as any)?.total || 0);
-        this.totalPages = Number((res as any)?.totalPages || 1);
+        this.totalPages = Math.max(1, Number((res as any)?.totalPages || 1));
+
+        // Guard: if URL has page > totalPages, jump to last page so the catalog
+        // never looks "recortado" by showing an empty page.
+        if (this.currentPage > this.totalPages) {
+          this.setPage(this.totalPages);
+          return;
+        }
         this.updatePaginationMetadata();
         
         this.loading = false;

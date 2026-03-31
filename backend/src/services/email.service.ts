@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { pool } from '../config/database';
 
 type MailOptions = {
     to: string;
@@ -53,6 +54,44 @@ const buildFrom = (name: string | null | undefined, address: string | null | und
     return fallback;
 };
 
+type SenderDbConfig = {
+    email_from_name?: string | null;
+    email_from_address?: string | null;
+    email_reply_to?: string | null;
+    email_bcc_orders?: string | null;
+};
+
+let senderDbCache: { value: SenderDbConfig; expiresAt: number } | null = null;
+const SENDER_DB_CACHE_MS = 60_000;
+
+const resolveSenderDbConfig = async (): Promise<SenderDbConfig> => {
+    const now = Date.now();
+    if (senderDbCache && senderDbCache.expiresAt > now) return senderDbCache.value;
+
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT email_from_name, email_from_address, email_reply_to, email_bcc_orders
+             FROM configuracionglobal
+             WHERE id = 1
+             LIMIT 1`
+        );
+        const row = rows?.[0] || {};
+        const value: SenderDbConfig = {
+            email_from_name: row.email_from_name ?? null,
+            email_from_address: row.email_from_address ?? null,
+            email_reply_to: row.email_reply_to ?? null,
+            email_bcc_orders: row.email_bcc_orders ?? null
+        };
+        senderDbCache = { value, expiresAt: now + SENDER_DB_CACHE_MS };
+        return value;
+    } catch {
+        // DB might not have columns/migrations in some environments.
+        const value: SenderDbConfig = {};
+        senderDbCache = { value, expiresAt: now + SENDER_DB_CACHE_MS };
+        return value;
+    }
+};
+
 const resolveSmtpConfig = async (): Promise<SmtpConfig | null> => {
     const host = String(process.env.SMTP_HOST || '').trim();
     const port = Number(process.env.SMTP_PORT || 587);
@@ -68,11 +107,14 @@ const resolveSenderConfig = async (fallbackFrom?: string): Promise<SenderConfig>
     const baseFrom = String(fallbackFrom || process.env.SMTP_FROM || '').trim();
     const envReplyTo = String(process.env.EMAIL_REPLY_TO || '').trim() || undefined;
     const envBcc = parseEmailList(process.env.EMAIL_BCC_ORDERS).join(',') || undefined;
-    return {
-        from: buildFrom(undefined, undefined, baseFrom),
-        replyTo: envReplyTo,
-        bccOrders: envBcc
-    };
+
+    const db = await resolveSenderDbConfig();
+
+    const from = buildFrom(db.email_from_name, db.email_from_address, baseFrom);
+    const replyTo = String(db.email_reply_to || '').trim() || envReplyTo;
+    const bccOrders = parseEmailList(db.email_bcc_orders).join(',') || envBcc;
+
+    return { from, replyTo, bccOrders };
 };
 
 const getTransporter = (config: SmtpConfig): nodemailer.Transporter => {
@@ -150,7 +192,7 @@ export const sendOrderShippingEmail = async (params: ShippingEmailParams): Promi
     const html = `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden">
           <div style="background:#1a1a1a;padding:24px;text-align:center">
-            <h1 style="color:#e8c96a;margin:0;font-size:24px">Lujo & Aroma</h1>
+            <h1 style="color:#e8c96a;margin:0;font-size:24px">Perfumes Bogotá</h1>
           </div>
           <div style="padding:32px">
             <h2 style="color:#1a1a1a;margin-top:0">🚚 ¡Tu pedido está en camino!</h2>
@@ -164,7 +206,7 @@ export const sendOrderShippingEmail = async (params: ShippingEmailParams): Promi
             <p style="color:#666;font-size:13px;margin-top:24px">Si tienes alguna pregunta, responde a este correo o contáctanos.</p>
           </div>
           <div style="background:#f5f5f5;padding:16px;text-align:center">
-            <p style="color:#888;font-size:12px;margin:0">© ${new Date().getFullYear()} Lujo & Aroma — lujo_aromacol.com</p>
+            <p style="color:#888;font-size:12px;margin:0">© ${new Date().getFullYear()} Perfumes Bogotá — perfumesbogota.com</p>
           </div>
         </div>`;
 

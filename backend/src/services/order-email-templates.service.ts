@@ -71,7 +71,7 @@ const BASE_EMAIL_HTML = `
                 <tr>
                   <td align="left" style="vertical-align:middle;">
                     <a href="{{store_url}}" style="text-decoration:none;display:inline-block;">
-                      <img src="{{logo_url}}" alt="Lujo & Aroma" width="150" style="display:block;border:0;outline:none;text-decoration:none;height:auto;max-width:150px;" />
+                      <img src="{{logo_url}}" alt="Perfumes Bogotá" width="150" style="display:block;border:0;outline:none;text-decoration:none;height:auto;max-width:150px;" />
                     </a>
                   </td>
                   <td align="right" style="vertical-align:middle;">
@@ -169,7 +169,7 @@ const BASE_EMAIL_HTML = `
 
           <tr>
             <td style="background:#fafafa;padding:14px 22px;text-align:center;font-family:Arial,sans-serif;color:#7a7468;font-size:12px;">
-              © {{year}} Lujo & Aroma · <a href="{{store_url}}" style="color:#7a7468;text-decoration:underline;">lujo_aromacol.com</a>
+              © {{year}} Perfumes Bogotá · <a href="{{store_url}}" style="color:#7a7468;text-decoration:underline;">perfumesbogota.com</a>
             </td>
           </tr>
         </table>

@@ -81,6 +81,12 @@ export const updateSettingsSchema = z.object({
     whatsapp_number: z.string().max(40).optional(),
     whatsapp_message: z.string().max(255).optional(),
 
+    // Email sender (stored in DB; SMTP stays in .env)
+    email_from_name: z.string().max(120).optional(),
+    email_from_address: z.string().max(200).optional(),
+    email_reply_to: z.string().max(200).optional(),
+    email_bcc_orders: z.string().max(500).optional(),
+
     // Recovery
     cart_recovery_enabled: booleanCoerce().optional(),
     cart_recovery_message: z.string().max(2000).optional(),

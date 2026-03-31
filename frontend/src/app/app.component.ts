@@ -51,10 +51,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.seoService.setJsonLd({
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
-      "name": "Lujo & Aroma",
-      "image": "https://lujo_aromacol.com/assets/images/logo.svg",
-      "@id": "https://lujo_aromacol.com",
-      "url": "https://lujo_aromacol.com",
+      "name": "Perfumes Bogotá",
+      "image": "https://perfumesbogota.com/assets/images/logo.png",
+      "@id": "https://perfumesbogota.com",
+      "url": "https://perfumesbogota.com",
       "telephone": "+573001234567",
       "address": {
         "@type": "PostalAddress",
@@ -305,7 +305,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private getAbsoluteLogoUrl(logoUrl: string | null | undefined): string {
     const url = (logoUrl || '').trim();
-    if (!url) return 'assets/images/logo.svg';
+    if (!url) return 'assets/images/logo.png';
 
     // Allow referencing frontend assets directly from settings
     if (url.startsWith('assets/') || url.startsWith('/assets/')) return url.replace(/^\/+/, '');

@@ -485,6 +485,12 @@ export class SettingsComponent implements OnInit {
     formData.append('boutique_phone', this.settings.boutique_phone || '');
     formData.append('boutique_email', this.settings.boutique_email || '');
 
+    // Email sender (used by automatic order emails)
+    formData.append('email_from_name', (this.settings as any).email_from_name || '');
+    formData.append('email_from_address', (this.settings as any).email_from_address || '');
+    formData.append('email_reply_to', (this.settings as any).email_reply_to || '');
+    formData.append('email_bcc_orders', (this.settings as any).email_bcc_orders || '');
+
     formData.append('alert_sales_delta_pct', String(this.settings.alert_sales_delta_pct ?? ''));
     formData.append('alert_abandoned_delta_pct', String(this.settings.alert_abandoned_delta_pct ?? ''));
     formData.append('alert_abandoned_value_threshold', String(this.settings.alert_abandoned_value_threshold ?? ''));

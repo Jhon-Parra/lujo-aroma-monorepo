@@ -434,14 +434,15 @@ export class OrderModel {
     }
 
     static async getHistorial(ordenId: string): Promise<any[]> {
+        const { expr, val } = await idToSql(ordenId);
         const [rows] = await pool.query<any[]>(
             `SELECT h.estado_anterior, h.estado_nuevo, h.cambio_en, h.observacion,
                     CONCAT(COALESCE(u.nombre,''), ' ', COALESCE(u.apellido,'')) AS admin_nombre
              FROM historial_pedido h
              LEFT JOIN usuarios u ON u.id = h.admin_id
-             WHERE h.orden_id = ?
+             WHERE h.orden_id = ${expr}
              ORDER BY h.cambio_en ASC`,
-            [ordenId]
+            [val]
         );
         return rows || [];
     }
@@ -700,7 +701,10 @@ export class OrderModel {
             LEFT JOIN productos p ON p.id = d.producto_id
             LEFT JOIN envios e ON e.orden_id = o.id
             WHERE o.usuario_id = ${userWhere}
-            GROUP BY o.id ${extraSelect ? `, ${extraSelect}` : ''}
+            GROUP BY o.id, o.total, o.estado, o.direccion_envio, o.codigo_transaccion, o.creado_en,
+                     o.telefono, o.nombre_cliente, o.metodo_pago, o.canal_pago, o.estado_pago, o.referencia_pago,
+                     e.transportadora, e.numero_guia, e.fecha_envio, e.link_rastreo
+                     ${extraSelect ? `, ${extraSelect}` : ''}
             ORDER BY o.creado_en DESC`,
             [userId]
         );
@@ -746,7 +750,9 @@ export class OrderModel {
             LEFT JOIN usuarios u ON u.id = o.usuario_id
             LEFT JOIN detalleordenes d ON d.orden_id = o.id
             ${where}
-            GROUP BY o.id, u.nombre, u.apellido, u.email, u.telefono
+            GROUP BY o.id, o.total, o.estado, o.direccion_envio, o.codigo_transaccion, o.creado_en,
+                     o.telefono, o.nombre_cliente, o.metodo_pago, o.canal_pago, o.estado_pago, o.referencia_pago,
+                     u.nombre, u.apellido, u.email, u.telefono
             ORDER BY o.creado_en DESC`,
             params
         );
@@ -793,7 +799,10 @@ export class OrderModel {
 
         const params: string[] = [orderId];
         if (userId) { query += ` AND o.usuario_id = ${idExprWhere}`; params.push(userId); }
-        query += ` GROUP BY o.id ${extraSelect ? `, ${extraSelect}, e.transportadora, e.numero_guia, e.fecha_envio, e.link_rastreo` : ', e.transportadora, e.numero_guia, e.fecha_envio, e.link_rastreo'}`;
+        query += ` GROUP BY o.id, o.total, o.estado, o.direccion_envio, o.codigo_transaccion, o.creado_en,
+                     o.telefono, o.nombre_cliente, o.metodo_pago, o.canal_pago, o.estado_pago,
+                     e.transportadora, e.numero_guia, e.fecha_envio, e.link_rastreo
+                     ${extraSelect ? `, ${extraSelect}` : ''}`;
         const [rows] = await pool.query(query, params);
         return (rows as any[])[0] || null;
     }
@@ -819,7 +828,7 @@ export class OrderModel {
                 ${idExprRead} AS id,
                 o.total, o.estado, o.direccion_envio, o.codigo_transaccion, o.creado_en,
                 o.telefono AS orden_telefono, o.nombre_cliente,
-                o.metodo_pago, o.canal_pago, o.estado_pago, o.referencia_pago, o.fecha_pago
+                o.metodo_pago, o.canal_pago, o.estado_pago, o.referencia_pago
                 ${extraSelect ? `, ${extraSelect}` : ''},
                 CONCAT(COALESCE(u.nombre,''), ' ', COALESCE(u.apellido,'')) AS cliente_nombre,
                 u.email AS cliente_email,
@@ -841,7 +850,10 @@ export class OrderModel {
             LEFT JOIN productos p ON p.id = d.producto_id
             LEFT JOIN envios e ON e.orden_id = o.id
             WHERE o.id = ${idExprWhere}
-            GROUP BY o.id, u.nombre, u.apellido, u.email, u.telefono, e.transportadora, e.numero_guia, e.fecha_envio, e.link_rastreo, e.observacion
+            GROUP BY o.id, o.total, o.estado, o.direccion_envio, o.codigo_transaccion, o.creado_en,
+                     o.telefono, o.nombre_cliente, o.metodo_pago, o.canal_pago, o.estado_pago, o.referencia_pago,
+                     u.nombre, u.apellido, u.email, u.telefono, 
+                     e.transportadora, e.numero_guia, e.fecha_envio, e.link_rastreo, e.observacion
                      ${extraSelect ? `, ${extraSelect}` : ''}`,
             [orderId]
         );

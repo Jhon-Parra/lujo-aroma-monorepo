@@ -383,15 +383,17 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
 
         const qRaw = String(req.query['q'] || '').trim();
         const q = normalizeSearch(qRaw);
-        const limitRaw = Number(req.query['limit']);
-        const limit = Number.isFinite(limitRaw) ? Math.max(0, Math.trunc(limitRaw)) : 0;
+        const limitRaw = Number(req.query['limit'] || req.query['pageSize'] || 12);
+        const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(100, Math.trunc(limitRaw))) : 12;
+        const pageRaw = Number(req.query['page'] || 1);
+        const page = Number.isFinite(pageRaw) ? Math.max(1, Math.trunc(pageRaw)) : 1;
+        const offset = (page - 1) * limit;
 
         // ── Cache: serve anonymous requests from cache (TTL 5 min) ───────────
-        // Authenticated users may see personalised promotions → skip cache.
         let anonCacheKey: string | null = null;
         if (!userId) {
-            anonCacheKey = `${CACHE_KEYS.CATALOG_ANON}:q=${encodeURIComponent(q)}:limit=${limit}`;
-            const cached = appCache.get<any[]>(anonCacheKey);
+            anonCacheKey = `${CACHE_KEYS.CATALOG_ANON}:q=${encodeURIComponent(q)}:page=${page}:limit=${limit}`;
+            const cached = appCache.get<any>(anonCacheKey);
             if (cached) {
                 res.setHeader('X-Cache', 'HIT');
                 res.status(200).json(cached);
@@ -432,19 +434,41 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         const slugSelect = slugOk ? 'p.slug, ' : '';
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
 
-        // 1. Fetch all products
-        const [pRows] = await pool.query<any[]>(
-            `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
+        // 1. Fetch total count for pagination
+        let countQuery = 'SELECT COUNT(*) as total FROM productos p WHERE p.stock > 0';
+        const queryParams: any[] = [];
+        if (q) {
+            // Very basic SQL search for total count, more robust filtering happens later if needed
+            // However, with indices, we can do some filtering here too.
+            countQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)';
+            const qLike = `%${q}%`;
+            queryParams.push(qLike, qLike, qLike, qLike);
+        }
+        const [countRows] = await pool.query<any[]>(countQuery, queryParams);
+        const total = countRows?.[0]?.total || 0;
+
+        // 2. Fetch products for the current page
+        let productsQuery = `
+             SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
                     p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
                     ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
              WHERE p.stock > 0
-             ORDER BY p.creado_en DESC`
-        );
+        `;
+        const productsParams: any[] = [...queryParams];
+        if (q) {
+            productsQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)';
+        }
+        productsQuery += ' ORDER BY p.creado_en DESC LIMIT ? OFFSET ?';
+        productsParams.push(limit, offset);
 
-        // 2. Fetch all active promotions for the current date
+        const [pRows] = await pool.query<any[]>(productsQuery, productsParams);
+
+        // 3. Fetch ONLY promotions related to the fetched products or global ones
+        // This is a big optimization: instead of matching ALL promotions to ALL products,
+        // we only match to the current page.
         const [promoRows] = await pool.query<any[]>(
             `SELECT pr.id, pr.nombre, pr.porcentaje_descuento,
                     ${advancedReady ? 'pr.discount_type, pr.amount_discount, pr.priority,' : "'PERCENT' AS discount_type, 0 AS amount_discount, 0 AS priority,"}
@@ -453,11 +477,7 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
              WHERE pr.activo = true
                AND pr.fecha_inicio <= NOW()
                AND pr.fecha_fin >= NOW()
-               AND (
-                 ${advancedReady 
-                    ? "(pr.discount_type = 'AMOUNT' AND pr.amount_discount > 0) OR (pr.discount_type <> 'AMOUNT' AND pr.porcentaje_descuento > 0)"
-                    : 'pr.porcentaje_descuento > 0'}
-               )`
+            `
         );
 
         // 3. Fetch specific mappings if needed
@@ -553,13 +573,21 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             products = products.slice(0, limit);
         }
 
+        const response = {
+            total,
+            page,
+            pageSize: limit,
+            totalPages: Math.ceil(total / limit),
+            items: products
+        };
+
         // ── Cache: store result for anonymous requests ────────────────────────
         if (anonCacheKey) {
-            appCache.set(anonCacheKey, products);
+            appCache.set(anonCacheKey, response);
             res.setHeader('X-Cache', 'MISS');
         }
 
-        res.status(200).json(products);
+        res.status(200).json(response);
     } catch (error) {
         console.error('Error fetching public catalog:', error);
         res.status(500).json({ error: 'Error al cargar el catálogo de productos' });
@@ -588,6 +616,15 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
 
         const limitRaw = req.query['limit'];
         const limit = Math.min(Math.max(Number(limitRaw || 8) || 8, 1), 50);
+
+        // ── Cache: serve anonymous requests from cache (TTL 5 min) ───────────
+        const cacheKey = `${CACHE_KEYS.NEWEST}${limit}:${userId || 'anon'}`;
+        const cached = appCache.get<any[]>(cacheKey);
+        if (cached) {
+            res.setHeader('X-Cache', 'HIT');
+            res.status(200).json(cached);
+            return;
+        }
 
         const { advancedReady } = await getPromotionAdvancedSqlParts();
         const newUntilOk = await detectProductNewUntilSchema();
@@ -697,7 +734,17 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
             };
         }).slice(0, limit);
 
-        res.status(200).json(rows);
+        const response = {
+            total: rows.length,
+            page: 1,
+            pageSize: limit,
+            totalPages: 1,
+            items: rows
+        };
+
+        appCache.set(cacheKey, response);
+        res.setHeader('X-Cache', 'MISS');
+        res.status(200).json(response);
     } catch (error) {
         console.error('Error fetching newest products:', error);
         res.status(500).json({ error: 'Error al cargar productos nuevos' });
@@ -725,6 +772,15 @@ export const getBestsellers = async (req: Request, res: Response): Promise<void>
 
         const limitRaw = req.query['limit'];
         const limit = Math.min(Math.max(Number(limitRaw || 4) || 4, 1), 50);
+
+        // ── Cache: serve anonymous requests from cache (TTL 5 min) ───────────
+        const cacheKey = `catalog:bestsellers:${limit}:${userId || 'anon'}`;
+        const cached = appCache.get<any[]>(cacheKey);
+        if (cached) {
+            res.setHeader('X-Cache', 'HIT');
+            res.status(200).json(cached);
+            return;
+        }
 
         const { advancedReady } = await getPromotionAdvancedSqlParts();
         const newUntilOk = await detectProductNewUntilSchema();
@@ -832,7 +888,17 @@ export const getBestsellers = async (req: Request, res: Response): Promise<void>
             };
         }).slice(0, limit);
 
-        res.status(200).json(rows);
+        const response = {
+            total: rows.length,
+            page: 1,
+            pageSize: limit,
+            totalPages: 1,
+            items: rows
+        };
+
+        appCache.set(cacheKey, response);
+        res.setHeader('X-Cache', 'MISS');
+        res.status(200).json(response);
     } catch (error) {
         console.error('Error fetching bestsellers:', error);
         res.status(500).json({ error: 'Error al cargar productos más vendidos' });

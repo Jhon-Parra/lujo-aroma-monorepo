@@ -22,11 +22,11 @@ export class CatalogComponent implements OnInit {
   error = '';
   // category = Casa (marca)
   selectedCategory = 'todos';
-  // gender filter
   selectedGender: 'all' | 'mujer' | 'hombre' | 'unisex' = 'all';
   searchTerm = '';
   selectedPromotionId = '';
   isMobileMenuOpen = false;
+  totalProducts = 0;
   private lastTrackedSearch = '';
 
   categories: Category[] = [];
@@ -190,10 +190,24 @@ export class CatalogComponent implements OnInit {
       }
     });
 
-    this.productService.getPublicCatalog().subscribe({
-      next: (apiProducts) => {
-        this.products = apiProducts.map(ap => ({
-          // Precio final (con promo si aplica) en `price` para el carrito
+    this.route.queryParams.subscribe(params => {
+      this.searchTerm = params['q'] || '';
+      this.selectedCategory = this.normalizeSlug(params['category'] ?? params['house']);
+      this.selectedPromotionId = params['promo'] || '';
+      const g = String(params['gender'] || '').trim().toLowerCase();
+      this.selectedGender = (g === 'mujer' || g === 'hombre' || g === 'unisex') ? (g as any) : 'all';
+      this.currentPage = Math.max(1, Math.trunc(Number(params['page'] || 1)));
+
+      this.fetchProducts();
+    });
+  }
+
+  private fetchProducts(): void {
+    this.loading = true;
+    this.productService.getPublicCatalog(this.currentPage, this.effectivePageSize, this.searchTerm).subscribe({
+      next: (res) => {
+        const items = Array.isArray((res as any)?.items) ? (res as any).items : [];
+        this.products = items.map((ap: any) => ({
           id: ap.id || '',
           promo_id: (ap as any).promo_id || null,
           name: ap.name || ap.nombre,
@@ -215,73 +229,19 @@ export class CatalogComponent implements OnInit {
           tiene_promocion: ap.tiene_promocion || false
         }));
 
-        // New catalog dataset -> reset cached indexes.
-        this.searchIndexCache.clear();
-
-        this.route.queryParams.subscribe(params => {
-          this.searchTerm = params['q'] || '';
-          // Casa: support legacy `house` param too.
-          this.selectedCategory = this.normalizeSlug(params['category'] ?? params['house']);
-          this.selectedPromotionId = params['promo'] || '';
-          const g = String(params['gender'] || '').trim().toLowerCase();
-          this.selectedGender = (g === 'mujer' || g === 'hombre' || g === 'unisex') ? (g as any) : 'all';
-
-          // si cambian filtros, resetear pagina
-          const nextFilterKey = `${this.searchTerm}|${this.selectedCategory}|${this.selectedGender}|${this.selectedPromotionId}`;
-          const rawPage = Math.trunc(Number(params['page'] || 1));
-          const safeRawPage = Number.isFinite(rawPage) ? Math.max(1, rawPage) : 1;
-          const filtersChanged = !!this.lastFilterKey && this.lastFilterKey !== nextFilterKey;
-          this.lastFilterKey = nextFilterKey;
-
-          if (filtersChanged) {
-            this.currentPage = 1;
-            if (safeRawPage > 1) {
-              // limpiar page del URL para evitar caer en paginas sin resultados
-              this.router.navigate([], {
-                relativeTo: this.route,
-                queryParams: { page: null },
-                queryParamsHandling: 'merge',
-                replaceUrl: true,
-              });
-            }
-          } else {
-            this.currentPage = safeRawPage;
-          }
-
-          this.skeletonCards = Array.from({ length: this.effectivePageSize }, (_, i) => i);
-          this.applyFilters();
-          // applyFilters() ya recalcula paginacion
-
-          const searchKey = `${this.searchTerm}|${this.selectedCategory}|${this.selectedPromotionId}`;
-          const trimmed = String(this.searchTerm || '').trim();
-          if (trimmed && searchKey !== this.lastTrackedSearch) {
-            const ids = (this.filteredProducts || []).slice(0, 10).map(p => p.id).filter(Boolean);
-            this.analyticsService.trackSearch(trimmed, ids, this.filteredProducts.length);
-            this.lastTrackedSearch = searchKey;
-          }
-
-          const parts: string[] = [];
-          if (this.selectedCategory && this.selectedCategory !== 'todos') {
-            parts.push(this.getCategoryLabel(this.selectedCategory));
-          }
-          if (this.selectedGender !== 'all') {
-            parts.push(`Genero: ${this.getGenderLabel(this.selectedGender)}`);
-          }
-          if (this.searchTerm && String(this.searchTerm).trim()) {
-            parts.push(`Busqueda: ${String(this.searchTerm).trim()}`);
-          }
-          if (this.selectedPromotionId) {
-            parts.push('Promocion');
-          }
-
-          const suffix = parts.length ? ` (${parts.join(' · ')})` : '';
-          this.seo.set({
-            title: `Catalogo${suffix} | Lujo & Aroma`,
-            description: 'Explora perfumes para mujer, hombre y unisex. Filtra por categoria y encuentra tu aroma ideal.'
-          });
-        });
-
+        this.filteredProducts = this.products; // Server already filtered
+        this.totalProducts = Number((res as any)?.total || 0);
+        this.totalPages = Number((res as any)?.totalPages || 1);
+        this.updatePaginationMetadata();
+        
         this.loading = false;
+
+        const trimmed = String(this.searchTerm || '').trim();
+        if (trimmed && trimmed !== this.lastTrackedSearch) {
+          const ids = this.products.slice(0, 10).map(p => p.id).filter(Boolean);
+          this.analyticsService.trackSearch(trimmed, ids, this.totalProducts);
+          this.lastTrackedSearch = trimmed;
+        }
       },
       error: (err) => {
         console.error(err);
@@ -289,6 +249,19 @@ export class CatalogComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  private updatePaginationMetadata(): void {
+    // Construir rango de paginas (max 7)
+    const windowSize = 7;
+    const half = Math.floor(windowSize / 2);
+    let start = Math.max(1, this.currentPage - half);
+    let end = Math.min(this.totalPages, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+
+    const arr: number[] = [];
+    for (let p = start; p <= end; p++) arr.push(p);
+    this.pages = arr;
   }
 
   toggleMobileMenu() {
@@ -351,53 +324,27 @@ export class CatalogComponent implements OnInit {
   }
 
   applyFilters() {
-    let result = this.products;
-
-    if (this.selectedPromotionId) {
-      if (this.selectedPromotionId === 'true') {
-        result = result.filter(p => p.tiene_promocion);
-      } else {
-        result = result.filter(p => (p as any).promo_id === this.selectedPromotionId);
-      }
-    }
-
-    if (this.selectedGender !== 'all') {
-      const g = this.selectedGender;
-      result = result.filter(p => String(p.genero || '').toLowerCase() === g);
-    }
-
-    if (this.selectedCategory && this.selectedCategory !== 'todos') {
-      const cat = String(this.selectedCategory).toLowerCase();
-      result = result.filter(p => {
-        const anyP: any = p as any;
-        const house = String(anyP?.categoria_slug || anyP?.casa || anyP?.house || '').trim().toLowerCase();
-        return !!house && house === cat;
-      });
-    }
-
-    if (this.searchTerm) {
-      const query = this.normalizeText(this.searchTerm);
-      const tokens = query.split(' ').filter(Boolean);
-      if (query && tokens.length) {
-        result = result.filter(p => this.matchesQuery(p, query, tokens));
-      }
-    }
-
-    this.filteredProducts = result;
-    // si el filtro reduce items, asegurar pagina valida
-    this.updatePagination();
+    // With server-side pagination, applyFilters just re-fetches from server
+    this.currentPage = 1;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { 
+        page: null,
+        q: this.searchTerm || null,
+        category: this.selectedCategory !== 'todos' ? this.selectedCategory : null,
+        gender: this.selectedGender !== 'all' ? this.selectedGender : null
+      },
+      queryParamsHandling: 'merge',
+    });
   }
 
   get paginatedProducts(): Product[] {
-    const total = (this.filteredProducts || []).length;
-    if (!total) return [];
-    const size = this.effectivePageSize;
-    const start = (this.currentPage - 1) * size;
-    return (this.filteredProducts || []).slice(start, start + size);
+    return this.products; // Server already paginated
   }
 
   setPage(page: number): void {
     const next = Math.max(1, Math.min(this.totalPages || 1, Math.trunc(Number(page || 1))));
+    this.currentPage = next;
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { page: next > 1 ? next : null },
@@ -406,22 +353,6 @@ export class CatalogComponent implements OnInit {
   }
 
   private updatePagination(): void {
-    const total = (this.filteredProducts || []).length;
-    const size = this.effectivePageSize;
-    this.totalPages = Math.max(1, Math.ceil(total / size));
-
-    if (!Number.isFinite(this.currentPage) || this.currentPage < 1) this.currentPage = 1;
-    if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
-
-    // Construir rango de paginas (max 7)
-    const windowSize = 7;
-    const half = Math.floor(windowSize / 2);
-    let start = Math.max(1, this.currentPage - half);
-    let end = Math.min(this.totalPages, start + windowSize - 1);
-    start = Math.max(1, end - windowSize + 1);
-
-    const arr: number[] = [];
-    for (let p = start; p <= end; p++) arr.push(p);
-    this.pages = arr;
+    // This is now partially handled by updatePaginationMetadata from server response
   }
 }

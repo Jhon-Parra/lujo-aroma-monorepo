@@ -142,8 +142,10 @@ export class CartService {
    * This ensures prices and promotions are always current.
    */
   public refreshProductData(): void {
-    this.productService.getPublicCatalog().pipe(take(1)).subscribe({
-      next: (freshProducts: ServiceProduct[]) => {
+    // Fetch a reasonably large page so cart items can be refreshed.
+    this.productService.getPublicCatalog(1, 100, '').pipe(take(1)).subscribe({
+      next: (res) => {
+        const freshProducts: ServiceProduct[] = Array.isArray((res as any)?.items) ? (res as any).items : [];
         const currentItems = [...this.items];
         let changed = false;
 

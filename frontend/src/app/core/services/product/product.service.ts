@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Product {
   id?: string;
@@ -51,6 +52,14 @@ export interface LowStockResponse {
   items: LowStockProduct[];
 }
 
+export interface PaginatedResponse<T> {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  items: T[];
+}
+
 import { API_CONFIG } from '../../config/api-config';
 
 @Injectable({
@@ -61,12 +70,44 @@ export class ProductService {
 
   constructor(private http: HttpClient) { }
 
+  /**
+   * Defensive normalization: some deployments/caches might return legacy shapes.
+   * We always want a PaginatedResponse with `items` as an array.
+   */
+  private normalizePaginatedResponse<T>(res: any, fallbackPageSize: number): PaginatedResponse<T> {
+    const items: T[] =
+      Array.isArray(res?.items) ? (res.items as T[]) :
+      Array.isArray(res?.data?.items) ? (res.data.items as T[]) :
+      Array.isArray(res?.rows) ? (res.rows as T[]) :
+      Array.isArray(res) ? (res as T[]) :
+      [];
+
+    const totalRaw = res?.total ?? res?.count ?? items.length;
+    const pageRaw = res?.page ?? 1;
+    const pageSizeRaw = res?.pageSize ?? res?.limit ?? fallbackPageSize ?? items.length;
+
+    const total = Number.isFinite(Number(totalRaw)) ? Number(totalRaw) : items.length;
+    const page = Number.isFinite(Number(pageRaw)) ? Math.max(1, Math.trunc(Number(pageRaw))) : 1;
+    const pageSize = Number.isFinite(Number(pageSizeRaw)) ? Math.max(1, Math.trunc(Number(pageSizeRaw))) : Math.max(1, items.length);
+    const totalPagesRaw = res?.totalPages;
+    const totalPages = Number.isFinite(Number(totalPagesRaw))
+      ? Math.max(1, Math.trunc(Number(totalPagesRaw)))
+      : Math.max(1, Math.ceil(total / pageSize));
+
+    return { total, page, pageSize, totalPages, items };
+  }
+
   getProducts(): Observable<Product[]> {
     return this.http.get<Product[]>(`${this.publicUrl}`);
   }
 
-  getPublicCatalog(): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.publicUrl}/catalog`);
+  getPublicCatalog(page = 1, limit = 12, query = ''): Observable<PaginatedResponse<Product>> {
+    const q = encodeURIComponent(query.trim());
+    return this.http.get<any>(
+      `${this.publicUrl}/catalog?page=${page}&limit=${limit}&q=${q}`
+    ).pipe(
+      map(res => this.normalizePaginatedResponse<Product>(res, limit))
+    );
   }
 
   /**
@@ -75,17 +116,27 @@ export class ProductService {
    */
   searchSuggestions(query: string, limit = 5): Observable<Product[]> {
     const q = encodeURIComponent(query.trim());
-    return this.http.get<Product[]>(
+    return this.http.get<any>(
       `${this.publicUrl}/catalog?q=${q}&limit=${limit}`
+    ).pipe(
+      map(res => this.normalizePaginatedResponse<Product>(res, limit).items.slice(0, limit))
     );
   }
 
-  getNewestProducts(limit = 8): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.publicUrl}/newest?limit=${encodeURIComponent(String(limit))}`);
+  getNewestProducts(limit = 8): Observable<PaginatedResponse<Product>> {
+    return this.http.get<any>(
+      `${this.publicUrl}/newest?limit=${encodeURIComponent(String(limit))}`
+    ).pipe(
+      map(res => this.normalizePaginatedResponse<Product>(res, limit))
+    );
   }
 
-  getBestsellers(limit = 4): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.publicUrl}/bestsellers?limit=${encodeURIComponent(String(limit))}`);
+  getBestsellers(limit = 4): Observable<PaginatedResponse<Product>> {
+    return this.http.get<any>(
+      `${this.publicUrl}/bestsellers?limit=${encodeURIComponent(String(limit))}`
+    ).pipe(
+      map(res => this.normalizePaginatedResponse<Product>(res, limit))
+    );
   }
 
   getProduct(id: string): Observable<Product> {

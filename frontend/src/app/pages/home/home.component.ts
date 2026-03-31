@@ -178,8 +178,8 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     // Load Newest Products
     this.productService.getNewestProducts(8).subscribe({
-      next: (apiProducts) => {
-        this.products = this.mapApiProducts(apiProducts);
+      next: (res) => {
+        this.products = this.mapApiProducts(res.items);
         this.loading = false;
       },
       error: (err) => {
@@ -191,8 +191,8 @@ export class HomeComponent implements OnInit, OnDestroy {
 
     // Load Bestsellers
     this.productService.getBestsellers(4).subscribe({
-      next: (apiProducts) => {
-        this.bestsellers = this.mapApiProducts(apiProducts);
+      next: (res) => {
+        this.bestsellers = this.mapApiProducts(res.items);
         this.loadingBestsellers = false;
       },
       error: (err) => {
@@ -545,8 +545,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     return `${API_CONFIG.serverUrl}${url}`;
   }
 
-  private mapApiProducts(apiProducts: any[]): Product[] {
-    return apiProducts.map(ap => ({
+  private mapApiProducts(apiProducts: any): Product[] {
+    const items = Array.isArray(apiProducts) ? apiProducts : [];
+    return items.map(ap => ({
       id: ap.id || '',
       name: ap.name || ap.nombre,
       notes: ap.notes || ap.notas_olfativas || ap.descripcion,

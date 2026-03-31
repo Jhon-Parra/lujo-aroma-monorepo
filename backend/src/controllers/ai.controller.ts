@@ -39,7 +39,7 @@ export const generateAIDescription = async (req: Request, res: Response): Promis
         }
 
         // Prompt enriquecido (Maestro) para Generación Textual de Alta Calidad (Luxury E-commerce)
-        const systemPrompt = `Asume el rol de una persona experta y apasionada que describe perfumes para "Perfumes Bogotá", una tienda de e-commerce de perfumería de alta gama. Tu función es describir el perfume de manera muy breve pero chévere.`;
+        const systemPrompt = `Asume el rol de una persona experta y apasionada que describe perfumes para "Lujo&Aroma | Perfumes Bogotá", una tienda de e-commerce de perfumería de alta gama. Tu función es describir el perfume de manera muy breve pero chévere.`;
 
         const userPrompt = `Haz una descripción muy breve pero chévere, atractiva y orientada a la compra para el siguiente perfume:
 - Nombre Oficial: ${String(nombreFinal).slice(0, 100)}

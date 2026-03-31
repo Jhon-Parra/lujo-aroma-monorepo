@@ -320,7 +320,7 @@ export class OrderController {
                 doc.moveDown(6);
             } else {
                 // Fallback si no existe el logo
-                doc.fontSize(22).font('Helvetica-Bold').text('PERFUMES BOGOTÁ', { align: 'center' });
+                doc.fontSize(22).font('Helvetica-Bold').text('LUJO&AROMA | PERFUMES BOGOTÁ', { align: 'center' });
                 doc.moveDown(0.3);
             }
 
@@ -446,7 +446,7 @@ export class OrderController {
             
             doc.moveDown(0.4);
             doc.fontSize(9).font('Helvetica').fillColor('#333333')
-                .text('Tu producto llegará junto con el Certificado de Perfumes Originales, respaldado por el sello físico de Perfumes Bogotá.', 70, doc.y, { width: 320 });
+                .text('Tu producto llegará junto con el Certificado de Perfumes Originales, respaldado por el sello físico de Lujo&Aroma | Perfumes Bogotá.', 70, doc.y, { width: 320 });
             
             doc.moveDown(0.5);
             doc.fontSize(8).font('Helvetica-Bold').fillColor('#B59A68')

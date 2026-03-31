@@ -192,7 +192,7 @@ export const sendOrderShippingEmail = async (params: ShippingEmailParams): Promi
     const html = `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden">
           <div style="background:#1a1a1a;padding:24px;text-align:center">
-            <h1 style="color:#e8c96a;margin:0;font-size:24px">Perfumes Bogotá</h1>
+            <h1 style="color:#e8c96a;margin:0;font-size:24px">Lujo&Aroma | Perfumes Bogotá</h1>
           </div>
           <div style="padding:32px">
             <h2 style="color:#1a1a1a;margin-top:0">🚚 ¡Tu pedido está en camino!</h2>
@@ -206,7 +206,7 @@ export const sendOrderShippingEmail = async (params: ShippingEmailParams): Promi
             <p style="color:#666;font-size:13px;margin-top:24px">Si tienes alguna pregunta, responde a este correo o contáctanos.</p>
           </div>
           <div style="background:#f5f5f5;padding:16px;text-align:center">
-            <p style="color:#888;font-size:12px;margin:0">© ${new Date().getFullYear()} Perfumes Bogotá — perfumesbogota.com</p>
+            <p style="color:#888;font-size:12px;margin:0">© ${new Date().getFullYear()} Lujo&Aroma | Perfumes Bogotá — perfumesbogota.com</p>
           </div>
         </div>`;
 

@@ -5,7 +5,7 @@ import { OrderEmailLogsService } from './order-email-logs.service';
 import { OrderEmailTemplateService, OrderEmailStatus } from './order-email-templates.service';
 
 const FRONTEND_URL = String(process.env.FRONTEND_URL || 'https://lujo_aromacol.com').replace(/\/$/, '');
-const BRAND_NAME = 'Perfumes Bogotá';
+const BRAND_NAME = 'Lujo&Aroma | Perfumes Bogotá';
 
 let cachedLogoUrl: { value: string; expiresAt: number } | null = null;
 const LOGO_CACHE_MS = 60_000;

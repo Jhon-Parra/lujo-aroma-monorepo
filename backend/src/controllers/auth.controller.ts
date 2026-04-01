@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
+import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { pool } from '../config/database';
 import { supabaseAdmin, supabasePublic } from '../config/supabase';
 
@@ -9,6 +10,32 @@ const isProduction = process.env.NODE_ENV === 'production';
 const allowCrossSiteCookies = process.env.COOKIE_CROSS_SITE === 'true';
 const cookieSameSite: 'lax' | 'none' = isProduction && allowCrossSiteCookies ? 'none' : 'lax';
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_please_change';
+
+const googleOAuthClient = new OAuth2Client();
+
+const getGoogleClientIds = (): string[] => {
+    const raw = String(process.env.GOOGLE_CLIENT_IDS || process.env.GOOGLE_CLIENT_ID || '').trim();
+    if (!raw) return [];
+    return raw.split(',').map((s) => s.trim()).filter(Boolean);
+};
+
+const verifyGoogleCredential = async (credential: string): Promise<TokenPayload> => {
+    const audiences = getGoogleClientIds();
+    if (audiences.length === 0) {
+        throw new Error('GOOGLE_CLIENT_ID no configurado en el backend');
+    }
+
+    const ticket = await googleOAuthClient.verifyIdToken({
+        idToken: credential,
+        audience: audiences
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload) throw new Error('Token de Google sin payload');
+    if (!payload.email) throw new Error('Token de Google sin email');
+    if (payload.email_verified === false) throw new Error('Email de Google no verificado');
+    return payload;
+};
 
 const cookieBaseOptions = {
     httpOnly: true,
@@ -132,6 +159,39 @@ const ensureLocalUser = async (input: {
 
     const created = await getUserBySupabaseId(input.supabaseUserId);
     return { ok: true, user: created };
+};
+
+// Crear o resolver usuario local SOLO por email (sin Supabase).
+// Esto permite fallback cuando Supabase/Google provider rechaza el token.
+const ensureLocalUserByEmailOnly = async (input: {
+    email: string;
+    nombre?: string | null;
+    apellido?: string | null;
+    telefono?: string | null;
+    foto_perfil?: string | null;
+}): Promise<any> => {
+    const existing = await getUserByEmail(input.email);
+    if (existing) return existing;
+
+    const newId = randomUUID();
+    const passwordHash = await bcrypt.hash(Math.random().toString(36), 10);
+
+    await pool.query(
+        `INSERT INTO usuarios (id, supabase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
+         VALUES (?, NULL, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
+        [
+            newId,
+            input.nombre || 'Usuario',
+            input.apellido || 'Google',
+            input.telefono || null,
+            input.email,
+            passwordHash,
+            input.foto_perfil || null
+        ]
+    );
+
+    const created = await getUserById(newId);
+    return created;
 };
 
 const buildUserResponse = async (user: any) => {
@@ -332,15 +392,71 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
 
         if (error || !data?.session || !data?.user) {
             console.error('Supabase Google Auth Error:', error);
-            await logSecurityEvent(req, null, 'login_failed');
 
-            // Devolvemos detalles para diagnostico temporalmente en produccion para resolver el 401
-            res.status(401).json({ 
-                error: 'Token de Google inválido o rechazado por Supabase',
-                details: error?.message || error || 'No se pudo obtener sesión de Supabase',
-                code: (error as any)?.code || (error as any)?.status || 'AUTH_ERROR'
-            });
-            return;
+            // Fallback: verificar el ID token directamente con Google.
+            // Esto mantiene el login funcional aunque Supabase rechace el token
+            // (por configuración de provider o outage).
+            try {
+                const payload = await verifyGoogleCredential(String(credential));
+                const { nombre, apellido } = guessNamesFromMetadata(payload);
+                const email = String(payload.email || '').trim();
+                const foto = (payload.picture ? String(payload.picture) : null);
+
+                const localUser = await ensureLocalUserByEmailOnly({
+                    email,
+                    nombre,
+                    apellido,
+                    telefono: null,
+                    foto_perfil: foto
+                });
+
+                // Generar tokens locales compatibles con el middleware.
+                const localAccessToken = jwt.sign(
+                    {
+                        sub: localUser.supabase_user_id || localUser.id,
+                        email: localUser.email,
+                        id: localUser.id,
+                        rol: localUser.rol,
+                        isLocal: true
+                    },
+                    JWT_SECRET,
+                    { expiresIn: '1h' }
+                );
+
+                const localRefreshToken = jwt.sign(
+                    { id: localUser.id, type: 'refresh' },
+                    JWT_SECRET,
+                    { expiresIn: '7d' }
+                );
+
+                setSessionCookies(res, {
+                    access_token: localAccessToken,
+                    refresh_token: localRefreshToken,
+                    expires_in: 3600
+                });
+
+                // Limpiar password_hash del payload
+                const { password_hash, ...userPayload } = (localUser || {}) as any;
+
+                res.status(200).json({
+                    message: 'Autenticación con Google exitosa (fallback local)',
+                    user: userPayload,
+                    isLocal: true
+                });
+                return;
+            } catch (googleErr: any) {
+                await logSecurityEvent(req, null, 'login_failed');
+                res.status(401).json({
+                    error: 'Token de Google inválido o rechazado',
+                    // Detalles de diagnóstico (útiles para arreglar audience/client_id o provider de Supabase).
+                    details: {
+                        supabase: (error as any)?.message || error || 'No se pudo obtener sesión de Supabase',
+                        google: googleErr?.message || String(googleErr || 'GOOGLE_VERIFY_ERROR')
+                    },
+                    code: (error as any)?.code || (error as any)?.status || 'AUTH_ERROR'
+                });
+                return;
+            }
         }
 
         const { nombre, apellido } = guessNamesFromMetadata(data.user.user_metadata || {});

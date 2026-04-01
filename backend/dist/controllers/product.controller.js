@@ -479,7 +479,7 @@ const getPublicCatalog = async (req, res) => {
         const slugSelect = slugOk ? 'p.slug, ' : '';
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
         // 1. Fetch total count for pagination
-        let countQuery = 'SELECT COUNT(*) as total FROM productos p WHERE p.stock > 0';
+        let countQuery = 'SELECT COUNT(*) as total FROM productos p WHERE p.stock >= 0';
         const queryParams = [];
         if (gender) {
             countQuery += ' AND p.genero = ?';
@@ -512,7 +512,7 @@ const getPublicCatalog = async (req, res) => {
                     ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
-              WHERE p.stock > 0
+              WHERE p.stock >= 0
         `;
         const productsParams = [...queryParams];
         if (gender) {
@@ -706,7 +706,7 @@ const getNewestProducts = async (req, res) => {
                     ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
-             WHERE p.stock > 0
+             WHERE p.stock >= 0
              ORDER BY p.creado_en DESC
              LIMIT ?`, [limit * 2]);
         // 2. Fetch all active promotions
@@ -845,7 +845,7 @@ const getBestsellers = async (req, res) => {
                     ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
-             WHERE p.stock > 0
+             WHERE p.stock >= 0
              ORDER BY p.unidades_vendidas DESC
              LIMIT ?`, [limit * 2]);
         // 2. Fetch all active promotions
@@ -1106,7 +1106,7 @@ const getRelatedProducts = async (req, res) => {
              ${categoryJoin}
              WHERE p.id <> ?
                AND p.genero = ?
-               AND p.stock > 0
+               AND p.stock >= 0
              ORDER BY p.unidades_vendidas DESC, p.creado_en DESC
              LIMIT ?`, [id, genero, limit]);
         if (!pRows || pRows.length === 0) {

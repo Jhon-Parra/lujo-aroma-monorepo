@@ -57,9 +57,13 @@
               {{ getPromotionPercent() }}% OFF
             </ng-template>
           </span>
-          <span *ngIf="product.stock <= 5"
+          <span *ngIf="product.stock > 0 && product.stock <= 5"
             class="bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
             Ultimas unidades
+          </span>
+          <span *ngIf="product.stock <= 0"
+            class="bg-gray-800 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-sm">
+            Agotado
           </span>
         </div>
 
@@ -101,16 +105,25 @@
             </ng-template>
           </div>
 
-          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:auto" *ngIf="product.stock > 0">
             <div class="flex items-center justify-between sm:justify-center border border-[#dcdcd4] rounded-md overflow-hidden">
               <button type="button" class="px-5 sm:px-3 py-3 sm:py-2 bg-cream hover:bg-[#e8e8e1]" (click)="decrementQty()">-</button>
               <input type="number" min="1" [(ngModel)]="quantity" class="w-16 sm:w-16 text-center py-3 sm:py-2 outline-none flex-1 sm:flex-none" />
               <button type="button" class="px-5 sm:px-3 py-3 sm:py-2 bg-cream hover:bg-[#e8e8e1]" (click)="incrementQty()">+</button>
             </div>
-            <button type="button" (click)="addToCart()" [disabled]="product.stock <= 0"
-              class="btn-premium-blue-outline w-full sm:w-auto px-6 py-3 text-xs tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed">
-              {{ product.stock <= 0 ? 'Sin stock' : 'Añadir al carrito' }}
+            <button type="button" (click)="addToCart()"
+              class="btn-premium-blue-outline w-full sm:w-auto px-6 py-3 text-xs tracking-widest uppercase">
+              Añadir al carrito
             </button>
+          </div>
+
+          <div *ngIf="product.stock <= 0" class="w-full sm:w-auto">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+              Agotado temporalmente
+            </div>
           </div>
         </div>
 
@@ -120,9 +133,9 @@
       </div>
 
       <!-- Comprar ahora (debajo de la imagen) -->
-      <div class="mt-3">
-        <button type="button" (click)="buyNow()" [disabled]="product.stock <= 0"
-          class="btn-premium-blue w-full px-6 py-3 text-xs tracking-widest uppercase disabled:opacity-50 disabled:cursor-not-allowed">
+      <div class="mt-3" *ngIf="product.stock > 0">
+        <button type="button" (click)="buyNow()"
+          class="btn-premium-blue w-full px-6 py-3 text-xs tracking-widest uppercase">
           Comprar ahora
         </button>
       </div>

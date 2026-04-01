@@ -27,6 +27,7 @@ export interface Product {
   descripcion?: string;
   nombre?: string;
   unidades_vendidas?: number;
+  stock?: number;
 }
 
 @Component({
@@ -116,6 +117,10 @@ export class ProductCardComponent {
 
   addToCart(event?: Event) {
     event?.stopPropagation();
+    if ((this.product as any)?.stock <= 0) {
+      this.toastService.error('Este producto se encuentra agotado temporalmente.');
+      return;
+    }
     this.cartService.addToCart(this.product);
     const name = this.product?.name || this.product?.nombre || 'Producto';
     this.toastService.success(`${name} se agregó al carrito de compras.`);

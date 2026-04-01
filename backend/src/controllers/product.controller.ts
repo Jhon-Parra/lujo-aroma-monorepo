@@ -489,7 +489,7 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
 
         // 1. Fetch total count for pagination
-        let countQuery = 'SELECT COUNT(*) as total FROM productos p WHERE p.stock > 0';
+        let countQuery = 'SELECT COUNT(*) as total FROM productos p WHERE p.stock >= 0';
         const queryParams: any[] = [];
 
         if (gender) {
@@ -523,7 +523,7 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
                     ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
-              WHERE p.stock > 0
+              WHERE p.stock >= 0
         `;
         const productsParams: any[] = [...queryParams];
 
@@ -734,7 +734,7 @@ export const getNewestProducts = async (req: Request, res: Response): Promise<vo
                     ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
-             WHERE p.stock > 0
+             WHERE p.stock >= 0
              ORDER BY p.creado_en DESC
              LIMIT ?`,
             [limit * 2]
@@ -888,7 +888,7 @@ export const getBestsellers = async (req: Request, res: Response): Promise<void>
                     ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
              ${categoryJoin}
-             WHERE p.stock > 0
+             WHERE p.stock >= 0
              ORDER BY p.unidades_vendidas DESC
              LIMIT ?`,
             [limit * 2]
@@ -1183,7 +1183,7 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
              ${categoryJoin}
              WHERE p.id <> ?
                AND p.genero = ?
-               AND p.stock > 0
+               AND p.stock >= 0
              ORDER BY p.unidades_vendidas DESC, p.creado_en DESC
              LIMIT ?`,
             [id, genero, limit]

@@ -58,24 +58,28 @@ app.use((0, helmet_1.default)({
     contentSecurityPolicy: {
         useDefaults: false,
         directives: {
-            "default-src": ["'none'"],
-            "img-src": ["'self'", 'data:', 'https:'],
+            "default-src": ["'self'"],
+            "img-src": ["'self'", 'data:', 'https:', 'https://*.googleusercontent.com'],
             "media-src": ["'self'", 'https:'],
-            "connect-src": ["'self'"],
-            "script-src": ["'self'"],
-            "style-src": ["'self'"],
-            "base-uri": ["'none'"],
+            "connect-src": ["'self'", 'https://*.supabase.co', 'https://*.googleapis.com', 'https://accounts.google.com'],
+            "script-src": ["'self'", "'unsafe-inline'", 'https://accounts.google.com', 'https://*.googleapis.com'],
+            "style-src": ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+            "font-src": ["'self'", 'https://fonts.gstatic.com'],
+            "frame-src": ["'self'", 'https://accounts.google.com', 'https://*.supabase.co'],
+            "base-uri": ["'self'"],
             "form-action": ["'self'"],
-            "frame-ancestors": ["'none'"]
+            "frame-ancestors": ["'self'"]
         }
     },
-    referrerPolicy: { policy: 'no-referrer' }
+    referrerPolicy: { policy: 'no-referrer-when-downgrade' }
 }));
 app.use((0, morgan_1.default)('combined'));
 app.use((0, cookie_parser_1.default)());
 const defaultAllowedOrigins = [
     'http://localhost:4200',
-    'http://127.0.0.1:4200'
+    'http://127.0.0.1:4200',
+    'https://perfumesbogota.com',
+    'https://www.perfumesbogota.com'
 ];
 const normalizeAllowedOrigin = (raw) => {
     const value = String(raw || '').trim();

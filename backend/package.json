@@ -17,7 +17,17 @@
   "dependencies": {
     "@google/genai": "^1.44.0",
     "@supabase/supabase-js": "^2.99.1",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^25.4.0",
+    "@types/nodemailer": "^6.4.17",
     "@types/pdfkit": "^0.17.5",
+    "@types/uuid": "^9.0.8",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
@@ -36,23 +46,13 @@
     "openai": "^6.27.0",
     "pdfkit": "^0.18.0",
     "reflect-metadata": "^0.2.2",
+    "typescript": "^5.9.3",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
-    "@types/cookie-parser": "^1.4.10",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/morgan": "^1.9.10",
-    "@types/multer": "^2.1.0",
-    "@types/node": "^25.4.0",
-    "@types/nodemailer": "^6.4.17",
-    "@types/uuid": "^9.0.8",
     "nodemon": "^3.1.14",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "ts-node": "^10.9.2"
   }
 }

@@ -10,7 +10,7 @@ const openai = new OpenAI({
 });
 
 /**
- * Endpoint: POST /api/products/generate-description
+ * Endpoint: POST /api/ai/generate-description
  * Descripción: Asistente IA para CMS. Genera una descripción de lujo basada en producto y notas.
  * Requiere Auth JWT y Rol ADMIN.
  */
@@ -19,6 +19,20 @@ export const generateAIDescription = async (req: Request, res: Response): Promis
         const { nombre = '', name = '', notas_olfativas = '', notes = '' } = req.body;
         const nombreFinal = name || nombre;
         const notasFinal = notes || notas_olfativas;
+
+        const makeSimulated = (): string => {
+            const safeName = String(nombreFinal || '').trim().slice(0, 60);
+            const firstNote = String(notasFinal || '')
+                .split(/,|\-|\||\//)
+                .map((s) => s.trim())
+                .filter(Boolean)[0] || String(notasFinal || '').trim().slice(0, 40);
+
+            let text = `${safeName}: ${firstNote}. Estela elegante y adictiva.`.trim();
+            if (text.length > 150) {
+                text = text.slice(0, 147).trimEnd() + '...';
+            }
+            return text;
+        };
 
         // Validar entradas básicas
         if (!nombreFinal || !notasFinal) {
@@ -30,10 +44,10 @@ export const generateAIDescription = async (req: Request, res: Response): Promis
 
         if (!GROQ_API_KEY) {
             console.warn('GROQ_API_KEY no proporcionada. Usando respuesta simulada...');
-            const fallbackDescription = `Sumérgete en la exclusividad con ${nombre}, una fragancia diseñada para la seducción. Con sus sutiles notas de ${notas_olfativas}, despliega un aura de sofisticación y poder que perdura. \n\nCreada especialmente para realzar tu distinción, esta esencia te acompañará en tus momentos más inolvidables, dejando una estela embriagadora e imposible de ignorar.`;
             res.status(200).json({
                 message: 'Descripción generada exitosamente (Modo Simulación).',
-                data: fallbackDescription
+                mode: 'SIMULATION',
+                data: makeSimulated()
             });
             return;
         }
@@ -62,10 +76,34 @@ IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total.
 
         res.status(200).json({
             message: 'Descripción generada exitosamente mediante Groq.',
+            mode: 'GROQ',
             data: generatedText
         });
     } catch (error) {
-        console.error('Error Generando AI description (Groq):', error);
-        res.status(500).json({ error: 'Ocurrió un error inesperado al conectar con el servicio de Inteligencia Artificial.' });
+        // No romper el flujo del CMS: si Groq falla, devolvemos una descripción simulada.
+        const anyErr: any = error as any;
+        const status = Number(anyErr?.status || anyErr?.response?.status || 0) || null;
+        const message = String(anyErr?.message || anyErr?.error?.message || '').slice(0, 500);
+        console.error('Error Generando AI description (Groq):', { status, message });
+
+        const nombreFinal = (req.body?.name || req.body?.nombre || '').toString();
+        const notasFinal = (req.body?.notes || req.body?.notas_olfativas || '').toString();
+
+        const safeName = String(nombreFinal || '').trim().slice(0, 60);
+        const firstNote = String(notasFinal || '')
+            .split(/,|\-|\||\//)
+            .map((s) => s.trim())
+            .filter(Boolean)[0] || String(notasFinal || '').trim().slice(0, 40);
+        let text = `${safeName}: ${firstNote}. Estela elegante y adictiva.`.trim();
+        if (text.length > 150) {
+            text = text.slice(0, 147).trimEnd() + '...';
+        }
+
+        res.status(200).json({
+            message: 'Descripción generada exitosamente (Modo Simulación).',
+            mode: 'SIMULATION',
+            warning: status ? `GROQ_ERROR_${status}` : 'GROQ_ERROR',
+            data: text
+        });
     }
 };

@@ -194,53 +194,58 @@ app.use('/api/email-templates', email_templates_routes_1.default);
 app.use('/api/intelligence', intelligence_routes_1.default);
 app.use('/api/seo', seo_routes_1.default);
 app.get('/health', async (req, res) => {
-    const base = { status: 'OK', message: 'Perfumes Bogotá API is running' };
-    // En produccion no exponemos detalles internos.
-    if (process.env.NODE_ENV === 'production') {
-        res.status(200).json(base);
-        return;
-    }
+    const base = {
+        status: 'OK',
+        message: 'Perfumes Bogotá API is running',
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV
+    };
     try {
-        const [rows] = await database_1.pool.query('SELECT DATABASE() AS db, CURRENT_USER() AS currentUser, @@hostname AS db_host, @@port AS db_port, @@socket AS db_socket, VERSION() AS db_version');
-        const info = rows?.[0] || null;
+        // SELECT 1 para verificar conectividad
+        const [rows] = await database_1.pool.query('SELECT 1 as connected');
+        // En produccion no exponemos detalles internos por defecto.
+        if (process.env.NODE_ENV === 'production') {
+            res.status(200).json({ ...base, db: 'CONNECTED' });
+            return;
+        }
+        const [infoRows] = await database_1.pool.query('SELECT DATABASE() AS db, CURRENT_USER() AS currentUser, @@hostname AS db_host, @@port AS db_port, @@socket AS db_socket, VERSION() AS db_version');
+        const info = infoRows?.[0] || null;
         res.status(200).json({
             ...base,
-            db: info?.db || null,
-            db_user: info?.currentUser || null,
-            db_host: info?.db_host || null,
-            db_port: info?.db_port ?? null,
-            db_socket: info?.db_socket || null,
-            db_version: info?.db_version || null
+            db: 'CONNECTED',
+            db_info: {
+                db: info?.db || null,
+                db_user: info?.currentUser || null,
+                db_host: info?.db_host || null,
+                db_port: info?.db_port ?? null,
+                db_socket: info?.db_socket || null,
+                db_version: info?.db_version || null
+            }
         });
     }
     catch (e) {
+        // IMPORTANTE: Incluso en produccion, exponemos el error de base de datos
+        // para facilitar el diagnostico inicial (ER_ACCESS_DENIED_ERROR, etc.)
         res.status(200).json({
             ...base,
-            db: null,
-            db_error: e?.code || e?.message || 'DB_ERROR'
+            db: 'DISCONNECTED',
+            db_error_code: e?.code || 'UNKNOWN_CODE',
+            db_error_message: e?.message || 'Database connection failed'
         });
     }
 });
 app.get('/health/db', async (req, res) => {
-    if (process.env.NODE_ENV === 'production') {
-        res.status(404).json({ ok: false, error: 'Not Found' });
-        return;
-    }
+    // Redirigir a health general para evitar duplicidad, pero permitiendo ver el error tecnico siempre.
     try {
-        const [rows] = await database_1.pool.query('SELECT DATABASE() AS db, CURRENT_USER() AS currentUser, @@hostname AS db_host, @@port AS db_port, @@socket AS db_socket, VERSION() AS db_version');
-        const info = rows?.[0] || null;
-        res.status(200).json({
-            ok: true,
-            db: info?.db || null,
-            db_user: info?.currentUser || null,
-            db_host: info?.db_host || null,
-            db_port: info?.db_port ?? null,
-            db_socket: info?.db_socket || null,
-            db_version: info?.db_version || null
-        });
+        await database_1.pool.query('SELECT 1');
+        res.status(200).json({ ok: true, connection: 'OK' });
     }
     catch (e) {
-        res.status(500).json({ ok: false, error: e?.code || e?.message || 'DB_ERROR' });
+        res.status(500).json({
+            ok: false,
+            error_code: e?.code,
+            error_message: e?.message
+        });
     }
 });
 app.use(error_middleware_1.notFoundHandler);

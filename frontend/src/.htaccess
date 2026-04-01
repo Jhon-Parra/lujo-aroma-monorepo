@@ -7,3 +7,9 @@ RewriteRule ^index\.html$ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule . /index.html [L]
+
+<IfModule mod_headers.c>
+    # Permitir que el popup de Google OAuth se comunique con nuestra ventana
+    Header set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+    Header set Cross-Origin-Embedder-Policy "unsafe-none"
+</IfModule>

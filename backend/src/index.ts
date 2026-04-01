@@ -1,14 +1,10 @@
-import dotenv from 'dotenv';
-import path from 'path';
-
-// Cargar siempre el .env del backend al puro principio.
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 import authRoutes from './routes/auth.routes';
 import aiRoutes from './routes/ai.routes';
 import recommendationRoutes from './routes/recommendation.routes';

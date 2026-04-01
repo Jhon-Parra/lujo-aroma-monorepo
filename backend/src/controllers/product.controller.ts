@@ -1513,29 +1513,36 @@ export const downloadProductImportTemplate = async (req: Request, res: Response)
     try {
         const header = [
             'nombre',
-            // slug de categoria (ej: mujer, hombre, unisex)
-            'categoria',
-            // casa / marca (ej: Dior, Lattafa)
+            // genero (mujer | hombre | unisex)
+            'genero',
+            // casa / marca (ideal: slug de categoria, ej: dior, lattafa, arabe)
             'casa',
             'notas_olfativas',
             'descripcion',
             'precio',
             'stock',
             'imagen_url',
+            'imagen_url_2',
+            'imagen_url_3',
             'unidades_vendidas',
-            'es_nuevo'
+            'es_nuevo',
+            // opcional (datetime-local o ISO). Ej: 2026-04-30T23:59
+            'nuevo_hasta'
         ];
         const example = [
             'Aqua di Roma',
             'unisex',
-            'Lujo & Aroma',
+            'dior',
             'Bergamota, Cedro, Ambar',
             'Fragancia fresca y elegante. Notas: Bergamota, Cedro, Ambar',
             159900,
             25,
             'https://tusitio.com/imagen.jpg',
+            '',
+            '',
             0,
-            'TRUE'
+            'TRUE',
+            ''
         ];
 
         const wb = XLSX.utils.book_new();
@@ -1562,29 +1569,9 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
     const dryRun = String((req.query as any)?.dry_run || '').toLowerCase() === 'true';
 
     try {
-        const categoriesSchemaOk = await detectCategoriesSchema();
         const casaOk = await detectProductCasaSchema();
-        const validSlugs = new Set<string>();
-        if (categoriesSchemaOk) {
-            try {
-                const [cRows] = await pool.query<any[]>('SELECT slug FROM categorias');
-                for (const r of (cRows || [])) {
-                    const s = String(r?.slug || '').trim().toLowerCase();
-                    if (s) validSlugs.add(s);
-                }
-            } catch {
-                // ignore
-            }
-        }
-
-        if (categoriesSchemaOk && validSlugs.size === 0) {
-            res.status(400).json({
-                error: 'Tu base de datos soporta categorias, pero no hay categorias creadas. Crea al menos una categoria en Admin > Categorias antes de importar.'
-            });
-            return;
-        }
-
-        const categoriesOk = categoriesSchemaOk && validSlugs.size > 0;
+        const newUntilOk = await detectProductNewUntilSchema();
+        const slugOk = await detectSlugSchema();
 
         const workbook = XLSX.read(file.buffer, { type: 'buffer' });
         const sheetName = workbook.SheetNames[0];
@@ -1627,7 +1614,11 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
             stock: number;
             unidades_vendidas: number;
             imagen_url: string | null;
+            imagen_url_2?: string | null;
+            imagen_url_3?: string | null;
             es_nuevo: boolean;
+            nuevo_hasta?: string | null;
+            slug?: string;
         }> = [];
 
         let skipped = 0;
@@ -1641,12 +1632,16 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
             const descripcionRaw = getRowValue(r, ['descripcion', 'description', 'desc', 'descrip']);
             const notasRaw = getRowValue(r, ['notas_olfativas', 'notas', 'notes', 'notasolfativas']);
             const generoRaw = getRowValue(r, ['genero', 'gender']);
+            // compat: algunos archivos antiguos usaban "categoria" como genero
             const categoriaRaw = getRowValue(r, ['categoria', 'category', 'categoria_slug']);
             const casaRaw = getRowValue(r, ['casa', 'house', 'marca', 'brand']);
             const stockRaw = getRowValue(r, ['stock', 'inventario', 'cantidad']);
             const imagenRaw = getRowValue(r, ['imagen_url', 'image_url', 'imagen', 'image', 'url_imagen', 'imageurl']);
+            const imagen2Raw = getRowValue(r, ['imagen_url_2', 'image_url_2', 'imagen2', 'image2', 'url_imagen_2', 'imageurl2']);
+            const imagen3Raw = getRowValue(r, ['imagen_url_3', 'image_url_3', 'imagen3', 'image3', 'url_imagen_3', 'imageurl3']);
             const vendidasRaw = getRowValue(r, ['unidades_vendidas', 'vendidas', 'ventas', 'unidades']);
             const nuevoRaw = getRowValue(r, ['es_nuevo', 'nuevo', 'is_new', 'new']);
+            const nuevoHastaRaw = getRowValue(r, ['nuevo_hasta', 'nuevohasta', 'new_until', 'newuntil', 'hasta_nuevo']);
 
             const nombre = String(nombreRaw ?? '').trim();
             const precioN = parseNumberFlexible(precioRaw);
@@ -1677,23 +1672,22 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
                 continue;
             }
 
-            const parsed = parseCategorySlugFromImport(
-                categoriaRaw !== undefined ? categoriaRaw : generoRaw,
-                categoriesOk,
-                validSlugs
-            );
-            if (!parsed.slug) {
-                errors.push({ row: excelRow, field: 'categoria', message: parsed.error || 'Categoria invalida' });
-                continue;
-            }
-            const genero = parsed.slug;
+            const genero = normalizeGeneroInput(generoRaw !== undefined ? generoRaw : categoriaRaw);
             const stockN = parseNumberFlexible(stockRaw);
             const vendidasN = parseNumberFlexible(vendidasRaw);
 
             const stock = stockN === null ? 0 : Math.max(0, Math.trunc(stockN));
             const unidades_vendidas = vendidasN === null ? 0 : Math.max(0, Math.trunc(vendidasN));
             const imagen_url = String(imagenRaw ?? '').trim() || null;
+            const imagen_url_2 = String(imagen2Raw ?? '').trim() || null;
+            const imagen_url_3 = String(imagen3Raw ?? '').trim() || null;
             const es_nuevo = String(nuevoRaw ?? '').toLowerCase() === 'true' || nuevoRaw === 1 || nuevoRaw === true;
+
+            const nuevoHastaParsed = parseNuevoHastaInput(nuevoHastaRaw);
+            if (nuevoHastaParsed !== undefined && !newUntilOk) {
+                errors.push({ row: excelRow, field: 'nuevo_hasta', message: 'Tu base de datos no soporta nuevo_hasta. Ejecuta migraciones y vuelve a intentar.' });
+                continue;
+            }
 
             const casaVal = String(casaRaw ?? '').trim();
             const casaFinal = casaVal ? (casaVal.length > 120 ? casaVal.slice(0, 120) : casaVal) : null;
@@ -1709,7 +1703,12 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
                 stock,
                 unidades_vendidas,
                 imagen_url,
+                imagen_url_2,
+                imagen_url_3,
                 es_nuevo
+                ,
+                nuevo_hasta: newUntilOk ? (nuevoHastaParsed === undefined ? null : nuevoHastaParsed) : undefined,
+                slug: slugOk ? generateSlug(nombre) : undefined
             });
         }
 
@@ -1726,20 +1725,50 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
         const connection = await pool.getConnection();
         try {
             await connection.query('BEGIN');
+            const image2Ok = true;
+            const image3Ok = true;
+
+            // Build a single INSERT statement shape (same columns for all rows)
+            const baseCols: string[] = [
+                'id',
+                'nombre',
+                'genero',
+                ...(casaOk ? ['casa'] : []),
+                ...(slugOk ? ['slug'] : []),
+                'descripcion',
+                'notas_olfativas',
+                'precio',
+                'stock',
+                'unidades_vendidas',
+                'imagen_url',
+                ...(image2Ok ? ['imagen_url_2'] : []),
+                ...(image3Ok ? ['imagen_url_3'] : []),
+                'es_nuevo',
+                ...(newUntilOk ? ['nuevo_hasta'] : [])
+            ];
+            const placeholders = baseCols.map(() => '?').join(', ');
+            const insertSql = `INSERT INTO productos (${baseCols.join(', ')}) VALUES (${placeholders})`;
+
             for (const p of toInsert) {
-                if (casaOk) {
-                    await connection.query(
-                        `INSERT INTO productos (id, nombre, genero, casa, descripcion, notas_olfativas, precio, stock, unidades_vendidas, imagen_url, es_nuevo)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                        [p.id, p.nombre, p.genero, (p as any).casa ?? null, p.descripcion, p.notas_olfativas, p.precio, p.stock, p.unidades_vendidas, p.imagen_url, p.es_nuevo]
-                    );
-                } else {
-                    await connection.query(
-                        `INSERT INTO productos (id, nombre, genero, descripcion, notas_olfativas, precio, stock, unidades_vendidas, imagen_url, es_nuevo)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                        [p.id, p.nombre, p.genero, p.descripcion, p.notas_olfativas, p.precio, p.stock, p.unidades_vendidas, p.imagen_url, p.es_nuevo]
-                    );
-                }
+                const values: any[] = [
+                    p.id,
+                    p.nombre,
+                    p.genero,
+                    ...(casaOk ? [(p as any).casa ?? null] : []),
+                    ...(slugOk ? [(p as any).slug ?? null] : []),
+                    p.descripcion,
+                    p.notas_olfativas,
+                    p.precio,
+                    p.stock,
+                    p.unidades_vendidas,
+                    p.imagen_url,
+                    ...(image2Ok ? [(p as any).imagen_url_2 ?? null] : []),
+                    ...(image3Ok ? [(p as any).imagen_url_3 ?? null] : []),
+                    p.es_nuevo,
+                    ...(newUntilOk ? [(p as any).nuevo_hasta ?? null] : [])
+                ];
+
+                await connection.query(insertSql, values);
             }
             await connection.query('COMMIT');
         } catch (e) {
@@ -1748,6 +1777,9 @@ export const importProductsFromSpreadsheet = async (req: Request, res: Response)
         } finally {
             connection.release();
         }
+
+        // Bust catalog cache so imported products are visible immediately
+        appCache.invalidateByPrefix('catalog:');
 
         res.status(201).json({ created: toInsert.length, skipped, failed: errors.length, errors });
     } catch (error: any) {

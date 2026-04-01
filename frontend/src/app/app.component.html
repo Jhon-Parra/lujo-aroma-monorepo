@@ -7,7 +7,7 @@
   <main [ngClass]="{
     'flex-grow min-h-screen pt-24 md:pt-28': isAdminRoute,
     'flex-grow relative': isHomeRoute && !isAdminRoute,
-    'flex-grow mt-28 md:mt-32 relative': !isHomeRoute && !isAdminRoute
+    'flex-grow mt-36 md:mt-[150px] relative': !isHomeRoute && !isAdminRoute
   }">
     <router-outlet></router-outlet>
   </main>

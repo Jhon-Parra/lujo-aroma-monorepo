@@ -153,7 +153,7 @@ export class CatalogComponent implements OnInit {
 
   ngOnInit(): void {
     this.seo.set({
-      title: 'Catálogo de Perfumes en Bogotá | Perfumes Bogotá',
+      title: 'Lujo&Aroma | Perfumes Bogotá',
       description: 'Explora nuestra colección exclusiva de perfumes originales en Bogotá. Envíos a toda Colombia. Filtra por categoría y encuentra tu aroma ideal.'
     });
 

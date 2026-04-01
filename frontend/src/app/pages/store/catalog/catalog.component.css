@@ -95,3 +95,12 @@
     max-width: 280px;
     margin: 0 auto;
 }
+
+/* Sticky Sidebar Stabilizer */
+.sticky-sidebar-container {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 150px !important;
+    z-index: 10 !important;
+    align-self: flex-start !important;
+}

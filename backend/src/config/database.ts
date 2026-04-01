@@ -5,13 +5,13 @@ import path from 'path';
 // Cargar siempre el .env del backend, independiente del working directory.
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const rawHost = process.env.DB_HOST || '127.0.0.1';
+const rawHost = process.env.DB_HOST || process.env.MYSQL_HOST || '127.0.0.1';
 const host = rawHost === 'localhost' ? '127.0.0.1' : rawHost;
 
 const dbConfig: any = {
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'lujo_aroma',
+    user: process.env.DB_USER || process.env.MYSQL_USER || 'root',
+    password: process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || '',
+    database: process.env.DB_NAME || process.env.MYSQL_DATABASE || 'lujo_aroma',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -21,7 +21,14 @@ if (process.env.DB_SOCKET_PATH) {
     dbConfig.socketPath = process.env.DB_SOCKET_PATH;
 } else {
     dbConfig.host = host;
-    dbConfig.port = Number(process.env.DB_PORT) || 3306;
+    dbConfig.port = Number(process.env.DB_PORT) || Number(process.env.MYSQL_PORT) || 3306;
+}
+
+// Soporte para SSL opcional
+if (process.env.DB_SSL === 'true' || process.env.MYSQL_SSL === 'true') {
+    dbConfig.ssl = {
+        rejectUnauthorized: false
+    };
 }
 
 // Si se prefiere usar una URL de conexión completa:

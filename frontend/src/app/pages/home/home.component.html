@@ -19,7 +19,8 @@
                         class="absolute inset-0 w-full h-full object-cover object-center scale-[1.04] home-hero-zoom"
                         [attr.data-slide-index]="i"
                         [src]="getHomeSlideMediaUrl(s, i)"
-                        preload="metadata"
+                        [poster]="getHomeSlidePosterUrl(s, i)"
+                        preload="auto"
                         [muted]="true"
                         playsinline
                         loop
@@ -222,7 +223,8 @@
 
                 <video *ngIf="isVideoSlide(c) && shouldLoadCategoryVideo(i)"
                     class="absolute inset-0 w-full h-full object-cover opacity-85 transition-transform duration-[1200ms] group-hover:scale-[1.04]"
-                    [src]="getHomeSlideMediaUrl(c, i)" preload="metadata" [muted]="true" playsinline loop autoplay>
+                    [src]="getHomeSlideMediaUrl(c, i)" [poster]="getHomeCategoryPosterUrl(c, i)" 
+                    preload="none" [muted]="true" playsinline loop autoplay>
                 </video>
 
                 <img *ngIf="isVideoSlide(c) && !shouldLoadCategoryVideo(i)"

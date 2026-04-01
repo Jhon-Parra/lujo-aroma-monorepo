@@ -433,6 +433,26 @@ export class HomeComponent implements OnInit, OnDestroy {
     return this.getHeroMediaUrl();
   }
 
+  getHomeSlidePosterUrl(slide: any, index: number): string {
+    const poster = String(slide?.posterUrl || slide?.poster_url || '').trim();
+    if (poster) return poster;
+
+    // Si es el primer slide y tenemos la imagen de hero configurada, usarla como poster
+    if (index === 0) {
+      const heroUrl = String(this.settings?.hero_image_url || '').trim();
+      if (heroUrl && !this.isVideoSlide(this.homeSlides[0])) {
+         return heroUrl.startsWith('http') ? heroUrl : `${API_CONFIG.serverUrl}${heroUrl.startsWith('/') ? '' : '/'}${heroUrl}`;
+      }
+    }
+
+    // Fallback simple a imagen estatica si el slide tiene una (por si acaso viene mezclado)
+    if (!this.isVideoSlide(slide)) {
+      return this.getHomeSlideMediaUrl(slide, index);
+    }
+
+    return '';
+  }
+
   navigateCta(linkRaw: string): void {
     const link = String(linkRaw || '').trim();
     if (!link) return;

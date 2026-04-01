@@ -9,6 +9,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes';
 import aiRoutes from './routes/ai.routes';
@@ -82,6 +83,7 @@ app.use(helmet({
     },
     referrerPolicy: { policy: 'no-referrer-when-downgrade' }
 }));
+app.use(compression());
 app.use(morgan('combined'));
 app.use(cookieParser());
 

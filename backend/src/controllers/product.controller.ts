@@ -5,17 +5,33 @@ import * as XLSX from 'xlsx';
 
 import { supabase } from '../config/supabase';
 import { sanitizeFilename } from '../middleware/upload.middleware';
+import { optimizeImage, isOptimizableImage } from '../utils/image.util';
 import { appCache, CACHE_KEYS } from '../utils/cache.util';
 
 /**
  * Helper to upload a file to Supabase perfumissimo_bucket/products/
  */
 async function uploadToSupabase(file: Express.Multer.File): Promise<string> {
-    const uniqueFilename = sanitizeFilename(file.originalname);
-    const { data, error } = await supabase.storage
+    let buffer = file.buffer;
+    let contentType = file.mimetype;
+    let filename = sanitizeFilename(file.originalname);
+
+    if (isOptimizableImage(file.mimetype)) {
+        try {
+            const optimized = await optimizeImage(file.buffer);
+            buffer = optimized.buffer;
+            contentType = optimized.contentType;
+            // Cambiar extensión a .webp
+            filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
+        } catch (error) {
+            console.warn('Image optimization failed, uploading original:', error);
+        }
+    }
+
+    const { error } = await supabase.storage
         .from('perfumissimo_bucket')
-        .upload(`products/${uniqueFilename}`, file.buffer, {
-            contentType: file.mimetype,
+        .upload(`products/${filename}`, buffer, {
+            contentType,
             upsert: true
         });
 
@@ -23,7 +39,7 @@ async function uploadToSupabase(file: Express.Multer.File): Promise<string> {
 
     const { data: publicData } = supabase.storage
         .from('perfumissimo_bucket')
-        .getPublicUrl(`products/${uniqueFilename}`);
+        .getPublicUrl(`products/${filename}`);
 
     return publicData.publicUrl;
 }

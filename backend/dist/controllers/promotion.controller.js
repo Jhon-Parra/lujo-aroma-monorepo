@@ -5,6 +5,7 @@ const database_1 = require("../config/database");
 const uuid_1 = require("uuid");
 const supabase_1 = require("../config/supabase");
 const upload_middleware_1 = require("../middleware/upload.middleware");
+const image_util_1 = require("../utils/image.util");
 let promotionAssignmentReady = null;
 let promotionMediaReady = null;
 let promotionAdvancedReady = null;
@@ -206,18 +207,32 @@ const createPromotion = async (req, res) => {
         let imagen_url = null;
         if (mediaReady && req.file) {
             const file = req.file;
-            const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
-            const { error } = await supabase_1.supabase.storage
+            let buffer = file.buffer;
+            let contentType = file.mimetype;
+            let filename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
+            if ((0, image_util_1.isOptimizableImage)(file.mimetype)) {
+                try {
+                    const optimized = await (0, image_util_1.optimizeImage)(file.buffer, { maxWidth: 1200 });
+                    buffer = optimized.buffer;
+                    contentType = optimized.contentType;
+                    filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
+                }
+                catch (error) {
+                    console.warn('Promotion image optimization failed, uploading original:', error);
+                }
+            }
+            const filePath = `promotions/${filename}`;
+            const { error: uploadError } = await supabase_1.supabase.storage
                 .from('perfumissimo_bucket')
-                .upload(`promotions/${uniqueFilename}`, file.buffer, {
-                contentType: file.mimetype,
+                .upload(filePath, buffer, {
+                contentType,
                 upsert: true
             });
-            if (error)
-                throw new Error('Error subiendo imagen de promocion a Supabase: ' + error.message);
+            if (uploadError)
+                throw new Error('Error subiendo imagen de promocion a Supabase: ' + uploadError.message);
             const { data: publicData } = supabase_1.supabase.storage
                 .from('perfumissimo_bucket')
-                .getPublicUrl(`promotions/${uniqueFilename}`);
+                .getPublicUrl(filePath);
             imagen_url = publicData.publicUrl;
         }
         const connection = await database_1.pool.getConnection();
@@ -459,18 +474,32 @@ const updatePromotion = async (req, res) => {
         let imagen_url = undefined;
         if (mediaReady && req.file) {
             const file = req.file;
-            const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
-            const { error } = await supabase_1.supabase.storage
+            let buffer = file.buffer;
+            let contentType = file.mimetype;
+            let filename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
+            if ((0, image_util_1.isOptimizableImage)(file.mimetype)) {
+                try {
+                    const optimized = await (0, image_util_1.optimizeImage)(file.buffer, { maxWidth: 1200 });
+                    buffer = optimized.buffer;
+                    contentType = optimized.contentType;
+                    filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
+                }
+                catch (error) {
+                    console.warn('Promotion image optimization failed (update), uploading original:', error);
+                }
+            }
+            const filePath = `promotions/${filename}`;
+            const { error: uploadError } = await supabase_1.supabase.storage
                 .from('perfumissimo_bucket')
-                .upload(`promotions/${uniqueFilename}`, file.buffer, {
-                contentType: file.mimetype,
+                .upload(filePath, buffer, {
+                contentType,
                 upsert: true
             });
-            if (error)
-                throw new Error('Error subiendo imagen de promocion a Supabase: ' + error.message);
+            if (uploadError)
+                throw new Error('Error subiendo imagen de promocion a Supabase: ' + uploadError.message);
             const { data: publicData } = supabase_1.supabase.storage
                 .from('perfumissimo_bucket')
-                .getPublicUrl(`promotions/${uniqueFilename}`);
+                .getPublicUrl(filePath);
             imagen_url = publicData.publicUrl;
         }
         const connection = await database_1.pool.getConnection();

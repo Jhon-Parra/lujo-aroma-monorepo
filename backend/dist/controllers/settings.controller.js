@@ -4,6 +4,7 @@ exports.updateSettings = exports.getSettings = void 0;
 const database_1 = require("../config/database");
 const supabase_1 = require("../config/supabase");
 const upload_middleware_1 = require("../middleware/upload.middleware");
+const image_util_1 = require("../utils/image.util");
 const encryption_util_1 = require("../utils/encryption.util");
 const audit_service_1 = require("../services/audit.service");
 const parseJsonMaybe = (raw) => {
@@ -97,6 +98,36 @@ const inferHeroMediaTypeFromMime = (mime) => {
 const MAX_HERO_IMAGE_BYTES = 10 * 1024 * 1024; // 10MB
 const MAX_HERO_VIDEO_BYTES = 30 * 1024 * 1024; // 30MB
 const MAX_ADDON_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB
+async function uploadSettingAsset(file, folder, options = {}) {
+    let buffer = file.buffer;
+    let contentType = file.mimetype;
+    let filename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
+    if ((0, image_util_1.isOptimizableImage)(file.mimetype)) {
+        try {
+            const optimized = await (0, image_util_1.optimizeImage)(file.buffer, options);
+            buffer = optimized.buffer;
+            contentType = optimized.contentType;
+            filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
+        }
+        catch (error) {
+            console.warn(`Image optimization failed for ${folder}, uploading original:`, error);
+        }
+    }
+    // Usar Date.now() para evitar caches agresivos si es necesario (se puede pasar en el folder o nombre)
+    const fullPath = `${folder}/${filename}`;
+    const { error } = await supabase_1.supabase.storage
+        .from('perfumissimo_bucket')
+        .upload(fullPath, buffer, {
+        contentType,
+        upsert: true
+    });
+    if (error)
+        throw new Error(`Error subiendo ${folder} a Supabase: ` + error.message);
+    const { data: publicData } = supabase_1.supabase.storage
+        .from('perfumissimo_bucket')
+        .getPublicUrl(fullPath);
+    return publicData.publicUrl;
+}
 const detectColumns = async (columns) => {
     try {
         console.log('[DEBUG] detectColumns query starting...');
@@ -349,21 +380,7 @@ const updateSettings = async (req, res) => {
         const requestedType = normalizeHeroMediaType(hero_media_type);
         // Subida tradicional (solo imagen)
         if (heroFile) {
-            const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(heroFile.originalname);
-            const { error } = await supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .upload(`settings/${uniqueFilename}`, heroFile.buffer, {
-                contentType: heroFile.mimetype,
-                upsert: true
-            });
-            if (error) {
-                console.error('Supabase upload error (hero_image):', error);
-                throw new Error('Error subiendo la imagen a Supabase');
-            }
-            const { data: publicData } = supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .getPublicUrl(`settings/${uniqueFilename}`);
-            hero_image_url = publicData.publicUrl;
+            hero_image_url = await uploadSettingAsset(heroFile, 'settings', { maxWidth: 1920 });
         }
         // Subida nueva (multimedia: imagen, gif, video)
         if (heroMediaFile) {
@@ -392,21 +409,7 @@ const updateSettings = async (req, res) => {
                 });
                 return;
             }
-            const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(heroMediaFile.originalname);
-            const { error } = await supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .upload(`settings/${uniqueFilename}`, heroMediaFile.buffer, {
-                contentType: heroMediaFile.mimetype,
-                upsert: true
-            });
-            if (error) {
-                console.error('Supabase upload error (hero_media):', error);
-                throw new Error('Error subiendo el archivo multimedia a Supabase');
-            }
-            const { data: publicData } = supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .getPublicUrl(`settings/${uniqueFilename}`);
-            hero_media_url = publicData.publicUrl;
+            hero_media_url = await uploadSettingAsset(heroMediaFile, 'settings', { maxWidth: 1920 });
             hero_media_type_final = actualType;
             // Mantener compatibilidad: si no es video, actualizar hero_image_url también
             if (actualType !== 'video') {
@@ -415,23 +418,7 @@ const updateSettings = async (req, res) => {
         }
         let logo_url = undefined;
         if (logoFile) {
-            const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(logoFile.originalname);
-            // Evitar cache agresivo en el navegador/CDN usando un path unico por subida
-            const logoPath = `settings/logo/${Date.now()}_${uniqueFilename}`;
-            const { error } = await supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .upload(logoPath, logoFile.buffer, {
-                contentType: logoFile.mimetype,
-                upsert: true
-            });
-            if (error) {
-                console.error('Supabase upload error (logo):', error);
-                throw new Error('Error subiendo el logo a Supabase');
-            }
-            const { data: publicData } = supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .getPublicUrl(logoPath);
-            logo_url = publicData.publicUrl;
+            logo_url = await uploadSettingAsset(logoFile, `settings/logo/${Date.now()}`, { maxWidth: 500 });
         }
         let envio_prioritario_image_url = undefined;
         if (envioFile) {
@@ -439,22 +426,7 @@ const updateSettings = async (req, res) => {
                 res.status(400).json({ error: 'La imagen de Envio prioritario es demasiado grande. Limite: 8MB.' });
                 return;
             }
-            const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(envioFile.originalname);
-            const filePath = `settings/addons/${Date.now()}_envio_${uniqueFilename}`;
-            const { error } = await supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .upload(filePath, envioFile.buffer, {
-                contentType: envioFile.mimetype,
-                upsert: true
-            });
-            if (error) {
-                console.error('Supabase upload error (envio_prioritario_image):', error);
-                throw new Error('Error subiendo la imagen de Envio prioritario a Supabase');
-            }
-            const { data: publicData } = supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .getPublicUrl(filePath);
-            envio_prioritario_image_url = publicData.publicUrl;
+            envio_prioritario_image_url = await uploadSettingAsset(envioFile, `settings/addons/${Date.now()}_envio`, { maxWidth: 500 });
         }
         let perfume_lujo_image_url = undefined;
         if (lujoFile) {
@@ -462,22 +434,7 @@ const updateSettings = async (req, res) => {
                 res.status(400).json({ error: 'La imagen de Perfume de lujo es demasiado grande. Limite: 8MB.' });
                 return;
             }
-            const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(lujoFile.originalname);
-            const filePath = `settings/addons/${Date.now()}_lujo_${uniqueFilename}`;
-            const { error } = await supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .upload(filePath, lujoFile.buffer, {
-                contentType: lujoFile.mimetype,
-                upsert: true
-            });
-            if (error) {
-                console.error('Supabase upload error (perfume_lujo_image):', error);
-                throw new Error('Error subiendo la imagen de Perfume de lujo a Supabase');
-            }
-            const { data: publicData } = supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .getPublicUrl(filePath);
-            perfume_lujo_image_url = publicData.publicUrl;
+            perfume_lujo_image_url = await uploadSettingAsset(lujoFile, `settings/addons/${Date.now()}_lujo`, { maxWidth: 500 });
         }
         const columns = await detectColumns([
             'banner_accent_color',
@@ -606,26 +563,12 @@ const updateSettings = async (req, res) => {
                     });
                     return;
                 }
-                const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(f.originalname);
-                const filePath = `settings/home/carousel/${Date.now()}_${i + 1}_${uniqueFilename}`;
-                const { error } = await supabase_1.supabase.storage
-                    .from('perfumissimo_bucket')
-                    .upload(filePath, f.buffer, {
-                    contentType: f.mimetype,
-                    upsert: true
-                });
-                if (error) {
-                    console.error('Supabase upload error (home_slide):', error);
-                    throw new Error('Error subiendo archivo del carrusel a Supabase');
-                }
-                const { data: publicData } = supabase_1.supabase.storage
-                    .from('perfumissimo_bucket')
-                    .getPublicUrl(filePath);
+                const mediaUrl = await uploadSettingAsset(f, 'settings/home/carousel', { maxWidth: 1920 });
                 const mediaType = actualType === 'video' ? 'video' : 'image';
                 carouselArr[i] = {
                     ...(carouselArr[i] || {}),
                     mediaType,
-                    mediaUrl: publicData.publicUrl
+                    mediaUrl: mediaUrl
                 };
             }
         }
@@ -647,30 +590,16 @@ const updateSettings = async (req, res) => {
                     });
                     return;
                 }
-                const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(f.originalname);
-                const filePath = `settings/home/categories/${Date.now()}_${i + 1}_${uniqueFilename}`;
-                const { error } = await supabase_1.supabase.storage
-                    .from('perfumissimo_bucket')
-                    .upload(filePath, f.buffer, {
-                    contentType: f.mimetype,
-                    upsert: true
-                });
-                if (error) {
-                    console.error('Supabase upload error (home_category):', error);
-                    throw new Error('Error subiendo archivo de categorias home a Supabase');
-                }
-                const { data: publicData } = supabase_1.supabase.storage
-                    .from('perfumissimo_bucket')
-                    .getPublicUrl(filePath);
+                const mediaUrl = await uploadSettingAsset(f, 'settings/home/categories', { maxWidth: 800 });
                 const mediaType = actualType === 'video' ? 'video' : 'image';
                 categoriesArr[i] = {
                     ...(categoriesArr[i] || {}),
                     mediaType,
-                    mediaUrl: publicData.publicUrl
+                    mediaUrl: mediaUrl
                 };
             }
         }
-        // Upload category posters (image placeholders) and patch JSON
+        // Upload category posters and patch JSON
         if (columns.home_categories && categoriesArr && anyCategoryPosterUpload) {
             for (let i = 0; i < categoryPosterFiles.length; i++) {
                 const f = categoryPosterFiles[i];
@@ -681,28 +610,10 @@ const updateSettings = async (req, res) => {
                     res.status(400).json({ error: 'El poster debe ser una imagen (JPEG/PNG/GIF/WebP).' });
                     return;
                 }
-                if (f.size > MAX_HERO_IMAGE_BYTES) {
-                    res.status(400).json({ error: 'La imagen del poster supera el limite de 10MB.' });
-                    return;
-                }
-                const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(f.originalname);
-                const filePath = `settings/home/categories/posters/${Date.now()}_${i + 1}_${uniqueFilename}`;
-                const { error } = await supabase_1.supabase.storage
-                    .from('perfumissimo_bucket')
-                    .upload(filePath, f.buffer, {
-                    contentType: f.mimetype,
-                    upsert: true
-                });
-                if (error) {
-                    console.error('Supabase upload error (home_category_poster):', error);
-                    throw new Error('Error subiendo poster de categorias home a Supabase');
-                }
-                const { data: publicData } = supabase_1.supabase.storage
-                    .from('perfumissimo_bucket')
-                    .getPublicUrl(filePath);
+                const posterUrl = await uploadSettingAsset(f, 'settings/home/categories/posters', { maxWidth: 800 });
                 categoriesArr[i] = {
                     ...(categoriesArr[i] || {}),
-                    posterUrl: publicData.publicUrl
+                    posterUrl: posterUrl
                 };
             }
         }

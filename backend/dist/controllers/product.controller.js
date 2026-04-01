@@ -39,23 +39,38 @@ const uuid_1 = require("uuid");
 const XLSX = __importStar(require("xlsx"));
 const supabase_1 = require("../config/supabase");
 const upload_middleware_1 = require("../middleware/upload.middleware");
+const image_util_1 = require("../utils/image.util");
 const cache_util_1 = require("../utils/cache.util");
 /**
  * Helper to upload a file to Supabase perfumissimo_bucket/products/
  */
 async function uploadToSupabase(file) {
-    const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
-    const { data, error } = await supabase_1.supabase.storage
+    let buffer = file.buffer;
+    let contentType = file.mimetype;
+    let filename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
+    if ((0, image_util_1.isOptimizableImage)(file.mimetype)) {
+        try {
+            const optimized = await (0, image_util_1.optimizeImage)(file.buffer);
+            buffer = optimized.buffer;
+            contentType = optimized.contentType;
+            // Cambiar extensión a .webp
+            filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
+        }
+        catch (error) {
+            console.warn('Image optimization failed, uploading original:', error);
+        }
+    }
+    const { error } = await supabase_1.supabase.storage
         .from('perfumissimo_bucket')
-        .upload(`products/${uniqueFilename}`, file.buffer, {
-        contentType: file.mimetype,
+        .upload(`products/${filename}`, buffer, {
+        contentType,
         upsert: true
     });
     if (error)
         throw new Error('Error subiendo imagen de producto a Supabase: ' + error.message);
     const { data: publicData } = supabase_1.supabase.storage
         .from('perfumissimo_bucket')
-        .getPublicUrl(`products/${uniqueFilename}`);
+        .getPublicUrl(`products/${filename}`);
     return publicData.publicUrl;
 }
 let promotionAssignmentReady = null;

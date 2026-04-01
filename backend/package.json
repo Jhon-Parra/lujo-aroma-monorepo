@@ -29,6 +29,7 @@
     "@types/pdfkit": "^0.17.5",
     "@types/uuid": "^9.0.8",
     "bcrypt": "^6.0.0",
+    "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
@@ -47,12 +48,14 @@
     "openai": "^6.27.0",
     "pdfkit": "^0.18.0",
     "reflect-metadata": "^0.2.2",
+    "sharp": "^0.34.5",
     "typescript": "^5.9.3",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2"
   }

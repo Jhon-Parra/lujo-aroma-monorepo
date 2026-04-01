@@ -61,6 +61,29 @@ async function uploadToSupabase(file) {
 let promotionAssignmentReady = null;
 let promotionGenderReady = null;
 let promotionAdvancedReady = null;
+// Detecta si productos.id es BINARY (UUID) o VARCHAR
+let productIdIsBinary = null;
+const detectProductIdType = async () => {
+    if (productIdIsBinary !== null)
+        return productIdIsBinary;
+    try {
+        const [rows] = await database_1.pool.query(`SELECT DATA_TYPE FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND LOWER(table_name) = 'productos'
+               AND LOWER(column_name) = 'id'
+             LIMIT 1`);
+        const dtype = String(rows?.[0]?.DATA_TYPE || '').toLowerCase();
+        productIdIsBinary = dtype === 'binary' || dtype === 'varbinary';
+    }
+    catch {
+        productIdIsBinary = false;
+    }
+    return productIdIsBinary;
+};
+const productIdWhereExpr = async () => {
+    const binary = await detectProductIdType();
+    return binary ? 'UUID_TO_BIN(?)' : '?';
+};
 let categoriesReady = null;
 const detectCategoriesSchema = async () => {
     if (categoriesReady !== null)
@@ -1296,8 +1319,9 @@ exports.updateProduct = updateProduct;
 const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
+        const idExpr = await productIdWhereExpr();
         const [result] = await database_1.pool.query(`
-            DELETE FROM productos WHERE id = ?
+            DELETE FROM productos WHERE id = ${idExpr}
         `, [id]);
         if (result.affectedRows === 0) {
             res.status(404).json({ error: 'Producto no encontrado' });
@@ -1308,6 +1332,17 @@ const deleteProduct = async (req, res) => {
         res.status(200).json({ message: 'Producto eliminado exitosamente' });
     }
     catch (error) {
+        // Caso tipico: el producto ya fue vendido y existe en detalleordenes.
+        // En ese escenario el FK bloquea el DELETE y MySQL/MariaDB devuelve errno 1451.
+        const err = error;
+        const errno = Number(err?.errno);
+        const code = String(err?.code || '');
+        if (errno === 1451 || code === 'ER_ROW_IS_REFERENCED_2') {
+            res.status(409).json({
+                error: 'No se puede eliminar el producto porque tiene ventas/pedidos asociados. Puedes dejarlo sin stock o desactivarlo en lugar de eliminarlo.'
+            });
+            return;
+        }
         console.error('Error deleting product:', error);
         res.status(500).json({ error: 'Error al eliminar producto' });
     }

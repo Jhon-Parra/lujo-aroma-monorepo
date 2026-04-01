@@ -32,6 +32,31 @@ let promotionAssignmentReady: boolean | null = null;
 let promotionGenderReady: boolean | null = null;
 let promotionAdvancedReady: boolean | null = null;
 
+// Detecta si productos.id es BINARY (UUID) o VARCHAR
+let productIdIsBinary: boolean | null = null;
+const detectProductIdType = async (): Promise<boolean> => {
+    if (productIdIsBinary !== null) return productIdIsBinary;
+    try {
+        const [rows] = await pool.query<any[]>(
+            `SELECT DATA_TYPE FROM information_schema.columns
+             WHERE table_schema = DATABASE()
+               AND LOWER(table_name) = 'productos'
+               AND LOWER(column_name) = 'id'
+             LIMIT 1`
+        );
+        const dtype = String(rows?.[0]?.DATA_TYPE || '').toLowerCase();
+        productIdIsBinary = dtype === 'binary' || dtype === 'varbinary';
+    } catch {
+        productIdIsBinary = false;
+    }
+    return productIdIsBinary;
+};
+
+const productIdWhereExpr = async (): Promise<string> => {
+    const binary = await detectProductIdType();
+    return binary ? 'UUID_TO_BIN(?)' : '?';
+};
+
 let categoriesReady: boolean | null = null;
 const detectCategoriesSchema = async (): Promise<boolean> => {
     if (categoriesReady !== null) return categoriesReady;
@@ -1378,8 +1403,10 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
     try {
         const { id } = req.params;
 
+        const idExpr = await productIdWhereExpr();
+
         const [result] = await pool.query<any>(`
-            DELETE FROM productos WHERE id = ?
+            DELETE FROM productos WHERE id = ${idExpr}
         `, [id]);
 
         if (result.affectedRows === 0) {
@@ -1392,6 +1419,17 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
 
         res.status(200).json({ message: 'Producto eliminado exitosamente' });
     } catch (error) {
+        // Caso tipico: el producto ya fue vendido y existe en detalleordenes.
+        // En ese escenario el FK bloquea el DELETE y MySQL/MariaDB devuelve errno 1451.
+        const err: any = error as any;
+        const errno = Number(err?.errno);
+        const code = String(err?.code || '');
+        if (errno === 1451 || code === 'ER_ROW_IS_REFERENCED_2') {
+            res.status(409).json({
+                error: 'No se puede eliminar el producto porque tiene ventas/pedidos asociados. Puedes dejarlo sin stock o desactivarlo en lugar de eliminarlo.'
+            });
+            return;
+        }
         console.error('Error deleting product:', error);
         res.status(500).json({ error: 'Error al eliminar producto' });
     }

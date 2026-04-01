@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -42,7 +42,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "mysql2": "^3.19.1",
-    "nodemailer": "^6.10.1",
+    "nodemailer": "^8.0.4",
     "openai": "^6.27.0",
     "pdfkit": "^0.18.0",
     "reflect-metadata": "^0.2.2",

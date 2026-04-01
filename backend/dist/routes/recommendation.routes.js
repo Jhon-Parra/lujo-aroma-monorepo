@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const validation_middleware_1 = require("../middleware/validation.middleware");
+const recommendation_schema_1 = require("../schemas/recommendation.schema");
+const recommendation_controller_1 = require("../controllers/recommendation.controller");
+const router = (0, express_1.Router)();
+router.post('/quiz', (0, validation_middleware_1.validate)(recommendation_schema_1.recommendationQuizSchema), recommendation_controller_1.recommendFromQuiz);
+router.post('/free', (0, validation_middleware_1.validate)(recommendation_schema_1.recommendationFreeSchema), recommendation_controller_1.recommendFromFreeText);
+router.post('/events', (0, validation_middleware_1.validate)(recommendation_schema_1.recommendationEventSchema), recommendation_controller_1.recordRecommendationEvent);
+router.post('/similar/:id', (0, validation_middleware_1.validate)(recommendation_schema_1.recommendationSimilarSchema), recommendation_controller_1.recommendSimilar);
+exports.default = router;

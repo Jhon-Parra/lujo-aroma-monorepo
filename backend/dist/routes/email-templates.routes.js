@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const validation_middleware_1 = require("../middleware/validation.middleware");
+const email_templates_controller_1 = require("../controllers/email-templates.controller");
+const email_templates_schema_1 = require("../schemas/email-templates.schema");
+const router = (0, express_1.Router)();
+router.get('/orders', auth_middleware_1.verifyToken, (0, auth_middleware_1.requirePermission)('admin.settings'), email_templates_controller_1.getOrderEmailTemplates);
+router.get('/orders/logs', auth_middleware_1.verifyToken, (0, auth_middleware_1.requirePermission)('admin.settings'), email_templates_controller_1.getOrderEmailLogs);
+router.put('/orders/:status', auth_middleware_1.verifyToken, (0, auth_middleware_1.requirePermission)('admin.settings'), (0, validation_middleware_1.validate)(email_templates_schema_1.updateOrderEmailTemplateSchema), email_templates_controller_1.updateOrderEmailTemplate);
+exports.default = router;

@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const ai_controller_1 = require("../controllers/ai.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const validation_middleware_1 = require("../middleware/validation.middleware");
+const ai_schema_1 = require("../schemas/ai.schema");
+const router = (0, express_1.Router)();
+router.post('/generate-description', auth_middleware_1.verifyToken, (0, validation_middleware_1.validate)(ai_schema_1.generateDescriptionSchema), ai_controller_1.generateAIDescription);
+exports.default = router;

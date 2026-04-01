@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const intelligence_controller_1 = require("../controllers/intelligence.controller");
+const auth_middleware_1 = require("../middleware/auth.middleware");
+const router = (0, express_1.Router)();
+router.get('/summary', auth_middleware_1.verifyToken, (0, auth_middleware_1.requirePermission)('admin.dashboard'), intelligence_controller_1.getIntelligenceSummary);
+router.post('/search', auth_middleware_1.optionalVerifyToken, intelligence_controller_1.trackSearchEvent);
+router.post('/product-view', auth_middleware_1.optionalVerifyToken, intelligence_controller_1.trackProductView);
+router.post('/cart', auth_middleware_1.optionalVerifyToken, intelligence_controller_1.trackCartSession);
+router.post('/cart/convert', auth_middleware_1.optionalVerifyToken, intelligence_controller_1.convertCartSession);
+exports.default = router;

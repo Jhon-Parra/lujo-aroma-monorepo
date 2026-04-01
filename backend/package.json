@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "engines": {
-    "node": ">=20.x"
+    "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "node -v && npm -v && tsc",
     "start": "node dist/index.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
   },

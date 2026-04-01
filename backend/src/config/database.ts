@@ -1,9 +1,6 @@
 import mysql from 'mysql2/promise';
-import dotenv from 'dotenv';
-import path from 'path';
 
-// Cargar siempre el .env del backend, independiente del working directory.
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// El .env se carga una sola vez en src/index.ts para todo el proceso.
 
 const rawHost = process.env.DB_HOST || process.env.MYSQL_HOST || 'localhost';
 // En muchos server Node (como Hostinger), 'localhost' intenta Socket Unix. 

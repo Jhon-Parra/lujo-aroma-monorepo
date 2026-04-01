@@ -3,13 +3,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-require("dotenv/config");
+const dotenv_1 = __importDefault(require("dotenv"));
+const path_1 = __importDefault(require("path"));
+// Carga robusta de variables de entorno: busca el .env en la raíz del proyecto (backend/)
+// Esto funciona tanto en desarrollo (src/) como en producción (dist/)
+dotenv_1.default.config({ path: path_1.default.resolve(process.cwd(), '.env') });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
-const path_1 = __importDefault(require("path"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const ai_routes_1 = __importDefault(require("./routes/ai.routes"));
 const recommendation_routes_1 = __importDefault(require("./routes/recommendation.routes"));

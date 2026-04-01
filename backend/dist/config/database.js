@@ -5,10 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.pool = exports.mysqlPool = void 0;
 const promise_1 = __importDefault(require("mysql2/promise"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const path_1 = __importDefault(require("path"));
-// Cargar siempre el .env del backend, independiente del working directory.
-dotenv_1.default.config({ path: path_1.default.resolve(__dirname, '../../.env') });
+// El .env se carga una sola vez en src/index.ts para todo el proceso.
 const rawHost = process.env.DB_HOST || process.env.MYSQL_HOST || 'localhost';
 // En muchos server Node (como Hostinger), 'localhost' intenta Socket Unix. 
 // '127.0.0.1' fuerza TCP. Por defecto probamos TCP pero permitimos el original si se desea.

@@ -1,10 +1,15 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Carga robusta de variables de entorno: busca el .env en la raíz del proyecto (backend/)
+// Esto funciona tanto en desarrollo (src/) como en producción (dist/)
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import path from 'path';
 import authRoutes from './routes/auth.routes';
 import aiRoutes from './routes/ai.routes';
 import recommendationRoutes from './routes/recommendation.routes';

@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve --host localhost --port 4200",
     "build": "ng build",
+    "build:prod": "ng build --configuration production && rm -rf ../frontend_deployment_main/browser && mkdir -p ../frontend_deployment_main/browser && cp -rv dist/frontend/browser/* ../frontend_deployment_main/browser/ && cp dist/frontend/browser/.htaccess ../frontend_deployment_main/browser/",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

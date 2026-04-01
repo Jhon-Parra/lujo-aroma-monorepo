@@ -3,9 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = __importDefault(require("dotenv"));
+const path_1 = __importDefault(require("path"));
+// Cargar siempre el .env del backend al puro principio.
+dotenv_1.default.config({ path: path_1.default.resolve(__dirname, '../.env') });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
-const dotenv_1 = __importDefault(require("dotenv"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
@@ -30,10 +33,7 @@ const seo_routes_1 = __importDefault(require("./routes/seo.routes"));
 const database_1 = require("./config/database");
 const security_middleware_1 = require("./middleware/security.middleware");
 const error_middleware_1 = require("./middleware/error.middleware");
-const path_1 = __importDefault(require("path"));
 const order_model_1 = require("./models/order.model");
-// Cargar siempre el .env del backend, independiente del working directory.
-dotenv_1.default.config({ path: path_1.default.resolve(__dirname, '../.env') });
 process.on('uncaughtException', (err) => {
     console.error('🔥 UNCAUGHT EXCEPTION:', err);
 });

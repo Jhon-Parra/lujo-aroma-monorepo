@@ -1,6 +1,11 @@
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Cargar siempre el .env del backend al puro principio.
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
@@ -32,11 +37,7 @@ import {
     createOrderLimiter 
 } from './middleware/security.middleware';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
-import path from 'path';
 import { OrderModel } from './models/order.model';
-
-// Cargar siempre el .env del backend, independiente del working directory.
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 process.on('uncaughtException', (err) => {
     console.error('🔥 UNCAUGHT EXCEPTION:', err);

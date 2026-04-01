@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -24,26 +24,42 @@ jobs:
         run: npm ci
         working-directory: ./frontend
 
-      - name: Build
-        run: npm run build
-        working-directory: ./frontend
-
-      - name: 🔍 Verificación Preliminar
+      - name: Configure Runtime App Config
+        shell: bash
         run: |
-          if [ -z "${{ secrets.FTP_USER }}" ]; then echo "❌ Error: FTP_USER no está configurado"; exit 1; fi
-          if [ -z "${{ secrets.FTP_PASS }}" ]; then echo "❌ Error: FTP_PASS no está configurado"; exit 1; fi
-          echo "✅ Secretos de usuario y contraseña detectados."
-          echo "🌐 Verificando conectividad al puerto 21..."
-          nc -zv -w 5 82.198.227.250 21 || echo "⚠️ Advertencia: El puerto 21 parece cerrado o bloqueado desde GitHub."
+          if [ -z "${{ secrets.FRONTEND_API_URL }}" ]; then
+            echo "❌ Error: FRONTEND_API_URL secret no está configurado";
+            exit 1;
+          fi
+
+          API_URL="${{ secrets.FRONTEND_API_URL }}"
+          GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
+
+          if [ -z "$GOOGLE_CLIENT_ID" ]; then
+            # Fallback to repo default if secret not set
+            GOOGLE_CLIENT_ID="83015258138-h30gb9n5k9le48kt6amfgje39fgfr3dg.apps.googleusercontent.com"
+          fi
+
+          cat > ./frontend/src/assets/config.json <<EOF
+          {
+            "apiUrl": "$API_URL",
+            "googleClientId": "$GOOGLE_CLIENT_ID"
+          }
+          EOF
+
+          echo "✅ config.json generado para: $API_URL"
+
+      - name: Build
+        run: npm run build -- --configuration production
+        working-directory: ./frontend
 
       - name: 📂 Sync files (SFTP)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          username: u498956148
-          server: 82.198.227.250
-          port: 65002
-          password: ${{ secrets.FTP_PASS }}
+          username: ${{ secrets.SFTP_USER }}
+          server: ${{ secrets.SFTP_HOST }}
+          port: ${{ secrets.SFTP_PORT }}
+          password: ${{ secrets.SFTP_PASS }}
           local_path: ./frontend/dist/frontend/browser/
-          remote_path: domains/lujoaroma.com/public_html/
+          remote_path: ${{ secrets.SFTP_REMOTE_PATH }}
           sftp_only: true
-

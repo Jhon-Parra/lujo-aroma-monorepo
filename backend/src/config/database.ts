@@ -5,8 +5,10 @@ import path from 'path';
 // Cargar siempre el .env del backend, independiente del working directory.
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const rawHost = process.env.DB_HOST || process.env.MYSQL_HOST || '127.0.0.1';
-const host = rawHost === 'localhost' ? '127.0.0.1' : rawHost;
+const rawHost = process.env.DB_HOST || process.env.MYSQL_HOST || 'localhost';
+// En muchos server Node (como Hostinger), 'localhost' intenta Socket Unix. 
+// '127.0.0.1' fuerza TCP. Por defecto probamos TCP pero permitimos el original si se desea.
+const host = (rawHost === 'localhost' && !process.env.DB_FORCE_LOCAL_IP) ? '127.0.0.1' : rawHost;
 
 const dbConfig: any = {
     user: process.env.DB_USER || process.env.MYSQL_USER || 'root',
@@ -14,7 +16,9 @@ const dbConfig: any = {
     database: process.env.DB_NAME || process.env.MYSQL_DATABASE || 'lujo_aroma',
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    // Aumentar el timeout para conexiones lentas en hosting compartido
+    connectTimeout: 10000
 };
 
 if (process.env.DB_SOCKET_PATH) {
@@ -24,7 +28,7 @@ if (process.env.DB_SOCKET_PATH) {
     dbConfig.port = Number(process.env.DB_PORT) || Number(process.env.MYSQL_PORT) || 3306;
 }
 
-// Soporte para SSL opcional
+// Soporte para SSL opcional (Hostinger suele no requerirlo para localhost)
 if (process.env.DB_SSL === 'true' || process.env.MYSQL_SSL === 'true') {
     dbConfig.ssl = {
         rejectUnauthorized: false
@@ -35,7 +39,7 @@ if (process.env.DB_SSL === 'true' || process.env.MYSQL_SSL === 'true') {
 let connectionString = process.env.DATABASE_URL;
 
 // IMPORTANTE: Si es una URL de PostgreSQL (común en Supabase), NO usarla para MySQL
-if (connectionString && connectionString.startsWith('postgresql')) {
+if (connectionString && (connectionString.startsWith('postgresql') || connectionString.startsWith('postgres'))) {
     connectionString = undefined;
 }
 
@@ -50,14 +54,14 @@ export const mysqlPool = connectionString
 export const pool = {
     query: async <T = any>(sql: string, params?: any[]): Promise<[T, any]> => {
         try {
-            // mysql2 ya usa '?' de forma nativa
             const [rows, fields] = await mysqlPool.query(sql, params);
             return [rows as any, fields];
         } catch (error: any) {
             console.error(`[DB ERROR] Query execution failed:`, {
                 message: error?.message,
                 code: error?.code,
-                sql: sql.substring(0, 200) + (sql.length > 200 ? '...' : '')
+                errno: error?.errno,
+                sqlState: error?.sqlState
             });
             throw error;
         }
@@ -70,17 +74,28 @@ export const pool = {
     }
 };
 
+// Verificación de conexión con Diagnóstico Detallado
 mysqlPool.getConnection()
     .then((conn) => {
-        console.log('✅ Conexión exitosa a la Base de Datos MySQL');
+        console.log('✅ Base de Datos: Conexión establecida correctamente.');
         conn.release();
     })
     .catch((err) => {
-        console.error('❌ Error conectando a la base de datos MySQL:', {
-            message: err.message,
+        console.error('❌ ERROR CRÍTICO DE CONEXIÓN DB:', {
             code: err.code,
+            message: err.message,
             host: dbConfig.host,
             user: dbConfig.user,
-            database: dbConfig.database
+            database: dbConfig.database,
+            port: dbConfig.port
         });
+
+        // Sugerencias basadas en el código de error
+        if (err.code === 'ER_ACCESS_DENIED_ERROR') {
+            console.error('💡 TIP: Revisa que el DB_USER y DB_PASSWORD sean correctos en el .env. En Hostinger, el usuario suele tener un prefijo (ej: u12345_...).');
+        } else if (err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
+            console.error('💡 TIP: El HOST no es alcanzable. Si estás en Hostinger, intenta con "localhost" o "127.0.0.1".');
+        } else if (err.code === 'ER_BAD_DB_ERROR') {
+            console.error('💡 TIP: La base de datos especificada no existe. Verifica el nombre exacto en el hPanel.');
+        }
     });

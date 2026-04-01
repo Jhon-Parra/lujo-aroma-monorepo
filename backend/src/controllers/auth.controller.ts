@@ -334,16 +334,12 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
             console.error('Supabase Google Auth Error:', error);
             await logSecurityEvent(req, null, 'login_failed');
 
-            // En dev devolvemos detalles para diagnostico (client_id/origins/provider config).
-            if (process.env.NODE_ENV !== 'production') {
-                res.status(401).json({
-                    error: 'Token de Google inválido o expirado',
-                    details: (error as any)?.message || (error as any) || null
-                });
-                return;
-            }
-
-            res.status(401).json({ error: 'Token de Google inválido o expirado' });
+            // Devolvemos detalles para diagnostico temporalmente en produccion para resolver el 401
+            res.status(401).json({ 
+                error: 'Token de Google inválido o rechazado por Supabase',
+                details: error?.message || error || 'No se pudo obtener sesión de Supabase',
+                code: (error as any)?.code || (error as any)?.status || 'AUTH_ERROR'
+            });
             return;
         }
 

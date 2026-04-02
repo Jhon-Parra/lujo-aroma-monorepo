@@ -20,11 +20,14 @@ export async function uploadFile(
     file: Express.Multer.File,
     options: UploadOptions = {}
 ): Promise<string> {
+    if (!bucket) {
+        throw new Error('Firebase Storage no está configurado. Verifica FIREBASE_SERVICE_ACCOUNT_JSON en tu .env');
+    }
     const { folder = 'general', ...optimizeOptions } = options;
     
     let buffer = file.buffer;
     let contentType = file.mimetype;
-    let originalName = sanitizeFilename(file.originalname);
+    let originalName = sanitizeFilename(file.originalname || 'unknown');
     let filename = originalName;
 
     // Optimizar si es imagen (excepto GIFs ya que sharp los aplana a menos que se configure extra)
@@ -66,6 +69,10 @@ export async function uploadFile(
  * @param urlOrPath URL completa o path del archivo
  */
 export async function deleteFile(urlOrPath: string): Promise<void> {
+    if (!bucket) {
+        console.warn('⚠️ No se puede eliminar archivo: Firebase Storage no configurado.');
+        return;
+    }
     try {
         let path = urlOrPath;
         if (urlOrPath.includes('storage.googleapis.com')) {

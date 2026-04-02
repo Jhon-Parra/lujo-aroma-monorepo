@@ -1,4 +1,5 @@
 import { bucket } from '../config/firebase';
+import { supabase } from '../config/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { optimizeImage, isOptimizableImage } from './image.util';
 import { sanitizeFilename } from '../middleware/upload.middleware';
@@ -20,9 +21,6 @@ export async function uploadFile(
     file: Express.Multer.File,
     options: UploadOptions = {}
 ): Promise<string> {
-    if (!bucket) {
-        throw new Error('Firebase Storage no está configurado. Verifica FIREBASE_SERVICE_ACCOUNT_JSON en tu .env');
-    }
     const { folder = 'general', ...optimizeOptions } = options;
     
     let buffer = file.buffer;
@@ -46,22 +44,47 @@ export async function uploadFile(
     // Agregar un prefijo único para evitar colisiones
     const uniqueName = `${Date.now()}-${uuidv4().slice(0, 8)}-${filename}`;
     const destination = `${folder}/${uniqueName}`;
-    const fileRef = bucket.file(destination);
 
-    // Subir a Firebase Storage
-    await fileRef.save(buffer, {
-        metadata: {
-            contentType: contentType,
-            cacheControl: 'public, max-age=31536000'
-        },
-        public: true, // Hacerlo público si el bucket lo permite
-        resumable: false
-    });
+    // Preferimos Firebase (si está configurado). Si no, hacemos fallback a Supabase Storage.
+    if (bucket) {
+        const fileRef = bucket.file(destination);
 
-    // En Firebase Storage, la URL pública estándar sigue un patrón:
-    // https://storage.googleapis.com/[BUCKET_NAME]/[FILE_PATH]
-    // O mediante getPublicUrl() de la librería de admin
-    return `https://storage.googleapis.com/${bucket.name}/${destination}`;
+        // Subir a Firebase Storage
+        await fileRef.save(buffer, {
+            metadata: {
+                contentType: contentType,
+                cacheControl: 'public, max-age=31536000'
+            },
+            public: true, // Hacerlo público si el bucket lo permite
+            resumable: false
+        });
+
+        // URL pública estándar:
+        // https://storage.googleapis.com/[BUCKET_NAME]/[FILE_PATH]
+        return `https://storage.googleapis.com/${bucket.name}/${destination}`;
+    }
+
+    const supabaseBucket = String(process.env.SUPABASE_STORAGE_BUCKET || 'perfumissimo_bucket').trim();
+    if (!supabaseBucket) {
+        throw new Error('Storage no está configurado. Configura FIREBASE_SERVICE_ACCOUNT_JSON o SUPABASE_STORAGE_BUCKET.');
+    }
+
+    const { error } = await supabase.storage
+        .from(supabaseBucket)
+        .upload(destination, buffer, {
+            contentType,
+            upsert: true,
+            cacheControl: '31536000'
+        });
+
+    if (error) {
+        throw new Error(
+            `No se pudo subir el archivo. Configura Firebase (FIREBASE_SERVICE_ACCOUNT_JSON) o habilita uploads en Supabase Storage (${supabaseBucket}). Detalle: ${error.message}`
+        );
+    }
+
+    const { data } = supabase.storage.from(supabaseBucket).getPublicUrl(destination);
+    return data.publicUrl;
 }
 
 /**
@@ -69,26 +92,49 @@ export async function uploadFile(
  * @param urlOrPath URL completa o path del archivo
  */
 export async function deleteFile(urlOrPath: string): Promise<void> {
-    if (!bucket) {
-        console.warn('⚠️ No se puede eliminar archivo: Firebase Storage no configurado.');
-        return;
-    }
     try {
+        // Firebase
+        if (bucket) {
+            let path = urlOrPath;
+            if (urlOrPath.includes('storage.googleapis.com')) {
+                const parts = urlOrPath.split(`${bucket.name}/`);
+                if (parts.length > 1) {
+                    path = decodeURIComponent(parts[1]);
+                }
+            }
+
+            const fileRef = bucket.file(path);
+            const [exists] = await fileRef.exists();
+            if (exists) {
+                await fileRef.delete();
+                console.log(`✅ Archivo eliminado: ${path}`);
+            }
+            return;
+        }
+
+        // Supabase fallback
+        const supabaseBucket = String(process.env.SUPABASE_STORAGE_BUCKET || 'perfumissimo_bucket').trim();
+        if (!supabaseBucket) {
+            console.warn('⚠️ No se puede eliminar archivo: Storage no configurado.');
+            return;
+        }
+
         let path = urlOrPath;
-        if (urlOrPath.includes('storage.googleapis.com')) {
-            const parts = urlOrPath.split(`${bucket.name}/`);
-            if (parts.length > 1) {
-                path = decodeURIComponent(parts[1]);
+        if (/^https?:\/\//i.test(urlOrPath)) {
+            // Formatos comunes:
+            // .../storage/v1/object/public/<bucket>/<path>
+            // .../storage/v1/object/sign/<bucket>/<path>
+            const idx = urlOrPath.indexOf(`/${supabaseBucket}/`);
+            if (idx >= 0) {
+                path = decodeURIComponent(urlOrPath.slice(idx + supabaseBucket.length + 2));
             }
         }
-        
-        const fileRef = bucket.file(path);
-        const [exists] = await fileRef.exists();
-        if (exists) {
-            await fileRef.delete();
-            console.log(`✅ Archivo eliminado: ${path}`);
+
+        const { error } = await supabase.storage.from(supabaseBucket).remove([path]);
+        if (error) {
+            console.warn('⚠️ Error eliminando archivo de Supabase Storage:', error.message);
         }
     } catch (error) {
-        console.error('❌ Error eliminando archivo de Firebase:', error);
+        console.error('❌ Error eliminando archivo de Storage:', error);
     }
 }

@@ -256,9 +256,28 @@ app.get('/health/db', async (req, res) => {
     }
 });
 app.use(error_middleware_1.notFoundHandler);
-app.use(error_middleware_1.errorHandler);
-app.listen(Number(PORT), HOST, () => {
+// Verificación de esquema al arranque para detectar migraciones pendientes
+const checkDatabaseSchema = async () => {
+    try {
+        await database_1.pool.query('SELECT firebase_user_id FROM usuarios LIMIT 1');
+        console.log('✅ Esquema de base de datos validado (firebase_user_id presente).');
+    }
+    catch (error) {
+        if (error.code === 'ER_BAD_FIELD_ERROR') {
+            console.error('⚠️ ALERTA CRÍTICA DE MIGRACIÓN:');
+            console.error('La columna "firebase_user_id" no existe en la tabla "usuarios".');
+            console.error('Esto causará fallos en el sistema de autenticación (CORS/503).');
+            console.error('Solución: Ejecutar script /backend/database/migrations/20260402_add_firebase_user_id.sql');
+        }
+        else {
+            console.warn('⚠️ No se pudo verificar el esquema de la base de datos:', error.message);
+        }
+    }
+};
+app.listen(Number(PORT), HOST, async () => {
     console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
+    // Verificar base de datos al arrancar
+    await checkDatabaseSchema();
     // Tarea de mantenimiento: cancelar pedidos expirados (24h) cada hora
     const ONE_HOUR = 60 * 60 * 1000;
     setInterval(async () => {

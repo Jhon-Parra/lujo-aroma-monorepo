@@ -66,6 +66,16 @@ exports.pool = {
     },
     getConnection: async () => {
         return await exports.mysqlPool.getConnection();
+    },
+    // Utilidad para verificar si una columna existe (evita errores 500 en migraciones)
+    hasColumn: async (table, column) => {
+        try {
+            const [rows] = await exports.mysqlPool.query('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND TABLE_SCHEMA = ?', [table, column, dbConfig.database]);
+            return rows.length > 0;
+        }
+        catch (error) {
+            return false;
+        }
     }
 };
 // Verificación de conexión con Diagnóstico Detallado

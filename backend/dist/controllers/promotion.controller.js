@@ -3,9 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getPromotionsFabMetrics = exports.trackPromotionsFabClick = exports.deletePromotion = exports.updatePromotionActive = exports.updatePromotion = exports.getPromotionsAdmin = exports.getPromotions = exports.createPromotion = void 0;
 const database_1 = require("../config/database");
 const uuid_1 = require("uuid");
-const supabase_1 = require("../config/supabase");
-const upload_middleware_1 = require("../middleware/upload.middleware");
-const image_util_1 = require("../utils/image.util");
+const storage_util_1 = require("../utils/storage.util");
 let promotionAssignmentReady = null;
 let promotionMediaReady = null;
 let promotionAdvancedReady = null;
@@ -207,33 +205,7 @@ const createPromotion = async (req, res) => {
         let imagen_url = null;
         if (mediaReady && req.file) {
             const file = req.file;
-            let buffer = file.buffer;
-            let contentType = file.mimetype;
-            let filename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
-            if ((0, image_util_1.isOptimizableImage)(file.mimetype)) {
-                try {
-                    const optimized = await (0, image_util_1.optimizeImage)(file.buffer, { maxWidth: 1200 });
-                    buffer = optimized.buffer;
-                    contentType = optimized.contentType;
-                    filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
-                }
-                catch (error) {
-                    console.warn('Promotion image optimization failed, uploading original:', error);
-                }
-            }
-            const filePath = `promotions/${filename}`;
-            const { error: uploadError } = await supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .upload(filePath, buffer, {
-                contentType,
-                upsert: true
-            });
-            if (uploadError)
-                throw new Error('Error subiendo imagen de promocion a Supabase: ' + uploadError.message);
-            const { data: publicData } = supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .getPublicUrl(filePath);
-            imagen_url = publicData.publicUrl;
+            imagen_url = await (0, storage_util_1.uploadFile)(file, { folder: 'promotions', maxWidth: 1200 });
         }
         const connection = await database_1.pool.getConnection();
         try {
@@ -474,33 +446,7 @@ const updatePromotion = async (req, res) => {
         let imagen_url = undefined;
         if (mediaReady && req.file) {
             const file = req.file;
-            let buffer = file.buffer;
-            let contentType = file.mimetype;
-            let filename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
-            if ((0, image_util_1.isOptimizableImage)(file.mimetype)) {
-                try {
-                    const optimized = await (0, image_util_1.optimizeImage)(file.buffer, { maxWidth: 1200 });
-                    buffer = optimized.buffer;
-                    contentType = optimized.contentType;
-                    filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
-                }
-                catch (error) {
-                    console.warn('Promotion image optimization failed (update), uploading original:', error);
-                }
-            }
-            const filePath = `promotions/${filename}`;
-            const { error: uploadError } = await supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .upload(filePath, buffer, {
-                contentType,
-                upsert: true
-            });
-            if (uploadError)
-                throw new Error('Error subiendo imagen de promocion a Supabase: ' + uploadError.message);
-            const { data: publicData } = supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .getPublicUrl(filePath);
-            imagen_url = publicData.publicUrl;
+            imagen_url = await (0, storage_util_1.uploadFile)(file, { folder: 'promotions', maxWidth: 1200 });
         }
         const connection = await database_1.pool.getConnection();
         try {

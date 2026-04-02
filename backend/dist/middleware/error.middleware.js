@@ -4,18 +4,16 @@ exports.notFoundHandler = exports.OperationalError = exports.errorHandler = void
 const errorHandler = (err, req, res, next) => {
     const statusCode = err.statusCode || 500;
     const message = err.isOperational ? err.message : 'Error interno del servidor';
-    if (process.env.NODE_ENV === 'development') {
-        console.error('🔴 Error:', {
-            message: err.message,
-            stack: err.stack,
-            path: req.path,
-            method: req.method,
-            body: req.body
-        });
-    }
-    else {
-        console.error('🔴 Error:', message);
-    }
+    // En producción también es vital loguear el error completo en la consola del servidor (ej: pm2 logs)
+    // para poder diagnosticar sin depender del entorno de desarrollo.
+    console.error('🔴 Error Error:', {
+        message: err.message,
+        statusCode: statusCode,
+        path: req.path,
+        method: req.method,
+        code: err.code, // Para errores de MySQL
+        stack: err.stack
+    });
     res.status(statusCode).json({
         error: message,
         ...(process.env.NODE_ENV === 'development' && { stack: err.stack })

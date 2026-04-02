@@ -2,9 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateSettings = exports.getSettings = void 0;
 const database_1 = require("../config/database");
-const supabase_1 = require("../config/supabase");
-const upload_middleware_1 = require("../middleware/upload.middleware");
-const image_util_1 = require("../utils/image.util");
+const storage_util_1 = require("../utils/storage.util");
 const encryption_util_1 = require("../utils/encryption.util");
 const audit_service_1 = require("../services/audit.service");
 const parseJsonMaybe = (raw) => {
@@ -99,34 +97,7 @@ const MAX_HERO_IMAGE_BYTES = 10 * 1024 * 1024; // 10MB
 const MAX_HERO_VIDEO_BYTES = 30 * 1024 * 1024; // 30MB
 const MAX_ADDON_IMAGE_BYTES = 8 * 1024 * 1024; // 8MB
 async function uploadSettingAsset(file, folder, options = {}) {
-    let buffer = file.buffer;
-    let contentType = file.mimetype;
-    let filename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
-    if ((0, image_util_1.isOptimizableImage)(file.mimetype)) {
-        try {
-            const optimized = await (0, image_util_1.optimizeImage)(file.buffer, options);
-            buffer = optimized.buffer;
-            contentType = optimized.contentType;
-            filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
-        }
-        catch (error) {
-            console.warn(`Image optimization failed for ${folder}, uploading original:`, error);
-        }
-    }
-    // Usar Date.now() para evitar caches agresivos si es necesario (se puede pasar en el folder o nombre)
-    const fullPath = `${folder}/${filename}`;
-    const { error } = await supabase_1.supabase.storage
-        .from('perfumissimo_bucket')
-        .upload(fullPath, buffer, {
-        contentType,
-        upsert: true
-    });
-    if (error)
-        throw new Error(`Error subiendo ${folder} a Supabase: ` + error.message);
-    const { data: publicData } = supabase_1.supabase.storage
-        .from('perfumissimo_bucket')
-        .getPublicUrl(fullPath);
-    return publicData.publicUrl;
+    return await (0, storage_util_1.uploadFile)(file, { folder, ...options });
 }
 const detectColumns = async (columns) => {
     try {

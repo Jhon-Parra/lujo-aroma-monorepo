@@ -37,41 +37,13 @@ exports.getLowStockProducts = exports.importProductsFromSpreadsheet = exports.do
 const database_1 = require("../config/database");
 const uuid_1 = require("uuid");
 const XLSX = __importStar(require("xlsx"));
-const supabase_1 = require("../config/supabase");
-const upload_middleware_1 = require("../middleware/upload.middleware");
-const image_util_1 = require("../utils/image.util");
 const cache_util_1 = require("../utils/cache.util");
+const storage_util_1 = require("../utils/storage.util");
 /**
- * Helper to upload a file to Supabase perfumissimo_bucket/products/
+ * Helper to upload a file to Firebase Storage /products/
  */
-async function uploadToSupabase(file) {
-    let buffer = file.buffer;
-    let contentType = file.mimetype;
-    let filename = (0, upload_middleware_1.sanitizeFilename)(file.originalname);
-    if ((0, image_util_1.isOptimizableImage)(file.mimetype)) {
-        try {
-            const optimized = await (0, image_util_1.optimizeImage)(file.buffer);
-            buffer = optimized.buffer;
-            contentType = optimized.contentType;
-            // Cambiar extensión a .webp
-            filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
-        }
-        catch (error) {
-            console.warn('Image optimization failed, uploading original:', error);
-        }
-    }
-    const { error } = await supabase_1.supabase.storage
-        .from('perfumissimo_bucket')
-        .upload(`products/${filename}`, buffer, {
-        contentType,
-        upsert: true
-    });
-    if (error)
-        throw new Error('Error subiendo imagen de producto a Supabase: ' + error.message);
-    const { data: publicData } = supabase_1.supabase.storage
-        .from('perfumissimo_bucket')
-        .getPublicUrl(`products/${filename}`);
-    return publicData.publicUrl;
+async function uploadToFirebase(file) {
+    return await (0, storage_util_1.uploadFile)(file, { folder: 'products' });
 }
 let promotionAssignmentReady = null;
 let promotionGenderReady = null;
@@ -223,6 +195,20 @@ const detectProductCasaSchema = async () => {
         return false;
     }
 };
+let productImg2Ready = null;
+const detectImage2Schema = async () => {
+    if (productImg2Ready !== null)
+        return productImg2Ready;
+    productImg2Ready = await database_1.pool.hasColumn('productos', 'imagen_url_2');
+    return productImg2Ready;
+};
+let productImg3Ready = null;
+const detectImage3Schema = async () => {
+    if (productImg3Ready !== null)
+        return productImg3Ready;
+    productImg3Ready = await database_1.pool.hasColumn('productos', 'imagen_url_3');
+    return productImg3Ready;
+};
 const parseNuevoHastaInput = (raw) => {
     if (raw === undefined || raw === null)
         return undefined;
@@ -318,20 +304,23 @@ const createProduct = async (req, res) => {
         let imagen_url_2 = null;
         let imagen_url_3 = null;
         if (files?.['imagen']?.[0]) {
-            imagen_url = await uploadToSupabase(files['imagen'][0]);
+            imagen_url = await uploadToFirebase(files['imagen'][0]);
         }
         if (files?.['imagen2']?.[0]) {
-            imagen_url_2 = await uploadToSupabase(files['imagen2'][0]);
+            imagen_url_2 = await uploadToFirebase(files['imagen2'][0]);
         }
         if (files?.['imagen3']?.[0]) {
-            imagen_url_3 = await uploadToSupabase(files['imagen3'][0]);
+            imagen_url_3 = await uploadToFirebase(files['imagen3'][0]);
         }
         const id = (0, uuid_1.v4)();
         const slug = generateSlug(nombre);
         const slugOk = await detectSlugSchema();
+        const img2Ok = await detectImage2Schema();
+        const img3Ok = await detectImage3Schema();
         const casaNormalized = normalizeCategorySlug(casa);
         // Convert UUID to BINARY(16) in MySQL logic
-        const cols = ['id', 'nombre', 'genero', 'descripcion', 'notas_olfativas', 'precio', 'stock', 'unidades_vendidas', 'imagen_url', 'imagen_url_2', 'imagen_url_3', 'es_nuevo'];
+        const idExpr = await productIdWhereExpr();
+        const cols = ['id', 'nombre', 'genero', 'descripcion', 'notas_olfativas', 'precio', 'stock', 'unidades_vendidas', 'imagen_url', 'es_nuevo'];
         const vals = [
             id,
             nombre,
@@ -342,10 +331,16 @@ const createProduct = async (req, res) => {
             stock || 0,
             unidades_vendidas || 0,
             imagen_url,
-            imagen_url_2,
-            imagen_url_3,
             !!es_nuevo
         ];
+        if (img2Ok) {
+            cols.push('imagen_url_2');
+            vals.push(imagen_url_2);
+        }
+        if (img3Ok) {
+            cols.push('imagen_url_3');
+            vals.push(imagen_url_3);
+        }
         if (casaOk) {
             cols.push('casa');
             vals.push(casaNormalized ? casaNormalized : null);
@@ -358,7 +353,7 @@ const createProduct = async (req, res) => {
             cols.push('nuevo_hasta');
             vals.push(nuevoHastaParsed === undefined ? null : nuevoHastaParsed);
         }
-        const placeholders = cols.map(() => '?').join(', ');
+        const placeholders = cols.map((c) => c === 'id' ? idExpr : '?').join(', ');
         const query = `INSERT INTO productos (${cols.join(', ')}) VALUES (${placeholders})`;
         await database_1.pool.query(query, vals);
         // Bust catalog cache so the new product is visible immediately
@@ -370,7 +365,11 @@ const createProduct = async (req, res) => {
     }
     catch (error) {
         console.error('Error creating product:', error);
-        res.status(500).json({ error: 'Error del servidor al crear producto' });
+        res.status(500).json({
+            error: 'Error del servidor al crear producto',
+            details: error.message,
+            code: error.code
+        });
     }
 };
 exports.createProduct = createProduct;
@@ -1217,20 +1216,10 @@ const updateProduct = async (req, res) => {
         const notasFinal = hasValue(notas_olfativas) ? notas_olfativas : (hasValue(notas) ? notas : undefined);
         let imagen_url;
         if (req.file) {
-            const uniqueFilename = (0, upload_middleware_1.sanitizeFilename)(req.file.originalname);
-            const { data, error } = await supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .upload(`products/${uniqueFilename}`, req.file.buffer, {
-                contentType: req.file.mimetype,
-                upsert: true
-            });
-            if (error)
-                throw new Error('Error subiendo imagen de producto a Supabase: ' + error.message);
-            const { data: publicData } = supabase_1.supabase.storage
-                .from('perfumissimo_bucket')
-                .getPublicUrl(`products/${uniqueFilename}`);
-            imagen_url = publicData.publicUrl;
+            imagen_url = await uploadToFirebase(req.file);
         }
+        const img2Ok = await detectImage2Schema();
+        const img3Ok = await detectImage3Schema();
         const updates = [];
         const params = [];
         const newUntilOk = await detectProductNewUntilSchema();
@@ -1289,23 +1278,19 @@ const updateProduct = async (req, res) => {
             updates.push('imagen_url = ?');
             params.push(imagen_url);
         }
-        if (updates.length === 0) {
-            res.status(400).json({ error: 'No hay campos para actualizar' });
-            return;
-        }
         const files = req.files;
         if (files?.['imagen']?.[0]) {
-            const url = await uploadToSupabase(files['imagen'][0]);
+            const url = await uploadToFirebase(files['imagen'][0]);
             updates.push('imagen_url = ?');
             params.push(url);
         }
-        if (files?.['imagen2']?.[0]) {
-            const url = await uploadToSupabase(files['imagen2'][0]);
+        if (img2Ok && files?.['imagen2']?.[0]) {
+            const url = await uploadToFirebase(files['imagen2'][0]);
             updates.push('imagen_url_2 = ?');
             params.push(url);
         }
-        if (files?.['imagen3']?.[0]) {
-            const url = await uploadToSupabase(files['imagen3'][0]);
+        if (img3Ok && files?.['imagen3']?.[0]) {
+            const url = await uploadToFirebase(files['imagen3'][0]);
             updates.push('imagen_url_3 = ?');
             params.push(url);
         }
@@ -1313,7 +1298,8 @@ const updateProduct = async (req, res) => {
             res.status(200).json({ message: 'Sin cambios aplicados' });
             return;
         }
-        const query = `UPDATE productos SET ${updates.join(', ')} WHERE id = ?`;
+        const idExpr = await productIdWhereExpr();
+        const query = `UPDATE productos SET ${updates.join(', ')} WHERE id = ${idExpr}`;
         params.push(id);
         const [result] = await database_1.pool.query(query, params);
         if (result.affectedRows === 0) {
@@ -1326,7 +1312,11 @@ const updateProduct = async (req, res) => {
     }
     catch (error) {
         console.error('Error updating product:', error);
-        res.status(500).json({ error: 'Error del servidor al actualizar' });
+        res.status(500).json({
+            error: 'Error del servidor al actualizar',
+            details: error.message,
+            code: error.code
+        });
     }
 };
 exports.updateProduct = updateProduct;

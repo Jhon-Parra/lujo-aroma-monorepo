@@ -95,50 +95,81 @@ const logSecurityEvent = async (req: Request, email: string | null, eventType: s
     }
 };
 
+// Cache para evitar multiples consultas a INFORMATION_SCHEMA en cada request
+let _hasFirebaseColumn: boolean | null = null;
+
+const getUserSelector = async (includePassword = false) => {
+    if (_hasFirebaseColumn === null) {
+        _hasFirebaseColumn = await pool.hasColumn('usuarios', 'firebase_user_id');
+    }
+    
+    const base = 'id, supabase_user_id, email, nombre, apellido, foto_perfil, rol';
+    const firebase = _hasFirebaseColumn ? ', firebase_user_id' : '';
+    const password = includePassword ? ', password_hash' : '';
+    
+    return `${base}${firebase}${password}`;
+};
+
 const getUserById = async (id: string) => {
     try {
+        const selector = await getUserSelector();
         const [rows] = await pool.query<any[]>(
-            'SELECT id, supabase_user_id, firebase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE id = ?',
+            `SELECT ${selector} FROM usuarios WHERE id = ?`,
             [id]
         );
         return (rows as any[])?.[0] || null;
     } catch (error: any) {
-        if (error.code === 'ER_BAD_FIELD_ERROR' && error.message.includes('firebase_user_id')) {
-            console.error('❌ ERROR CRÍTICO: La columna firebase_user_id no existe. ESTO CAUSA ERRORES 500/503. Por favor ejecuta el script SQL de migración en el servidor.');
-        }
+        console.error('Error en getUserById:', error.message);
         throw error;
     }
 };
 
 const getUserBySupabaseId = async (supabaseUserId: string) => {
-    const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, firebase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE supabase_user_id = ?',
-        [supabaseUserId]
-    );
-    return (rows as any[])?.[0] || null;
+    try {
+        const selector = await getUserSelector();
+        const [rows] = await pool.query<any[]>(
+            `SELECT ${selector} FROM usuarios WHERE supabase_user_id = ?`,
+            [supabaseUserId]
+        );
+        return (rows as any[])?.[0] || null;
+    } catch (error: any) {
+        console.error('Error en getUserBySupabaseId:', error.message);
+        throw error;
+    }
 };
 
 const getUserByFirebaseId = async (firebaseUserId: string) => {
     try {
+        if (_hasFirebaseColumn === null) {
+            _hasFirebaseColumn = await pool.hasColumn('usuarios', 'firebase_user_id');
+        }
+        
+        if (!_hasFirebaseColumn) return null;
+
+        const selector = await getUserSelector();
         const [rows] = await pool.query<any[]>(
-            'SELECT id, supabase_user_id, firebase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE firebase_user_id = ?',
+            `SELECT ${selector} FROM usuarios WHERE firebase_user_id = ?`,
             [firebaseUserId]
         );
         return (rows as any[])?.[0] || null;
     } catch (error: any) {
-        if (error.code === 'ER_BAD_FIELD_ERROR' && error.message.includes('firebase_user_id')) {
-            console.error('❌ ERROR CRÍTICO: La columna firebase_user_id no existe. ESTO CAUSA ERRORES 500/503. Por favor ejecuta el script SQL de migración en el servidor.');
-        }
+        console.error('Error en getUserByFirebaseId:', error.message);
         throw error;
     }
 };
 
 const getUserByEmail = async (email: string) => {
-    const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, firebase_user_id, email, nombre, apellido, foto_perfil, rol, password_hash FROM usuarios WHERE email = ?',
-        [email]
-    );
-    return (rows as any[])?.[0] || null;
+    try {
+        const selector = await getUserSelector(true);
+        const [rows] = await pool.query<any[]>(
+            `SELECT ${selector} FROM usuarios WHERE email = ?`,
+            [email]
+        );
+        return (rows as any[])?.[0] || null;
+    } catch (error: any) {
+        console.error('Error en getUserByEmail:', error.message);
+        throw error;
+    }
 };
 
 const linkSupabaseUser = async (localUserId: string, supabaseUserId: string) => {
@@ -149,6 +180,11 @@ const linkSupabaseUser = async (localUserId: string, supabaseUserId: string) => 
 };
 
 const linkFirebaseUser = async (localUserId: string, firebaseUserId: string) => {
+    if (_hasFirebaseColumn === null) {
+        _hasFirebaseColumn = await pool.hasColumn('usuarios', 'firebase_user_id');
+    }
+    if (!_hasFirebaseColumn) return;
+
     await pool.query(
         'UPDATE usuarios SET firebase_user_id = ? WHERE id = ?',
         [firebaseUserId, localUserId]
@@ -202,21 +238,42 @@ const ensureLocalUser = async (input: {
     const passwordHash = input.passwordHash || await bcrypt.hash(Math.random().toString(36), 10);
     const newId = randomUUID();
 
-    await pool.query(
-        `INSERT INTO usuarios (id, supabase_user_id, firebase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
-        [
-            newId,
-            input.supabaseUserId || null,
-            input.firebaseUserId || null,
-            input.nombre || 'Usuario',
-            input.apellido || 'Nuevo',
-            input.telefono || null,
-            input.email,
-            passwordHash,
-            input.foto_perfil || null
-        ]
-    );
+    if (_hasFirebaseColumn === null) {
+        _hasFirebaseColumn = await pool.hasColumn('usuarios', 'firebase_user_id');
+    }
+
+    if (_hasFirebaseColumn) {
+        await pool.query(
+            `INSERT INTO usuarios (id, supabase_user_id, firebase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
+            [
+                newId,
+                input.supabaseUserId || null,
+                input.firebaseUserId || null,
+                input.nombre || 'Usuario',
+                input.apellido || 'Nuevo',
+                input.telefono || null,
+                input.email,
+                passwordHash,
+                input.foto_perfil || null
+            ]
+        );
+    } else {
+        await pool.query(
+            `INSERT INTO usuarios (id, supabase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
+            [
+                newId,
+                input.supabaseUserId || null,
+                input.nombre || 'Usuario',
+                input.apellido || 'Nuevo',
+                input.telefono || null,
+                input.email,
+                passwordHash,
+                input.foto_perfil || null
+            ]
+        );
+    }
 
     const created = await getUserById(newId);
     return { ok: true, user: created };
@@ -244,20 +301,40 @@ const ensureLocalUserByEmailOnly = async (input: {
     const newId = randomUUID();
     const passwordHash = await bcrypt.hash(Math.random().toString(36), 10);
 
-    await pool.query(
-        `INSERT INTO usuarios (id, supabase_user_id, firebase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
-         VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
-        [
-            newId,
-            input.firebaseUserId || null,
-            input.nombre || 'Usuario',
-            input.apellido || 'Externo',
-            input.telefono || null,
-            input.email,
-            passwordHash,
-            input.foto_perfil || null
-        ]
-    );
+    if (_hasFirebaseColumn === null) {
+        _hasFirebaseColumn = await pool.hasColumn('usuarios', 'firebase_user_id');
+    }
+
+    if (_hasFirebaseColumn) {
+        await pool.query(
+            `INSERT INTO usuarios (id, supabase_user_id, firebase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
+             VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
+            [
+                newId,
+                input.firebaseUserId || null,
+                input.nombre || 'Usuario',
+                input.apellido || 'Externo',
+                input.telefono || null,
+                input.email,
+                passwordHash,
+                input.foto_perfil || null
+            ]
+        );
+    } else {
+        await pool.query(
+            `INSERT INTO usuarios (id, supabase_user_id, nombre, apellido, telefono, email, password_hash, rol, foto_perfil)
+             VALUES (?, NULL, ?, ?, ?, ?, ?, 'CUSTOMER', ?)`,
+            [
+                newId,
+                input.nombre || 'Usuario',
+                input.apellido || 'Externo',
+                input.telefono || null,
+                input.email,
+                passwordHash,
+                input.foto_perfil || null
+            ]
+        );
+    }
 
     const created = await getUserById(newId);
     return created;

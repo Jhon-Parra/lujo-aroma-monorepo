@@ -68,6 +68,18 @@ export const pool = {
     },
     getConnection: async (): Promise<any> => {
         return await mysqlPool.getConnection();
+    },
+    // Utilidad para verificar si una columna existe (evita errores 500 en migraciones)
+    hasColumn: async (table: string, column: string): Promise<boolean> => {
+        try {
+            const [rows] = await mysqlPool.query<any[]>(
+                'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = ? AND COLUMN_NAME = ? AND TABLE_SCHEMA = ?',
+                [table, column, dbConfig.database]
+            );
+            return rows.length > 0;
+        } catch (error) {
+            return false;
+        }
     }
 };
 

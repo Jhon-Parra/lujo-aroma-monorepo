@@ -4,6 +4,10 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { ConfigService } from './core/services/config.service';
 
+import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
+import { getAuth, provideAuth } from '@angular/fire/auth';
+import { environment } from '../environments/environment';
+
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
@@ -13,6 +17,8 @@ export const appConfig: ApplicationConfig = {
       withFetch(),
       withInterceptors([authInterceptor])
     ),
+    provideFirebaseApp(() => initializeApp(environment.firebase)),
+    provideAuth(() => getAuth()),
     {
       provide: APP_INITIALIZER,
       useFactory: (configService: ConfigService) => () => configService.loadConfig(),

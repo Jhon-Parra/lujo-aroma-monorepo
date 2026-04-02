@@ -94,7 +94,11 @@
         </div>
 
         <div class="mt-6 w-full flex justify-center">
-            <div id="google-btn"></div>
+            <button type="button" (click)="onGoogleLogin()" [disabled]="isLoading"
+                class="w-full flex items-center justify-center bg-white border border-[#dcdcd4] rounded-sm py-3 px-4 shadow-sm hover:shadow-md hover:bg-gray-50 transition-all text-sm font-bold text-charcoal tracking-widest uppercase disabled:opacity-50">
+                <img src="assets/images/google-icon.png" alt="Google" class="w-5 h-5 mr-3" onerror="this.src='https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png'">
+                Google
+            </button>
         </div>
 
         <div class="mt-8 text-center space-y-4">

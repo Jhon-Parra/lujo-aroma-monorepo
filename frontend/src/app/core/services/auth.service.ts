@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap, BehaviorSubject, catchError, of } from 'rxjs';
+import { Observable, tap, BehaviorSubject, catchError, of, from, switchMap } from 'rxjs';
 import { Router } from '@angular/router';
 import { CartService } from './cart/cart.service';
 import { FavoritesService } from './favorites/favorites.service';
+
+import { Auth, GoogleAuthProvider, signInWithPopup, signOut, user, idToken } from '@angular/fire/auth';
 
 export interface User {
   id: string;
@@ -28,7 +30,8 @@ export class AuthService {
     private http: HttpClient,
     private router: Router,
     private cartService: CartService,
-    private favoritesService: FavoritesService
+    private favoritesService: FavoritesService,
+    private auth: Auth
   ) {
     this.checkStoredAuth();
   }
@@ -77,8 +80,19 @@ export class AuthService {
     );
   }
 
-  loginWithGoogle(credential: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/google`, { credential }, { withCredentials: true }).pipe(
+  loginWithGoogle(): Observable<any> {
+    const provider = new GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
+
+    return from(signInWithPopup(this.auth, provider)).pipe(
+      switchMap(result => from(result.user.getIdToken())),
+      switchMap(token => {
+        return this.http.post<any>(`${this.apiUrl}/google`, { 
+          credential: token,
+          source: 'firebase' 
+        }, { withCredentials: true });
+      }),
       tap(response => {
         if (response.user) {
           this.currentUserSubject.next(response.user);
@@ -90,6 +104,9 @@ export class AuthService {
   }
 
   logout(): void {
+    // Cerrar sesión en Firebase
+    from(signOut(this.auth)).subscribe();
+
     this.http.post<any>(`${this.apiUrl}/logout`, {}, { withCredentials: true }).subscribe({
       complete: () => {
         this.currentUserSubject.next(null);

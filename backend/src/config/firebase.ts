@@ -9,18 +9,27 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 // la app de igual modo inicializará sin romperse, pero fallarán las subidas a menos que
 // se configure correctamente las credenciales en .env
 try {
-    // Option 1: Using service account JSON string from env
-    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    const storageBucket = process.env.FIREBASE_STORAGE_BUCKET || 'lujoyaroma-c1d28.firebasestorage.app';
+
+    if (serviceAccountJson) {
+        let serviceAccount;
+        try {
+            serviceAccount = JSON.parse(serviceAccountJson);
+        } catch (e) {
+            // Reintentar limpiando posibles saltos de línea mal escapados si viene de shell
+            serviceAccount = JSON.parse(serviceAccountJson.replace(/\n/g, '\\n'));
+        }
+
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
-            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'lujo_aroma-app.appspot.com'
+            storageBucket: storageBucket
         });
-        console.log('✅ Firebase Admin inicializado correctamente.');
+        console.log('✅ Firebase Admin inicializado correctamente con Service Account.');
     } else {
-        console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_JSON no encontrado en .env. Firebase se inicializa vacío.');
+        console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_JSON no encontrado en .env. Usando credenciales por defecto (si existen).');
         admin.initializeApp({
-            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'lujo_aroma-app.appspot.com'
+            storageBucket: storageBucket
         });
     }
 } catch (error) {

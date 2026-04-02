@@ -7,41 +7,13 @@ import { supabase } from '../config/supabase';
 import { sanitizeFilename } from '../middleware/upload.middleware';
 import { optimizeImage, isOptimizableImage } from '../utils/image.util';
 import { appCache, CACHE_KEYS } from '../utils/cache.util';
+import { uploadFile } from '../utils/storage.util';
 
 /**
- * Helper to upload a file to Supabase perfumissimo_bucket/products/
+ * Helper to upload a file to Firebase Storage /products/
  */
-async function uploadToSupabase(file: Express.Multer.File): Promise<string> {
-    let buffer = file.buffer;
-    let contentType = file.mimetype;
-    let filename = sanitizeFilename(file.originalname);
-
-    if (isOptimizableImage(file.mimetype)) {
-        try {
-            const optimized = await optimizeImage(file.buffer);
-            buffer = optimized.buffer;
-            contentType = optimized.contentType;
-            // Cambiar extensión a .webp
-            filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
-        } catch (error) {
-            console.warn('Image optimization failed, uploading original:', error);
-        }
-    }
-
-    const { error } = await supabase.storage
-        .from('perfumissimo_bucket')
-        .upload(`products/${filename}`, buffer, {
-            contentType,
-            upsert: true
-        });
-
-    if (error) throw new Error('Error subiendo imagen de producto a Supabase: ' + error.message);
-
-    const { data: publicData } = supabase.storage
-        .from('perfumissimo_bucket')
-        .getPublicUrl(`products/${filename}`);
-
-    return publicData.publicUrl;
+async function uploadToFirebase(file: Express.Multer.File): Promise<string> {
+    return await uploadFile(file, { folder: 'products' });
 }
 
 let promotionAssignmentReady: boolean | null = null;
@@ -306,13 +278,13 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         let imagen_url_3 = null;
 
         if (files?.['imagen']?.[0]) {
-            imagen_url = await uploadToSupabase(files['imagen'][0]);
+            imagen_url = await uploadToFirebase(files['imagen'][0]);
         }
         if (files?.['imagen2']?.[0]) {
-            imagen_url_2 = await uploadToSupabase(files['imagen2'][0]);
+            imagen_url_2 = await uploadToFirebase(files['imagen2'][0]);
         }
         if (files?.['imagen3']?.[0]) {
-            imagen_url_3 = await uploadToSupabase(files['imagen3'][0]);
+            imagen_url_3 = await uploadToFirebase(files['imagen3'][0]);
         }
 
         const id = uuidv4();
@@ -1304,21 +1276,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         let imagen_url: string | undefined;
 
         if (req.file) {
-            const uniqueFilename = sanitizeFilename(req.file.originalname);
-            const { data, error } = await supabase.storage
-                .from('perfumissimo_bucket')
-                .upload(`products/${uniqueFilename}`, req.file.buffer, {
-                    contentType: req.file.mimetype,
-                    upsert: true
-                });
-
-            if (error) throw new Error('Error subiendo imagen de producto a Supabase: ' + error.message);
-
-            const { data: publicData } = supabase.storage
-                .from('perfumissimo_bucket')
-                .getPublicUrl(`products/${uniqueFilename}`);
-
-            imagen_url = publicData.publicUrl;
+            imagen_url = await uploadToFirebase(req.file);
         }
 
         const updates: string[] = [];
@@ -1374,17 +1332,17 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
 
         const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
         if (files?.['imagen']?.[0]) {
-            const url = await uploadToSupabase(files['imagen'][0]);
+            const url = await uploadToFirebase(files['imagen'][0]);
             updates.push('imagen_url = ?');
             params.push(url);
         }
         if (files?.['imagen2']?.[0]) {
-            const url = await uploadToSupabase(files['imagen2'][0]);
+            const url = await uploadToFirebase(files['imagen2'][0]);
             updates.push('imagen_url_2 = ?');
             params.push(url);
         }
         if (files?.['imagen3']?.[0]) {
-            const url = await uploadToSupabase(files['imagen3'][0]);
+            const url = await uploadToFirebase(files['imagen3'][0]);
             updates.push('imagen_url_3 = ?');
             params.push(url);
         }

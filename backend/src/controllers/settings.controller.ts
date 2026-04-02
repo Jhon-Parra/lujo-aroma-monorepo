@@ -3,6 +3,7 @@ import { pool } from '../config/database';
 import { supabase } from '../config/supabase';
 import { sanitizeFilename } from '../middleware/upload.middleware';
 import { optimizeImage, isOptimizableImage } from '../utils/image.util';
+import { uploadFile } from '../utils/storage.util';
 import { encryptString } from '../utils/encryption.util';
 import { logAdminAction } from '../services/audit.service';
 
@@ -172,37 +173,7 @@ async function uploadSettingAsset(
     folder: string, 
     options: { maxWidth?: number; maxHeight?: number } = {}
 ): Promise<string> {
-    let buffer = file.buffer;
-    let contentType = file.mimetype;
-    let filename = sanitizeFilename(file.originalname);
-
-    if (isOptimizableImage(file.mimetype)) {
-        try {
-            const optimized = await optimizeImage(file.buffer, options);
-            buffer = optimized.buffer;
-            contentType = optimized.contentType;
-            filename = filename.replace(/\.[^/.]+$/, "") + optimized.extension;
-        } catch (error) {
-            console.warn(`Image optimization failed for ${folder}, uploading original:`, error);
-        }
-    }
-
-    // Usar Date.now() para evitar caches agresivos si es necesario (se puede pasar en el folder o nombre)
-    const fullPath = `${folder}/${filename}`;
-    const { error } = await supabase.storage
-        .from('perfumissimo_bucket')
-        .upload(fullPath, buffer, {
-            contentType,
-            upsert: true
-        });
-
-    if (error) throw new Error(`Error subiendo ${folder} a Supabase: ` + error.message);
-
-    const { data: publicData } = supabase.storage
-        .from('perfumissimo_bucket')
-        .getPublicUrl(fullPath);
-
-    return publicData.publicUrl;
+    return await uploadFile(file, { folder, ...options });
 }
 
 const detectColumns = async (columns: string[]): Promise<Record<string, boolean>> => {

@@ -3,9 +3,6 @@ import { pool } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
 import * as XLSX from 'xlsx';
 
-import { supabase } from '../config/supabase';
-import { sanitizeFilename } from '../middleware/upload.middleware';
-import { optimizeImage, isOptimizableImage } from '../utils/image.util';
 import { appCache, CACHE_KEYS } from '../utils/cache.util';
 import { uploadFile } from '../utils/storage.util';
 

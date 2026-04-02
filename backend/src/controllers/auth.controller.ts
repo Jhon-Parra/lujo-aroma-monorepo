@@ -96,11 +96,18 @@ const logSecurityEvent = async (req: Request, email: string | null, eventType: s
 };
 
 const getUserById = async (id: string) => {
-    const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, firebase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE id = ?',
-        [id]
-    );
-    return (rows as any[])?.[0] || null;
+    try {
+        const [rows] = await pool.query<any[]>(
+            'SELECT id, supabase_user_id, firebase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE id = ?',
+            [id]
+        );
+        return (rows as any[])?.[0] || null;
+    } catch (error: any) {
+        if (error.code === 'ER_BAD_FIELD_ERROR' && error.message.includes('firebase_user_id')) {
+            console.error('❌ ERROR CRÍTICO: La columna firebase_user_id no existe. ESTO CAUSA ERRORES 500/503. Por favor ejecuta el script SQL de migración en el servidor.');
+        }
+        throw error;
+    }
 };
 
 const getUserBySupabaseId = async (supabaseUserId: string) => {
@@ -112,11 +119,18 @@ const getUserBySupabaseId = async (supabaseUserId: string) => {
 };
 
 const getUserByFirebaseId = async (firebaseUserId: string) => {
-    const [rows] = await pool.query<any[]>(
-        'SELECT id, supabase_user_id, firebase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE firebase_user_id = ?',
-        [firebaseUserId]
-    );
-    return (rows as any[])?.[0] || null;
+    try {
+        const [rows] = await pool.query<any[]>(
+            'SELECT id, supabase_user_id, firebase_user_id, email, nombre, apellido, foto_perfil, rol FROM usuarios WHERE firebase_user_id = ?',
+            [firebaseUserId]
+        );
+        return (rows as any[])?.[0] || null;
+    } catch (error: any) {
+        if (error.code === 'ER_BAD_FIELD_ERROR' && error.message.includes('firebase_user_id')) {
+            console.error('❌ ERROR CRÍTICO: La columna firebase_user_id no existe. ESTO CAUSA ERRORES 500/503. Por favor ejecuta el script SQL de migración en el servidor.');
+        }
+        throw error;
+    }
 };
 
 const getUserByEmail = async (email: string) => {

@@ -169,6 +169,20 @@ const detectProductCasaSchema = async (): Promise<boolean> => {
     }
 };
 
+let productImg2Ready: boolean | null = null;
+const detectImage2Schema = async (): Promise<boolean> => {
+    if (productImg2Ready !== null) return productImg2Ready;
+    productImg2Ready = await pool.hasColumn('productos', 'imagen_url_2');
+    return productImg2Ready;
+};
+
+let productImg3Ready: boolean | null = null;
+const detectImage3Schema = async (): Promise<boolean> => {
+    if (productImg3Ready !== null) return productImg3Ready;
+    productImg3Ready = await pool.hasColumn('productos', 'imagen_url_3');
+    return productImg3Ready;
+};
+
 const parseNuevoHastaInput = (raw: any): string | null | undefined => {
     if (raw === undefined || raw === null) return undefined;
     const v = String(raw).trim();
@@ -290,11 +304,14 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         const id = uuidv4();
         const slug = generateSlug(nombre);
         const slugOk = await detectSlugSchema();
+        const img2Ok = await detectImage2Schema();
+        const img3Ok = await detectImage3Schema();
 
         const casaNormalized = normalizeCategorySlug(casa);
 
         // Convert UUID to BINARY(16) in MySQL logic
-        const cols: string[] = ['id', 'nombre', 'genero', 'descripcion', 'notas_olfativas', 'precio', 'stock', 'unidades_vendidas', 'imagen_url', 'imagen_url_2', 'imagen_url_3', 'es_nuevo'];
+        const idExpr = await productIdWhereExpr();
+        const cols: string[] = ['id', 'nombre', 'genero', 'descripcion', 'notas_olfativas', 'precio', 'stock', 'unidades_vendidas', 'imagen_url', 'es_nuevo'];
         const vals: any[] = [
             id,
             nombre,
@@ -305,27 +322,31 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
             stock || 0,
             unidades_vendidas || 0,
             imagen_url,
-            imagen_url_2,
-            imagen_url_3,
             !!es_nuevo
         ];
 
+        if (img2Ok) {
+            cols.push('imagen_url_2');
+            vals.push(imagen_url_2);
+        }
+        if (img3Ok) {
+            cols.push('imagen_url_3');
+            vals.push(imagen_url_3);
+        }
         if (casaOk) {
             cols.push('casa');
             vals.push(casaNormalized ? casaNormalized : null);
         }
-
         if (slugOk) {
             cols.push('slug');
             vals.push(slug);
         }
-
         if (newUntilOk) {
             cols.push('nuevo_hasta');
             vals.push(nuevoHastaParsed === undefined ? null : nuevoHastaParsed);
         }
 
-        const placeholders = cols.map(() => '?').join(', ');
+        const placeholders = cols.map((c) => c === 'id' ? idExpr : '?').join(', ');
         const query = `INSERT INTO productos (${cols.join(', ')}) VALUES (${placeholders})`;
 
         await pool.query(query, vals);
@@ -1279,6 +1300,9 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
             imagen_url = await uploadToFirebase(req.file);
         }
 
+        const img2Ok = await detectImage2Schema();
+        const img3Ok = await detectImage3Schema();
+
         const updates: string[] = [];
         const params: any[] = [];
 
@@ -1325,23 +1349,18 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         }
         if (imagen_url) { updates.push('imagen_url = ?'); params.push(imagen_url); }
 
-        if (updates.length === 0) {
-            res.status(400).json({ error: 'No hay campos para actualizar' });
-            return;
-        }
-
         const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
         if (files?.['imagen']?.[0]) {
             const url = await uploadToFirebase(files['imagen'][0]);
             updates.push('imagen_url = ?');
             params.push(url);
         }
-        if (files?.['imagen2']?.[0]) {
+        if (img2Ok && files?.['imagen2']?.[0]) {
             const url = await uploadToFirebase(files['imagen2'][0]);
             updates.push('imagen_url_2 = ?');
             params.push(url);
         }
-        if (files?.['imagen3']?.[0]) {
+        if (img3Ok && files?.['imagen3']?.[0]) {
             const url = await uploadToFirebase(files['imagen3'][0]);
             updates.push('imagen_url_3 = ?');
             params.push(url);
@@ -1352,7 +1371,8 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
-        const query = `UPDATE productos SET ${updates.join(', ')} WHERE id = ?`;
+        const idExpr = await productIdWhereExpr();
+        const query = `UPDATE productos SET ${updates.join(', ')} WHERE id = ${idExpr}`;
         params.push(id);
 
         const [result] = await pool.query<any>(query, params);

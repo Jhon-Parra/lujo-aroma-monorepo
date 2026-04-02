@@ -360,7 +360,11 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         });
     } catch (error: any) {
         console.error('Error creating product:', error);
-        res.status(500).json({ error: 'Error del servidor al crear producto' });
+        res.status(500).json({ 
+            error: 'Error del servidor al crear producto',
+            details: error.message,
+            code: error.code
+        });
     }
 };
 
@@ -1386,9 +1390,13 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         appCache.invalidateByPrefix('catalog:');
 
         res.status(200).json({ message: 'Producto actualizado exitosamente' });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error updating product:', error);
-        res.status(500).json({ error: 'Error del servidor al actualizar' });
+        res.status(500).json({ 
+            error: 'Error del servidor al actualizar', 
+            details: error.message,
+            code: error.code
+        });
     }
 };
 

@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
     "@google/genai": "^1.44.0",
     "@supabase/supabase-js": "^2.99.1",
     "@types/bcrypt": "^6.0.0",
@@ -44,6 +45,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "mysql2": "^3.19.1",
+    "node-fetch": "^2.7.0",
     "nodemailer": "^8.0.4",
     "openai": "^6.27.0",
     "pdfkit": "^0.18.0",

@@ -58,8 +58,8 @@ exports.updateSettingsSchema = zod_1.z.object({
     banner_text: zod_1.z.string().max(255).optional(),
     banner_accent_color: hexColorOptional(),
     // Home premium (JSON string)
-    home_carousel: zod_1.z.string().max(20000).optional(),
-    home_categories: zod_1.z.string().max(20000).optional(),
+    home_carousel: zod_1.z.string().max(20000000).optional(),
+    home_categories: zod_1.z.string().max(20000000).optional(),
     logo_height_mobile: intOptional(24, 220),
     logo_height_desktop: intOptional(24, 260),
     instagram_url: zod_1.z.string().max(500).optional(),

@@ -67,8 +67,8 @@ export const updateSettingsSchema = z.object({
     banner_accent_color: hexColorOptional(),
 
     // Home premium (JSON string)
-    home_carousel: z.string().max(20000).optional(),
-    home_categories: z.string().max(20000).optional(),
+    home_carousel: z.string().max(20000000).optional(),
+    home_categories: z.string().max(20000000).optional(),
 
     logo_height_mobile: intOptional(24, 220),
     logo_height_desktop: intOptional(24, 260),

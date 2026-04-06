@@ -607,12 +607,12 @@ const updateSettings = async (req, res) => {
         const params = [hero_title, hero_subtitle, accent_color, !!show_banner, banner_text];
         if (columns.home_carousel && homeCarouselWork !== undefined) {
             query += `, home_carousel = ?`;
-            const toStore = carouselArr ? JSON.stringify(carouselArr) : safeJsonString(homeCarouselWork, 20000);
+            const toStore = carouselArr ? JSON.stringify(carouselArr) : safeJsonString(homeCarouselWork, 20000000);
             params.push(toStore);
         }
         if (columns.home_categories && homeCategoriesWork !== undefined) {
             query += `, home_categories = ?`;
-            const toStore = categoriesArr ? JSON.stringify(categoriesArr) : safeJsonString(homeCategoriesWork, 20000);
+            const toStore = categoriesArr ? JSON.stringify(categoriesArr) : safeJsonString(homeCategoriesWork, 20000000);
             params.push(toStore);
         }
         if (columns.banner_accent_color && banner_accent_color !== undefined) {

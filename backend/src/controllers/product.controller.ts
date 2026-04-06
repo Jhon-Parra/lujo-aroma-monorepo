@@ -147,6 +147,16 @@ const detectProductNewUntilSchema = async (): Promise<boolean> => {
     }
 };
 
+const getProductImagesSql = async (alias: string = 'p'): Promise<string> => {
+    const img2 = await detectImage2Schema();
+    const img3 = await detectImage3Schema();
+    let sql = `${alias}.imagen_url AS imageUrl, ${alias}.imagen_url`;
+    if (img2) sql += `, ${alias}.imagen_url_2 AS imageUrl2, ${alias}.imagen_url_2`;
+    if (img3) sql += `, ${alias}.imagen_url_3 AS imageUrl3, ${alias}.imagen_url_3`;
+    return sql;
+};
+
+
 let productCasaReady: boolean | null = null;
 const detectProductCasaSchema = async (): Promise<boolean> => {
     if (productCasaReady === true) return true;
@@ -360,10 +370,11 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         console.error('Error creating product:', error);
         res.status(500).json({ 
             error: 'Error del servidor al crear producto',
-            details: error.message,
+            details: [error.message],
             code: error.code
         });
     }
+
 };
 
 // 2. Obtener todos los productos
@@ -385,14 +396,16 @@ export const getProducts = async (req: Request, res: Response): Promise<void> =>
         const slugSelect = slugOk ? 'p.slug, ' : '';
         const extraSelect = newUntilOk ? ', p.nuevo_hasta' : '';
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
+        const imagesSelect = await getProductImagesSql('p');
+
 
         const [rows] = await pool.query<any[]>(
             `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
-                    p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, ${imagesSelect},
                     ${esNuevoExpr}${extraSelect}${casaSelect}, p.creado_en
              FROM productos p
+
              ${categoryJoin}
              ORDER BY p.creado_en DESC`
         );
@@ -498,6 +511,8 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         const slugOk = await detectSlugSchema();
         const slugSelect = slugOk ? 'p.slug, ' : '';
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
+        const imagesSelect = await getProductImagesSql('p');
+
 
         // 1. Fetch total count for pagination
         let countQuery = 'SELECT COUNT(*) as total FROM productos p WHERE p.stock >= 0';
@@ -530,9 +545,10 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         let productsQuery = `
              SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, ${imagesSelect}, p.promocion_id,
                     ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
+
              ${categoryJoin}
               WHERE p.stock >= 0
         `;
@@ -1037,15 +1053,17 @@ export const getProductById = async (req: Request, res: Response): Promise<void>
         const whereClause = slugOk ? 'WHERE p.id = ? OR p.slug = ?' : 'WHERE p.id = ?';
         const queryParams = slugOk ? [id, id] : [id];
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
+        const imagesSelect = await getProductImagesSql('p');
+
 
         // 1. Fetch product
         const [pRows] = await pool.query<any[]>(
             `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
-                    p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, ${imagesSelect},
                     p.promocion_id, ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
+
              ${categoryJoin}
              ${whereClause}`,
             queryParams
@@ -1184,11 +1202,12 @@ export const getRelatedProducts = async (req: Request, res: Response): Promise<v
         const slugOk = await detectSlugSchema();
         const slugSelect = slugOk ? 'p.slug, ' : '';
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
+        const imagesSelect = await getProductImagesSql('p');
 
         // 2. Fetch related products
         const [pRows] = await pool.query<any[]>(
             `SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
-                    p.precio AS price, p.precio, p.stock, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
+                    p.precio AS price, p.precio, p.stock, ${imagesSelect}, p.promocion_id,
                     ${esNuevoExpr}${casaSelect}, p.creado_en, p.unidades_vendidas AS soldCount, p.unidades_vendidas
              FROM productos p
              ${categoryJoin}

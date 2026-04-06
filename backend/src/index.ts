@@ -40,6 +40,7 @@ import emailTemplatesRoutes from './routes/email-templates.routes';
 import intelligenceRoutes from './routes/intelligence.routes';
 import seoRoutes from './routes/seo.routes';
 import { pool } from './config/database';
+import { bucket as firebaseBucket, firebaseDiagnostics, firebaseAdmin } from './config/firebase';
 import { 
     generalLimiter, 
     authLimiter, 
@@ -294,6 +295,34 @@ app.get('/health/db', async (req, res) => {
             error_message: e?.message 
         });
     }
+});
+
+app.get('/health/firebase', (req, res) => {
+    const debug = process.env.FIREBASE_DEBUG === 'true';
+    const base = {
+        ok: !!firebaseBucket,
+        storage: firebaseBucket ? 'CONFIGURED' : 'NOT_CONFIGURED',
+        bucket: firebaseBucket?.name || null,
+        apps: firebaseAdmin.apps.length
+    };
+
+    if (!debug) {
+        res.status(200).json(base);
+        return;
+    }
+
+    const missing = Object.entries(firebaseDiagnostics.env)
+        .filter(([, ok]) => !ok)
+        .map(([k]) => k);
+
+    res.status(200).json({
+        ...base,
+        diagnostics: {
+            loadedEnvFrom: firebaseDiagnostics.loadedEnvFrom ? 'loaded' : 'not-found',
+            missing,
+            lastInitError: firebaseDiagnostics.lastInitError || null
+        }
+    });
 });
 
 app.use(notFoundHandler);

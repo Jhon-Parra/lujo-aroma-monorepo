@@ -466,7 +466,12 @@ const getPublicCatalog = async (req, res) => {
             gender = categorySlug;
         }
         const limitRaw = Number(req.query['limit'] || req.query['pageSize'] || 12);
-        const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(100, Math.trunc(limitRaw))) : 12;
+        // En el catálogo por categoría (house) o género, mantenemos el máximo en 12 items por página.
+        // Sin filtros (usado por tareas internas como refresh de carrito), permitimos más.
+        const maxLimit = (categorySlug || gender) ? 12 : 100;
+        const limit = Number.isFinite(limitRaw)
+            ? Math.max(1, Math.min(maxLimit, Math.trunc(limitRaw)))
+            : 12;
         const pageRaw = Number(req.query['page'] || 1);
         const page = Number.isFinite(pageRaw) ? Math.max(1, Math.trunc(pageRaw)) : 1;
         const offset = (page - 1) * limit;

@@ -35,7 +35,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   showOnlyPromotions = false;
 
   // Paginacion: siempre 12 por pagina.
-  itemsPerPage = 12;
+  readonly itemsPerPage = 12;
   currentPage = 1;
   totalPages = 1;
   pages: number[] = [];

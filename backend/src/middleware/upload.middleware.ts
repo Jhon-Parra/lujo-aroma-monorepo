@@ -77,6 +77,7 @@ export const uploadSettingsAssets = (req: any, res: any, next: any) => {
         storage,
         limits: {
             fileSize: MAX_SETTINGS_MEDIA_SIZE,
+            fieldSize: 25 * 1024 * 1024, // 25MB para campos de texto ricos que pueden contener base64
             files: 20
         },
         fileFilter: (_req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {

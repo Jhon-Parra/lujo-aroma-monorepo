@@ -42,6 +42,7 @@ const category_routes_1 = __importDefault(require("./routes/category.routes"));
 const email_templates_routes_1 = __importDefault(require("./routes/email-templates.routes"));
 const intelligence_routes_1 = __importDefault(require("./routes/intelligence.routes"));
 const seo_routes_1 = __importDefault(require("./routes/seo.routes"));
+const sitemap_routes_1 = __importDefault(require("./routes/sitemap.routes"));
 const database_1 = require("./config/database");
 const firebase_1 = require("./config/firebase");
 const security_middleware_1 = require("./middleware/security.middleware");
@@ -211,6 +212,8 @@ app.use('/api/categories', category_routes_1.default);
 app.use('/api/email-templates', email_templates_routes_1.default);
 app.use('/api/intelligence', intelligence_routes_1.default);
 app.use('/api/seo', seo_routes_1.default);
+// Sitemap
+app.use('/sitemap.xml', sitemap_routes_1.default);
 app.get('/health', async (req, res) => {
     const base = {
         status: 'OK',

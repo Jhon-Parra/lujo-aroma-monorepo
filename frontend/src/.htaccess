@@ -22,8 +22,8 @@ RewriteBase /
     Header set Access-Control-Allow-Origin "*"
 </IfModule>
 
-# Evitar que la siguiente regla de SPA atrape sitemap.xml pasándolo directo
-RewriteRule ^sitemap\.xml$ - [L]
+# Redirigir sitemap.xml al generador dinámico en tiempo real del backend
+RewriteRule ^sitemap\.xml$ https://api.perfumesbogota.com/sitemap.xml [R=301,L]
 
 # No reescribir archivos ni carpetas existentes
 RewriteCond %{REQUEST_FILENAME} -f [OR]

@@ -28,13 +28,59 @@ if (loadedEnvFrom) {
     console.log('ℹ️ No se encontró .env (se usarán variables de entorno del hosting si existen).');
 }
 
+const unquote = (v: string) => {
+    const s = String(v ?? '').trim();
+    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+        return s.slice(1, -1);
+    }
+    return s;
+};
+
+const normalizeBucketName = (raw: string | undefined): string | undefined => {
+    const v = String(raw ?? '').trim();
+    if (!v) return undefined;
+    // gs://bucket-name
+    if (v.startsWith('gs://')) return v.slice('gs://'.length);
+    // People sometimes paste Firebase REST host; Admin SDK expects the GCS bucket name.
+    // Default Firebase bucket is: <project-id>.appspot.com
+    if (v.endsWith('.firebasestorage.app')) return v.replace(/\.firebasestorage\.app$/i, '.appspot.com');
+    return v;
+};
+
+let lastInitError: string | null = null;
+
+export const firebaseDiagnostics: {
+    loadedEnvFrom: string | null;
+    env: {
+        FIREBASE_PROJECT_ID: boolean;
+        FIREBASE_CLIENT_EMAIL: boolean;
+        FIREBASE_PRIVATE_KEY: boolean;
+        FIREBASE_STORAGE_BUCKET: boolean;
+        FIREBASE_SERVICE_ACCOUNT_JSON: boolean;
+        FIREBASE_SERVICE_ACCOUNT_JSON_BASE64: boolean;
+    };
+    lastInitError: string | null;
+} = {
+    loadedEnvFrom,
+    // keep this safe: booleans and sanitized values only
+    env: {
+        FIREBASE_PROJECT_ID: !!process.env.FIREBASE_PROJECT_ID,
+        FIREBASE_CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
+        FIREBASE_PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY,
+        FIREBASE_STORAGE_BUCKET: !!process.env.FIREBASE_STORAGE_BUCKET,
+        FIREBASE_SERVICE_ACCOUNT_JSON: !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
+        FIREBASE_SERVICE_ACCOUNT_JSON_BASE64: !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64,
+    },
+    lastInitError
+};
+
 /**
  * Inicialización Robusta de Firebase Admin
  * Prioriza variables individuales para mayor compatibilidad con Hostinger y otros hostings.
  */
 function initializeFirebase() {
     try {
-        const storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
+        const storageBucket = normalizeBucketName(process.env.FIREBASE_STORAGE_BUCKET);
 
         // Evitar re-inicialización
         if (admin.apps.length > 0) {
@@ -44,14 +90,6 @@ function initializeFirebase() {
         const projectId = process.env.FIREBASE_PROJECT_ID;
         const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
         const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-
-        const unquote = (v: string) => {
-            const s = String(v ?? '').trim();
-            if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
-                return s.slice(1, -1);
-            }
-            return s;
-        };
 
         // Logging de diagnóstico seguro (no muestra secretos)
         console.log('--- [Firebase Admin Diagnostics] ---');
@@ -76,10 +114,28 @@ function initializeFirebase() {
         }
 
         // 2. Fallback: Intentar con JSON completo (Legacy)
+        // Soporte adicional: JSON en base64 (algunos hostings/panels lo requieren)
         const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-        if (serviceAccountJson) {
+        const serviceAccountJsonB64 = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64;
+
+        const resolveServiceAccountJson = (): string | undefined => {
+            const raw = String(serviceAccountJson ?? '').trim();
+            if (raw) return raw;
+            const b64 = String(serviceAccountJsonB64 ?? '').trim();
+            if (!b64) return undefined;
             try {
-                const serviceAccount = JSON.parse(serviceAccountJson);
+                return Buffer.from(b64, 'base64').toString('utf8').trim();
+            } catch (e: any) {
+                lastInitError = `Error decodificando FIREBASE_SERVICE_ACCOUNT_JSON_BASE64: ${String(e?.message || e)}`;
+                firebaseDiagnostics.lastInitError = lastInitError;
+                return undefined;
+            }
+        };
+
+        const saJson = resolveServiceAccountJson();
+        if (saJson) {
+            try {
+                const serviceAccount = JSON.parse(saJson);
                 // Si la private_key viene con escapes literales, los corregimos
                 if (serviceAccount.private_key) {
                     serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
@@ -92,6 +148,8 @@ function initializeFirebase() {
                 console.log('✅ Firebase Admin inicializado exitosamente con JSON de cuenta de servicio.');
                 return storageBucket ? admin.storage().bucket(storageBucket) : admin.storage().bucket();
             } catch (jsonErr) {
+                lastInitError = `Error parseando FIREBASE_SERVICE_ACCOUNT_JSON: ${String((jsonErr as any)?.message || jsonErr)}`;
+                firebaseDiagnostics.lastInitError = lastInitError;
                 console.error('❌ Error parseando FIREBASE_SERVICE_ACCOUNT_JSON:', jsonErr);
             }
         }
@@ -99,7 +157,9 @@ function initializeFirebase() {
         console.warn('⚠️ No se pudo inicializar Firebase Storage: Faltan credenciales válidas en el entorno.');
         return null;
     } catch (error: any) {
-        console.error('❌ Error crítico al inicializar Firebase Admin:', error.message);
+        lastInitError = String(error?.message || error);
+        firebaseDiagnostics.lastInitError = lastInitError;
+        console.error('❌ Error crítico al inicializar Firebase Admin:', lastInitError);
         return null; // Retornamos null para que la app no crashee al arrancar
     }
 }

@@ -1,4 +1,4 @@
-import { bucket } from '../config/firebase';
+import { bucket, firebaseDiagnostics } from '../config/firebase';
 import { v4 as uuidv4 } from 'uuid';
 import { optimizeImage, isOptimizableImage } from './image.util';
 import { sanitizeFilename } from '../middleware/upload.middleware';
@@ -23,7 +23,22 @@ export async function uploadFile(
     const holdsFile = file && file.buffer && file.buffer.length > 0;
     
     if (!bucket && holdsFile) {
-        throw new Error('Firebase Storage no está configurado correctamente en este entorno. Verifica las credenciales en el servidor.');
+        const debug = process.env.FIREBASE_DEBUG === 'true';
+        if (!debug) {
+            throw new Error('Firebase Storage no está configurado correctamente en este entorno. Verifica las credenciales en el servidor.');
+        }
+
+        // Diagnóstico seguro (sin exponer secretos)
+        const missing = Object.entries(firebaseDiagnostics.env)
+            .filter(([, ok]) => !ok)
+            .map(([k]) => k);
+        const extra = [
+            missing.length ? `Missing: ${missing.join(', ')}` : '',
+            firebaseDiagnostics.lastInitError ? `InitError: ${firebaseDiagnostics.lastInitError}` : '',
+            firebaseDiagnostics.loadedEnvFrom ? `EnvFile: loaded` : 'EnvFile: not-found'
+        ].filter(Boolean).join(' | ');
+
+        throw new Error(`Firebase Storage no está configurado correctamente en este entorno. ${extra}`);
     }
 
     // Usamos una referencia local para que TypeScript sepa que no es null después de esta validación
@@ -135,4 +150,3 @@ export async function deleteFile(urlOrPath: string): Promise<void> {
         console.error('❌ Error eliminando archivo de Storage:', error?.message || String(error));
     }
 }
-

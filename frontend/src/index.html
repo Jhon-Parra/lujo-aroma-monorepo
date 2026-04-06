@@ -63,6 +63,16 @@
       position: relative;
     }
 
+    .preloader-logo {
+      width: clamp(120px, 20vw, 160px);
+      height: auto;
+      object-fit: contain;
+      margin-bottom: 2rem;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+      opacity: 0;
+      animation: fadeInDown 1s ease forwards;
+    }
+
     .preloader-brand {
       font-size: 0.75rem;
       letter-spacing: 0.5em;
@@ -163,6 +173,7 @@
 <body>
   <div id="app-preloader">
     <div class="preloader-content">
+      <img src="assets/images/logo-splash.png" alt="PB BY LA - Perfumes Bogotá Original" class="preloader-logo">
       <div class="preloader-brand">Lujo & Aroma</div>
       <h2 class="preloader-title">Distinción y Esencia</h2>
       <p class="preloader-slogan">Originalidad en cada gota.</p>

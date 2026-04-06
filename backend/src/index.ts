@@ -39,6 +39,7 @@ import categoryRoutes from './routes/category.routes';
 import emailTemplatesRoutes from './routes/email-templates.routes';
 import intelligenceRoutes from './routes/intelligence.routes';
 import seoRoutes from './routes/seo.routes';
+import sitemapRoutes from './routes/sitemap.routes';
 import { pool } from './config/database';
 import { bucket as firebaseBucket, firebaseDiagnostics, firebaseAdmin } from './config/firebase';
 import { 
@@ -236,6 +237,9 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/email-templates', emailTemplatesRoutes);
 app.use('/api/intelligence', intelligenceRoutes);
 app.use('/api/seo', seoRoutes);
+
+// Sitemap
+app.use('/sitemap.xml', sitemapRoutes);
 
 app.get('/health', async (req, res) => {
     const base: any = { 

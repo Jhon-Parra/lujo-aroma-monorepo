@@ -1,0 +1,1 @@
+var e={serverUrl:"https://api.perfumesbogota.com",baseUrl:"https://api.perfumesbogota.com/api",googleClientId:"83015258138-h30gb9n5k9le48kt6amfgje39fgfr3dg.apps.googleusercontent.com"};function g(o,t){e.serverUrl=o,e.baseUrl=`${o}/api`,e.googleClientId=t}export{e as a,g as b};

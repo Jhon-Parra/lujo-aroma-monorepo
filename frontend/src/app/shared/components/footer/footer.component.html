@@ -42,24 +42,43 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10 footer-content">
-            <!-- info -->
+            <div class="space-y-6">
+                <div>
+                    <h3 class="font-serif text-2xl font-bold tracking-[0.2em] text-charcoal mb-4 uppercase">Lujo & <span class="text-gold">Aroma</span></h3>
+                    <p class="text-[13px] leading-relaxed text-soft-charcoal max-w-sm italic">
+                        La boutique de alta perfumería líder en Colombia. Especialistas en <span class="text-gold font-medium">perfumes originales en Bogotá</span>, ofreciendo una curaduría exclusiva de las casas más prestigiosas del mundo. Elevamos su esencia con autenticidad y distinción.
+                    </p>
+                </div>
+                <div class="flex gap-5 transition-all">
+                    <a href="https://instagram.com" target="_blank" class="text-charcoal hover:text-gold transition-colors block"><i class="bi bi-instagram text-lg"></i></a>
+                    <a href="https://facebook.com" target="_blank" class="text-charcoal hover:text-gold transition-colors block"><i class="bi bi-facebook text-lg"></i></a>
+                    <a href="https://tiktok.com" target="_blank" class="text-charcoal hover:text-gold transition-colors block"><i class="bi bi-tiktok text-lg"></i></a>
+                </div>
+            </div>
+
+            <!-- Casas Perfumistas (SEO Dynamic Cluster) -->
             <div>
-                <h4 class="font-serif font-bold tracking-widest text-charcoal mb-4 uppercase text-[11px] underline decoration-gold/30 underline-offset-4">Boutique</h4>
-                <ul class="space-y-2.5 text-[13px] text-soft-charcoal">
-                    <li><a routerLink="/catalog" class="hover:text-gold transition-colors">Catálogo</a></li>
-                    <li><a routerLink="/manual" class="hover:text-gold transition-colors">Manual de uso</a></li>
-                    <li><a routerLink="/contact" class="hover:text-gold transition-colors">Contacto</a></li>
+                <h4 class="font-serif font-bold tracking-widest text-charcoal mb-4 uppercase text-[11px] underline decoration-gold/30 underline-offset-4">Casas Perfumistas</h4>
+                <ul class="grid grid-cols-2 gap-x-4 gap-y-2.5 text-[13px] text-soft-charcoal">
+                    <li><a [routerLink]="['/catalog']" [queryParams]="{ house: 'Dior' }" class="hover:text-gold transition-colors">Dior</a></li>
+                    <li><a [routerLink]="['/catalog']" [queryParams]="{ house: 'Chanel' }" class="hover:text-gold transition-colors">Chanel</a></li>
+                    <li><a [routerLink]="['/catalog']" [queryParams]="{ house: 'Versace' }" class="hover:text-gold transition-colors">Versace</a></li>
+                    <li><a [routerLink]="['/catalog']" [queryParams]="{ house: 'Carolina Herrera' }" class="hover:text-gold transition-colors">Carolina Herrera</a></li>
+                    <li><a [routerLink]="['/catalog']" [queryParams]="{ house: 'Jean Paul Gaultier' }" class="hover:text-gold transition-colors">Jean Paul Gaultier</a></li>
+                    <li><a [routerLink]="['/catalog']" [queryParams]="{ house: 'Lattafa' }" class="hover:text-gold transition-colors">Lattafa (Árabes)</a></li>
                 </ul>
             </div>
 
-            <!-- Catálogo -->
+            <!-- Atención / Soporte -->
             <div>
-                <h4 class="font-serif font-bold tracking-widest text-charcoal mb-4 uppercase text-[11px] underline decoration-gold/30 underline-offset-4">Atención</h4>
+                <h4 class="font-serif font-bold tracking-widest text-charcoal mb-4 uppercase text-[11px] underline decoration-gold/30 underline-offset-4">Atención VIP</h4>
                 <ul class="space-y-2.5 text-[13px] text-soft-charcoal">
-                    <li><a routerLink="/favorites" class="hover:text-gold transition-colors">Mis Favoritos</a></li>
+                    <li><a routerLink="/favorites" class="hover:text-gold transition-colors">Favoritos</a></li>
+                    <li><a routerLink="/my-orders" class="hover:text-gold transition-colors">Rastrear Pedido</a></li>
                     <li>
-                        <a [href]="'tel:' + (settings?.boutique_phone || '+573001234567')" class="hover:text-gold transition-colors">
-                            {{ settings?.boutique_phone || 'WhatsApp' }}
+                        <a [href]="whatsappUrl" target="_blank" class="flex items-center gap-2 group hover:text-gold transition-colors">
+                            <i class="bi bi-whatsapp text-gold"></i>
+                            <span>{{ settings?.boutique_phone || 'Asesoría Directa' }}</span>
                         </a>
                     </li>
                 </ul>

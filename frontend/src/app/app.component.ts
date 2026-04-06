@@ -123,6 +123,24 @@ export class AppComponent implements OnInit, OnDestroy {
     this.loadActivePromotions();
 
     this.warmRouteChunks();
+    this.hidePreloader();
+  }
+
+  private hidePreloader(): void {
+    if (typeof window === 'undefined') return;
+    
+    // Esperamos un momento para que el render inicial de Angular se asiente
+    // y para que el usuario pueda apreciar el SplashScreen de lujo.
+    setTimeout(() => {
+      const preloader = this.document.getElementById('app-preloader');
+      if (preloader) {
+        preloader.classList.add('fade-out');
+        // Remover del DOM despues de la animacion de CSS (0.8s)
+        setTimeout(() => {
+          preloader.remove();
+        }, 800);
+      }
+    }, 1200); // 1.2s de visibilidad minima garantizada
   }
 
   private warmRouteChunks(): void {

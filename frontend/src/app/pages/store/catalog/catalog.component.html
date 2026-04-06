@@ -36,17 +36,25 @@
 
              <div class="flex-1 overflow-y-auto p-6">
                 <div class="mb-8">
-                    <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-white/60 mb-3">Categorias (Casa)</div>
-                    <div class="space-y-2">
+                    <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-white/60 mb-3">Casas Perfumistas</div>
+                    
+                    <!-- House Search (Mobile) -->
+                    <div class="mb-4 relative">
+                        <input type="text" [(ngModel)]="houseSearchTerm" placeholder="Buscar marca..." 
+                            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/30 focus:outline-none focus:border-[#d8c08a]/50 transition-all">
+                        <i class="bi bi-search absolute right-3 top-2.5 text-white/30 text-xs"></i>
+                    </div>
+
+                    <div class="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                         <button (click)="filterCategory('todos')"
                             [class.text-[#d8c08a]]="selectedCategory === 'todos'"
-                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors text-xs tracking-[0.18em] uppercase font-bold">
-                            <span>Todas</span>
+                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors text-xs tracking-[0.18em] uppercase font-bold py-1">
+                            <span>Todas las Casas</span>
                             <span *ngIf="selectedCategory === 'todos'" class="w-1.5 h-1.5 rounded-full bg-[#d8c08a]"></span>
                         </button>
-                        <button *ngFor="let c of categories" (click)="filterCategory(c.slug)"
+                        <button *ngFor="let c of filteredHouses" (click)="filterCategory(c.slug)"
                             [class.text-[#d8c08a]]="selectedCategory === c.slug"
-                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors text-xs tracking-[0.18em] uppercase font-bold">
+                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors text-xs tracking-[0.18em] uppercase font-bold py-1">
                             <span class="truncate">{{ c.nombre }}</span>
                             <span *ngIf="selectedCategory === c.slug" class="w-1.5 h-1.5 rounded-full bg-[#d8c08a]"></span>
                         </button>
@@ -186,39 +194,64 @@
                  </ul>
 
                 <div class="mt-6 pt-5 border-t border-[#ecece5]">
-                    <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Categorias (Casa)</div>
-                    <ul class="mt-4 space-y-2">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Casas Perfumistas</div>
+                        <div class="text-[9px] text-soft-charcoal font-medium uppercase tracking-widest">{{ filteredHouses.length }} marcas</div>
+                    </div>
+
+                    <!-- House Search (Desktop) -->
+                    <div class="mb-4 relative">
+                        <input type="text" [(ngModel)]="houseSearchTerm" placeholder="Filtrar por marca..." 
+                            class="w-full bg-[#f9f9f6] border border-[#ecece5] rounded-2xl px-4 py-2.5 text-[11px] text-charcoal placeholder:text-soft-charcoal/60 focus:outline-none focus:border-[#b59a68]/40 transition-all shadow-inner">
+                        <i class="bi bi-search absolute right-4 top-3 text-soft-charcoal/40 text-xs"></i>
+                    </div>
+
+                    <ul class="mt-2 space-y-1 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                         <li>
-                            <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
+                            <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 border border-transparent hover:bg-[#f9f9f6] transition-colors cursor-pointer">
                                 <input type="radio" name="category" value="todos" (change)="filterCategory('todos')"
                                     [checked]="selectedCategory === 'todos'" class="sr-only peer">
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-10 h-10 rounded-2xl bg-[#f9f9f6] text-[#274C68] flex items-center justify-center border border-[#ecece5] shadow-sm transition-colors peer-checked:bg-[#b59a68]/15 peer-checked:border-[#b59a68]/35 peer-checked:text-[#07121a]">
-                                        <i class="bi bi-grid text-lg"></i>
+                                    <div class="w-8 h-8 rounded-xl bg-[#f9f9f6] text-[#274C68] flex items-center justify-center border border-[#ecece5] shadow-sm transition-colors peer-checked:bg-[#b59a68]/15 peer-checked:border-[#b59a68]/35 peer-checked:text-[#07121a]">
+                                        <i class="bi bi-grid-fill text-sm"></i>
                                     </div>
                                     <div class="min-w-0">
-                                        <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal truncate">Todas</div>
+                                        <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal truncate">Todas las Casas</div>
                                     </div>
                                 </div>
-                                <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                <div class="h-1.5 w-1.5 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
                             </label>
                         </li>
-                        <li *ngFor="let c of categories">
-                            <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
+                        <li *ngFor="let c of filteredHouses">
+                            <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 border border-transparent hover:bg-[#f9f9f6] transition-colors cursor-pointer">
                                 <input type="radio" name="category" [value]="c.slug" (change)="filterCategory(c.slug)"
                                     [checked]="selectedCategory === c.slug" class="sr-only peer">
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-10 h-10 rounded-2xl bg-[#f9f9f6] text-[#274C68] flex items-center justify-center border border-[#ecece5] shadow-sm transition-colors peer-checked:bg-[#b59a68]/15 peer-checked:border-[#b59a68]/35 peer-checked:text-[#07121a]">
-                                        <i class="bi bi-droplet-half text-lg"></i>
+                                    <div class="w-8 h-8 rounded-xl bg-[#f9f9f6] text-[#274C68] flex items-center justify-center border border-[#ecece5] shadow-sm transition-colors peer-checked:bg-[#b59a68]/15 peer-checked:border-[#b59a68]/35 peer-checked:text-[#07121a]">
+                                        <i class="bi bi-award text-sm"></i>
                                     </div>
                                     <div class="min-w-0">
                                         <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal truncate">{{ c.nombre }}</div>
                                     </div>
                                 </div>
-                                <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+                                <div class="h-1.5 w-1.5 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
                             </label>
                         </li>
                     </ul>
+
+                    <!-- Promotions Toggle -->
+                    <div class="mt-6 pt-5 border-t border-[#ecece5]">
+                        <button (click)="togglePromotions()" 
+                            [class.bg-[#b59a68]]="showOnlyPromotions"
+                            [class.text-white]="showOnlyPromotions"
+                            class="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-[#ecece5] text-[10px] font-bold uppercase tracking-[0.28em] transition-all hover:shadow-md">
+                            <span class="flex items-center gap-2">
+                                <i class="bi bi-percent text-base"></i>
+                                Solo en Oferta
+                            </span>
+                            <div *ngIf="showOnlyPromotions" class="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -312,3 +345,47 @@
         </div>
     </main>
 </div>
+
+<!-- SEO Rich Content Section -->
+<section class="mt-24 border-t border-[#ecece5] pt-16 pb-20 bg-[#fafafa]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+            <div>
+                <h3 class="font-serif text-2xl text-charcoal tracking-wide mb-6 uppercase">
+                    Perfumes Originales en Bogotá | Lujo & Aroma
+                </h3>
+                <p class="text-sm text-soft-charcoal leading-relaxed mb-4">
+                    Bienvenidos a <strong>Lujo & Aroma</strong>, su destino definitivo para encontrar la mejor selección de <strong>perfumes originales en Bogotá</strong> y toda Colombia. Nos especializamos en ofrecer fragancias auténticas de las casas perfumistas más prestigiosas del mundo, garantizando calidad y exclusividad en cada frasco.
+                </p>
+                <p class="text-sm text-soft-charcoal leading-relaxed">
+                    Si está buscando <strong>perfumes Bogotá</strong> con envíos rápidos y seguros, nuestro catálogo cuenta con opciones para todos los gustos: desde aromas cítricos y frescos hasta fragancias orientales intensas. Nuestra misión es brindar una experiencia de lujo accesible para los amantes de la alta perfumería.
+                </p>
+            </div>
+            <div>
+                <h3 class="font-serif text-xl text-charcoal tracking-wide mb-6 uppercase">
+                    ¿Por qué elegir nuestras Casas Perfumistas?
+                </h3>
+                <ul class="space-y-4 text-sm text-soft-charcoal">
+                    <li class="flex items-start gap-3">
+                        <span class="text-[#b59a68] mt-1">✦</span>
+                        <span><strong>100% Originalidad:</strong> Solo distribuimos productos legítimos con sellos de garantía.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-[#b59a68] mt-1">✦</span>
+                        <span><strong>Variedad Exclusiva:</strong> Encuentre marcas como Dior, Chanel, Tom Ford y más en un solo lugar.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <span class="text-[#b59a68] mt-1">✦</span>
+                        <span><strong>Asesoría Personalizada:</strong> Le ayudamos a encontrar el aroma que mejor se adapte a su personalidad.</span>
+                    </li>
+                </ul>
+                <div class="mt-8 p-6 bg-white border border-[#ecece5] rounded-xl shadow-sm">
+                    <p class="text-[10px] uppercase tracking-[0.2em] text-[#b59a68] font-bold mb-2">Tip de Experto</p>
+                    <p class="text-xs text-soft-charcoal italic leading-relaxed">
+                        "Para que su perfume original dure más tiempo, aplíquelo en puntos de pulso como las muñecas y detrás de las orejas sobre la piel hidratada."
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

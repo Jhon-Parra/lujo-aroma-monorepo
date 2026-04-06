@@ -30,6 +30,8 @@ export class CatalogComponent implements OnInit {
   private lastTrackedSearch = '';
 
   categories: Category[] = [];
+  houseSearchTerm = '';
+  showOnlyPromotions = false;
 
   // Paginacion: siempre 12 por pagina.
   itemsPerPage = 12;
@@ -180,7 +182,6 @@ export class CatalogComponent implements OnInit {
         this.categories = [];
       }
     });
-
     this.route.queryParams.subscribe(params => {
       this.searchTerm = params['q'] || '';
       this.selectedCategory = this.normalizeSlug(params['category'] ?? params['house']);
@@ -189,6 +190,9 @@ export class CatalogComponent implements OnInit {
       this.selectedGender = (g === 'mujer' || g === 'hombre' || g === 'unisex') ? (g as any) : 'all';
       this.currentPage = Math.max(1, Math.trunc(Number(params['page'] || 1)));
 
+      // Actualizar SEO inicial
+      this.updateCatalogSeo();
+
       // Make skeleton count match the requested page size.
       this.skeletonCards = Array.from({ length: this.itemsPerPage }, (_, i) => i);
 
@@ -196,10 +200,96 @@ export class CatalogComponent implements OnInit {
     });
   }
 
+  private updateCatalogSeo(): void {
+    const categoryLabel = this.getCategoryLabel(this.selectedCategory);
+    const genderLabel = this.selectedGender !== 'all' ? ` para ${this.getGenderLabel(this.selectedGender)}` : '';
+    
+    let title = 'Lujo & Aroma | Perfumes Originales';
+    let description = 'Descubre nuestra colección exclusiva de perfumes originales en Bogotá y envíos a toda Colombia.';
+
+    if (this.selectedCategory !== 'todos') {
+      title = `${categoryLabel}${genderLabel} | Perfumes Originales Lujo & Aroma`;
+      description = `Compra perfumes originales de ${categoryLabel}${genderLabel} en Bogotá. Fragancias exclusivas con garantía de autenticidad y envío rápido.`;
+    } else if (this.selectedGender !== 'all') {
+      title = `Perfumes Originales${genderLabel} | Lujo & Aroma Bogotá`;
+      description = `Los mejores perfumes originales${genderLabel} en Bogotá. Encuentra tu esencia ideal en Lujo & Aroma con precios competitivos.`;
+    }
+
+    if (this.searchTerm) {
+      title = `Resultados para "${this.searchTerm}" | Lujo & Aroma`;
+    }
+
+    this.seo.set({ title, description });
+    this.injectJsonLd();
+    this.updateCanonical();
+  }
+
+  private updateCanonical(): void {
+    if (typeof window === 'undefined') return;
+    const old = document.querySelector('link[rel="canonical"]');
+    if (old) old.remove();
+
+    const link: HTMLLinkElement = document.createElement('link');
+    link.setAttribute('rel', 'canonical');
+    const url = new URL(window.location.href);
+    url.searchParams.delete('page'); // Canonical usually doesn't include page
+    link.setAttribute('href', url.toString());
+    document.head.appendChild(link);
+  }
+
+  private injectJsonLd(): void {
+    if (typeof window === 'undefined') return;
+    
+    // Remove old JSON-LD
+    const old = document.getElementById('catalog-jsonld');
+    if (old) old.remove();
+
+    const script = document.createElement('script');
+    script.id = 'catalog-jsonld';
+    script.type = 'application/ld+json';
+    
+    const categoryLabel = this.getCategoryLabel(this.selectedCategory);
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": `Catálogo de Perfumes Originales ${categoryLabel} - Lujo & Aroma`,
+      "description": "Tienda online de perfumes originales en Bogotá, Colombia. Fragancias de lujo y casas exclusivas.",
+      "url": window.location.href,
+      "mainEntity": {
+        "@type": "ItemList",
+        "itemListElement": this.products.slice(0, 10).map((p, i) => ({
+          "@type": "ListItem",
+          "position": i + 1,
+          "item": {
+            "@type": "Product",
+            "name": p.name,
+            "image": p.imageUrl,
+            "brand": {
+              "@type": "Brand",
+              "name": p.casa || 'Lujo & Aroma'
+            },
+            "offers": {
+              "@type": "Offer",
+              "price": p.price,
+              "priceCurrency": "COP",
+              "availability": "https://schema.org/InStock"
+            }
+          }
+        }))
+      }
+    };
+
+    script.text = JSON.stringify(jsonLd);
+    document.head.appendChild(script);
+  }
+
   private fetchProducts(): void {
     this.loading = true;
     const category = this.selectedCategory !== 'todos' ? this.selectedCategory : null;
     const gender = this.selectedGender !== 'all' ? this.selectedGender : null;
+    
+    // El backend ya filtra por category/house y q. 
+    // Agregamos soporte para solo promociones si el backend lo permite o lo filtramos aqui.
     this.productService.getPublicCatalog(this.currentPage, this.itemsPerPage, this.searchTerm, { category, gender }).subscribe({
       next: (res) => {
         const items = Array.isArray((res as any)?.items) ? (res as any).items : [];
@@ -225,8 +315,12 @@ export class CatalogComponent implements OnInit {
           tiene_promocion: ap.tiene_promocion || false
         }));
 
-        this.filteredProducts = this.products; // Server already filtered
-        this.totalProducts = Number((res as any)?.total || 0);
+        if (this.showOnlyPromotions) {
+          this.products = this.products.filter(p => p.tiene_promocion);
+        }
+
+        this.filteredProducts = this.products; 
+        this.totalProducts = this.showOnlyPromotions ? this.products.length : Number((res as any)?.total || 0);
         this.totalPages = Math.max(1, Number((res as any)?.totalPages || 1));
 
         // Guard: if URL has page > totalPages, jump to last page so the catalog
@@ -236,6 +330,7 @@ export class CatalogComponent implements OnInit {
           return;
         }
         this.updatePaginationMetadata();
+        this.updateCatalogSeo(); // Update SEO with products loaded
         
         this.loading = false;
 
@@ -297,6 +392,20 @@ export class CatalogComponent implements OnInit {
       queryParams: { gender: gender !== 'all' ? gender : null, page: null },
       queryParamsHandling: 'merge',
     });
+  }
+
+  togglePromotions() {
+    this.showOnlyPromotions = !this.showOnlyPromotions;
+    this.fetchProducts();
+  }
+
+  get filteredHouses(): Category[] {
+    if (!this.houseSearchTerm.trim()) return this.categories;
+    const term = this.normalizeText(this.houseSearchTerm);
+    return this.categories.filter(c => 
+      this.normalizeText(c.nombre).includes(term) || 
+      this.normalizeText(c.slug).includes(term)
+    );
   }
 
   getCategoryLabel(slugRaw: string): string {

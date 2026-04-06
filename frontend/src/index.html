@@ -3,97 +3,150 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Lujo&Aroma | Perfumes Bogotá</title>
+  <title>Lujo & Aroma | Perfumes Originales en Bogotá</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Perfumes Bogotá - Perfumería de lujo y perfumes originales. Envíos nacionales.">
+  <meta name="description" content="Descubre Lujo & Aroma, tu perfumería de confianza en Bogotá. Ofrecemos perfumes originales, fragancias exclusivas y envíos a toda Colombia. Calidad y distinción en cada gota.">
+  <meta name="keywords" content="perfumes originales, perfumes bogota, lujo y aroma, fragancias exclusivas, perfumeria colombia, lujoyaroma">
   <meta name="robots" content="index,follow">
-  <meta name="theme-color" content="#b59a68">
+  <meta name="theme-color" content="#07121a">
   <meta name="google-site-verification" content="sPYzifNiHeOj4LO_Jhl4XXb_vSfGCesVRHQd6Ds7EiA" />
 
-  <meta property="og:site_name" content="Lujo&Aroma">
+  <meta property="og:site_name" content="Lujo & Aroma">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="es_CO">
-  <meta property="og:title" content="Lujo&Aroma | Perfumes Bogotá">
-  <meta property="og:description" content="Perfumes originales y fragancias exclusivas. Descubre tu esencia en Lujo&Aroma.">
+  <meta property="og:title" content="Lujo & Aroma | Perfumes Originales en Bogotá">
+  <meta property="og:description" content="Perfumes 100% originales y fragancias exclusivas. Encuentra tu esencia ideal con envíos garantizados en Bogotá y Colombia.">
   <meta property="og:image" content="assets/images/brand-banner.png">
 
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Lujo&Aroma | Perfumes Bogotá">
-  <meta name="twitter:description" content="Perfumes originales y fragancias exclusivas en Bogotá y envíos a toda Colombia. Descubre tu esencia en Lujo&Aroma.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Lujo & Aroma | Perfumes Originales Bogotá">
+  <meta name="twitter:description" content="Fragancias exclusivas y perfumes originales. Calidad garantizada en Lujo & Aroma.">
   <link rel="icon" type="image/png" href="assets/images/logo.png">
   <link rel="apple-touch-icon" href="assets/images/logo.png">
 
   <!-- config.json se carga via HttpClient en runtime (evitar warnings de preload) -->
 
   <style>
-    /* Minimal preloader shown until Angular boots */
+    /* Premium SplashScreen Preloader */
+    :root {
+      --luxury-gold: #b59a68;
+      --luxury-dark: #07121a;
+      --luxury-cream: #f6f3ea;
+    }
+
     #app-preloader {
-      min-height: 100vh;
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #f6f3ea;
-      color: #1f1f1f;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    }
-
-    #app-preloader .wrap {
-      width: min(520px, calc(100vw - 48px));
-      text-align: center;
-      padding: 28px 24px;
-      border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 18px;
-      background: rgba(255,255,255,0.75);
-      backdrop-filter: blur(10px);
-    }
-
-    #app-preloader .brand {
-      letter-spacing: 0.22em;
-      font-weight: 700;
-      font-size: 11px;
-      text-transform: uppercase;
-      opacity: 0.75;
-    }
-
-    #app-preloader .title {
-      margin-top: 10px;
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: 0.02em;
-    }
-
-    #app-preloader .sub {
-      margin-top: 8px;
-      font-size: 12px;
-      opacity: 0.7;
-      line-height: 1.45;
-    }
-
-    #app-preloader .bar {
-      margin: 18px auto 0;
-      width: 160px;
-      height: 3px;
-      background: rgba(0,0,0,0.10);
-      border-radius: 999px;
+      background: var(--luxury-dark);
+      color: white;
+      font-family: 'Playfair Display', serif;
       overflow: hidden;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
     }
 
-    #app-preloader .bar::after {
-      content: "";
-      display: block;
-      width: 40%;
+    #app-preloader.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .preloader-content {
+      text-align: center;
+      max-width: 90vw;
+      width: 480px;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .preloader-brand {
+      font-size: 0.75rem;
+      letter-spacing: 0.5em;
+      text-transform: uppercase;
+      color: var(--luxury-gold);
+      margin-bottom: 2rem;
+      font-weight: 600;
+      opacity: 0;
+      animation: fadeInDown 1s ease forwards 0.2s;
+    }
+
+    .preloader-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 600;
+      margin-bottom: 1rem;
+      background: linear-gradient(to right, #fff 20%, var(--luxury-gold) 40%, var(--luxury-gold) 60%, #fff 80%);
+      background-size: 200% auto;
+      color: #000;
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 3s linear infinite, fadeInUp 1s ease forwards 0.4s;
+    }
+
+    .preloader-slogan {
+      font-style: italic;
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 3rem;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: 0.1em;
+      opacity: 0;
+      animation: fadeIn 1.5s ease forwards 1s;
+    }
+
+    .preloader-bar-wrap {
+      width: 240px;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.1);
+      margin: 0 auto;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .preloader-bar {
+      width: 100%;
       height: 100%;
-      background: #b59a68;
-      border-radius: 999px;
-      transform: translateX(-120%);
-      animation: preloader-sweep 1.15s ease-in-out infinite;
+      background: var(--luxury-gold);
+      transform: translateX(-100%);
+      animation: progress 2.5s cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
     }
 
-    @keyframes preloader-sweep {
-      0% { transform: translateX(-120%); }
-      50% { transform: translateX(120%); }
-      100% { transform: translateX(120%); }
+    .preloader-footer {
+      position: absolute;
+      bottom: 3rem;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      color: rgba(255, 255, 255, 0.3);
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    @keyframes shine {
+      to { background-position: 200% center; }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    @keyframes progress {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(0); }
+      100% { transform: translateX(100%); }
     }
   </style>
 
@@ -108,21 +161,24 @@
 </head>
 
 <body>
-  <app-root>
-    <div id="app-preloader">
-      <div class="wrap">
-        <div class="brand">Lujo&Aroma | Perfumes Bogotá</div>
-        <div class="title">Cargando la tienda…</div>
-        <div class="sub">Preparando el catalogo y las promociones.</div>
-        <div class="bar"></div>
-        <noscript>
-          <div class="sub" style="margin-top: 14px; opacity: 0.85;">
-            Necesitas habilitar JavaScript para continuar.
-          </div>
-        </noscript>
+  <div id="app-preloader">
+    <div class="preloader-content">
+      <div class="preloader-brand">Lujo & Aroma</div>
+      <h2 class="preloader-title">Distinción y Esencia</h2>
+      <p class="preloader-slogan">Originalidad en cada gota.</p>
+      <div class="preloader-bar-wrap">
+        <div class="preloader-bar"></div>
       </div>
     </div>
-  </app-root>
+    <div class="preloader-footer">Perfumes Bogotá</div>
+    <noscript>
+      <div style="color: white; margin-top: 1rem; font-family: sans-serif; font-size: 12px; opacity: 0.7;">
+        Habilita JavaScript para una experiencia completa.
+      </div>
+    </noscript>
+  </div>
+
+  <app-root></app-root>
 </body>
 
 </html>

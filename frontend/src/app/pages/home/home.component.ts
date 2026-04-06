@@ -184,24 +184,83 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // SEO & JSON-LD
+    // SEO & JSON-LD extendido para máxima visibilidad
+    const siteTitle = 'Lujo & Aroma | Perfumes Originales en Bogotá';
+    const siteDesc = 'Descubre Lujo & Aroma, la perfumería líder en Bogotá. Perfumes 100% originales, fragancias árabes exclusivas y lanzamientos internacionales con envíos rápidos a toda Colombia.';
+    const siteKeywords = 'perfumes originales, perfumes bogota, fragancias lujosas, perfumes árabes bogota, envios perfumes colombia, lujo y aroma, perfume original';
+
     this.seo.set({
-      title: 'Lujo&Aroma | Perfumes Bogotá',
-      description: 'Lujo&Aroma | Perfumes Bogotá: Perfumería árabe y perfumes originales en Bogotá y Colombia. Fragancias para hombre, mujer y unisex con envíos rápidos.',
-      keywords: 'Lujo&Aroma, Perfumes Bogotá, perfumería árabe, perfumes árabes, perfumes originales, oud, perfumes bogota, fragancias originales, perfumes colombia'
+      title: siteTitle,
+      description: siteDesc,
+      keywords: siteKeywords
     });
 
-    this.seo.setJsonLd({
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Lujo&Aroma | Perfumes Bogotá",
-      "url": "https://perfumesbogota.com.co/",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": "https://perfumesbogota.com.co/catalog?q={search_term_string}",
-        "query-input": "required name=search_term_string"
+    // Inyección de JSON-LD múltiple: WebSite + LocalBusiness + FAQ
+    this.seo.setJsonLd([
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Lujo & Aroma",
+        "url": "https://perfumesbogota.com.co/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://perfumesbogota.com.co/catalog?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "Lujo & Aroma | Perfumes Originales",
+        "image": "https://perfumesbogota.com.co/assets/images/logo.png",
+        "@id": "https://perfumesbogota.com.co/",
+        "url": "https://perfumesbogota.com.co/",
+        "telephone": "+573001234567",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Calle 12 #13-85",
+          "addressLocality": "Bogotá",
+          "addressRegion": "Cundinamarca",
+          "postalCode": "110111",
+          "addressCountry": "CO"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 4.6097,
+          "longitude": -74.0817
+        },
+        "openingHoursSpecification": {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": [
+            "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+          ],
+          "opens": "09:00",
+          "closes": "20:00"
+        }
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Los perfumes de Lujo & Aroma son originales?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí, en Lujo & Aroma garantizamos que todos nuestros productos son 100% originales. Trabajamos con importadores directos de las mejores casas perfumistas del mundo."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Realizan envíos a domicilio en Bogotá?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Realizamos envíos rápidos en toda Bogotá y a nivel nacional en Colombia. El tiempo de entrega estimado es de 24 a 48 horas hábiles."
+            }
+          }
+        ]
       }
-    });
+    ]);
 
     // Load Settings
     this.settingsService.settings$.subscribe({

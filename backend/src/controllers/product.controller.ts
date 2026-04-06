@@ -299,22 +299,32 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
         let imagen_url_2 = null;
         let imagen_url_3 = null;
 
-        if (files?.['imagen']?.[0]) {
-            imagen_url = await uploadToFirebase(files['imagen'][0]);
-        }
-        if (files?.['imagen2']?.[0]) {
-            imagen_url_2 = await uploadToFirebase(files['imagen2'][0]);
-        }
-        if (files?.['imagen3']?.[0]) {
-            imagen_url_3 = await uploadToFirebase(files['imagen3'][0]);
+        const img2Ok = await detectImage2Schema();
+        const img3Ok = await detectImage3Schema();
+        const slugOk = await detectSlugSchema();
+
+        // 3. Procesar Imágenes (Solo si se subieron archivos nuevos y de forma resiliente)
+        try {
+            if (files?.['imagen']?.[0]) {
+                imagen_url = await uploadToFirebase(files['imagen'][0]);
+            }
+            if (img2Ok && files?.['imagen2']?.[0]) {
+                imagen_url_2 = await uploadToFirebase(files['imagen2'][0]);
+            }
+            if (img3Ok && files?.['imagen3']?.[0]) {
+                imagen_url_3 = await uploadToFirebase(files['imagen3'][0]);
+            }
+        } catch (fbError: any) {
+            console.error('❌ Error crítico en Firebase Storage durante creación:', fbError.message);
+            res.status(500).json({ 
+                error: 'Error al procesar las imágenes. Firebase Storage no está configurado correctamente.',
+                details: [fbError.message]
+            });
+            return;
         }
 
         const id = uuidv4();
         const slug = generateSlug(nombre);
-        const slugOk = await detectSlugSchema();
-        const img2Ok = await detectImage2Schema();
-        const img3Ok = await detectImage3Schema();
-
         const casaNormalized = normalizeCategorySlug(casa);
 
         // Convert UUID to BINARY(16) in MySQL logic

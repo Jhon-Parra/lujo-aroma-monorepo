@@ -1,104 +1,78 @@
 import * as admin from 'firebase-admin';
-import * as dotenv from 'dotenv';
+import dotenv from 'dotenv';
 import path from 'path';
 
-// Cargar .env desde el working directory (backend/) si existe.
-// En producción (Hostinger) normalmente se setean variables en el panel y esto no es necesario,
-// pero no estorba.
+// Cargar variables de entorno del archivo .env si existe.
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-// En desarrollo y para este scaffold, si no hay credenciales completas de Firebase,
-// la app de igual modo inicializará sin romperse, pero fallarán las subidas a menos que
-// se configure correctamente las credenciales en .env
-let isInitialized = false;
-
-type ServiceAccount = {
-    project_id?: string;
-    private_key?: string;
-    client_email?: string;
-    [k: string]: any;
-};
-
-const loadServiceAccountFromEnv = (): ServiceAccount | null => {
-    const rawJson = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
-    const rawB64 = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 || '').trim();
-
-    let raw = rawJson;
-    if (!raw && rawB64) {
-        try {
-            raw = Buffer.from(rawB64, 'base64').toString('utf8').trim();
-        } catch {
-            raw = '';
-        }
-    }
-
-    if (!raw) return null;
-
-    // Algunos hostings guardan el JSON entre comillas simples o dobles.
-    const unwrapped = raw.replace(/^['"]|['"]$/g, '').trim();
-
-    let parsed: ServiceAccount;
+/**
+ * Inicialización Robusta de Firebase Admin
+ * Prioriza variables individuales para mayor compatibilidad con Hostinger y otros hostings.
+ */
+function initializeFirebase() {
     try {
-        parsed = JSON.parse(unwrapped);
-    } catch (e) {
-        // Último intento: si viene doble-escapado, a veces lo guardan como JSON-string ("{...}")
-        // o con caracteres de escape raros.
-        parsed = JSON.parse(unwrapped.replace(/\\"/g, '"'));
-    }
-
-    // Normalizar private_key para soportar cuando viene como "\n" literal (backslash-n)
-    // en vez de saltos de línea reales.
-    if (typeof parsed?.private_key === 'string') {
-        parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
-    }
-
-    return parsed;
-};
-
-try {
-    const serviceAccount = loadServiceAccountFromEnv();
-
-    // Por defecto, Firebase Storage usa <project_id>.appspot.com
-    const projectId = String(serviceAccount?.project_id || process.env.FIREBASE_PROJECT_ID || '').trim();
-    const storageBucket = String(
-        process.env.FIREBASE_STORAGE_BUCKET || (projectId ? `${projectId}.appspot.com` : '')
-    ).trim();
-
-    if (!admin.apps.length) {
-        if (serviceAccount) {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount as any),
-                storageBucket: storageBucket || undefined
-            });
-            console.log('✅ Firebase Admin inicializado con Service Account.');
-            isInitialized = true;
-        } else {
-            // Sin service account, en servidores fuera de GCP normalmente no funcionará.
-            admin.initializeApp({
-                storageBucket: storageBucket || undefined
-            });
-            console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_JSON no configurado o inválido. Firebase Storage fallará en este entorno si se requiere autenticación.');
-            // No marcamos como fully initialized si no hay serviceAccount en un VPS externo
-            isInitialized = !!process.env.GOOGLE_APPLICATION_CREDENTIALS; 
+        // Evitar re-inicialización
+        if (admin.apps.length > 0) {
+            return admin.storage().bucket();
         }
-    } else {
-        isInitialized = true;
-    }
 
-    if (isInitialized && storageBucket) {
-        console.log('✅ Firebase Storage bucket listo:', storageBucket);
-    } else if (!storageBucket) {
-        console.error('❌ Error: FIREBASE_STORAGE_BUCKET no configurado. Las subidas fallarán.');
-        isInitialized = false;
+        const projectId = process.env.FIREBASE_PROJECT_ID;
+        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+        const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+        const storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
+
+        // Logging de diagnóstico seguro (no muestra secretos)
+        console.log('--- [Firebase Admin Diagnostics] ---');
+        console.log('Project ID:', projectId ? '✅ OK' : '❌ Miss');
+        console.log('Client Email:', clientEmail ? '✅ OK' : '❌ Miss');
+        console.log('Private Key:', privateKey ? '✅ OK' : '❌ Miss');
+        console.log('Bucket Name:', storageBucket ? '✅ OK' : '❌ Miss');
+
+        // 1. Intentar inicializar con variables granulares (RECOMENDADO)
+        if (projectId && clientEmail && privateKey) {
+            const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+            admin.initializeApp({
+                credential: admin.credential.cert({
+                    projectId,
+                    clientEmail,
+                    privateKey: formattedPrivateKey,
+                }),
+                storageBucket: storageBucket || undefined
+            });
+            console.log('✅ Firebase Admin inicializado exitosamente con variables granulares.');
+            return admin.storage().bucket();
+        }
+
+        // 2. Fallback: Intentar con JSON completo (Legacy)
+        const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+        if (serviceAccountJson) {
+            try {
+                const serviceAccount = JSON.parse(serviceAccountJson);
+                // Si la private_key viene con escapes literales, los corregimos
+                if (serviceAccount.private_key) {
+                    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+                }
+                
+                admin.initializeApp({
+                    credential: admin.credential.cert(serviceAccount),
+                    storageBucket: storageBucket || undefined
+                });
+                console.log('✅ Firebase Admin inicializado exitosamente con JSON de cuenta de servicio.');
+                return admin.storage().bucket();
+            } catch (jsonErr) {
+                console.error('❌ Error parseando FIREBASE_SERVICE_ACCOUNT_JSON:', jsonErr);
+            }
+        }
+
+        console.warn('⚠️ No se pudo inicializar Firebase Storage: Faltan credenciales válidas en el entorno.');
+        return null;
+    } catch (error: any) {
+        console.error('❌ Error crítico al inicializar Firebase Admin:', error.message);
+        return null; // Retornamos null para que la app no crashee al arrancar
     }
-} catch (error: any) {
-    console.error('❌ Error crítico al inicializar Firebase Admin:', error?.message || error);
-    isInitialized = false;
 }
 
-
-// Exportar el bucket de forma segura. Si no se inicializó, las llamadas a bucket fallarán 
-// pero no detendrán el arranque del servidor.
-export const bucket = isInitialized ? admin.storage().bucket() : null as any;
+// Exportamos el bucket. Si es null, los controllers deben manejar la situación con gracia.
+export const bucket = initializeFirebase();
 export const firebaseAdmin = admin;
-export default admin;
+export default bucket;

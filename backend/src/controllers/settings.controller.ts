@@ -1036,8 +1036,13 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
         }
 
         // Obtener valores antiguos antes de actualizar para limpieza de Storage
-        const [oldSettingsRows] = await pool.query<any>('SELECT hero_image_url, hero_media_url, logo_url, envio_prioritario_image_url, perfume_lujo_image_url FROM configuracionglobal WHERE id = 1');
+        const selectSettingsCols = ['hero_image_url', 'hero_media_url', 'logo_url'];
+        if (columns.envio_prioritario_image_url) selectSettingsCols.push('envio_prioritario_image_url');
+        if (columns.perfume_lujo_image_url) selectSettingsCols.push('perfume_lujo_image_url');
+
+        const [oldSettingsRows] = await pool.query<any>(`SELECT ${selectSettingsCols.join(', ')} FROM configuracionglobal WHERE id = 1`);
         const oldSettings = oldSettingsRows[0];
+
 
         query += ` WHERE id = 1`;
 

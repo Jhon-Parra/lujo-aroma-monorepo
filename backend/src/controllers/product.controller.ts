@@ -1379,17 +1379,25 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         // Intentar limpiar imágenes antiguas si se subieron nuevas
         if (req.file || files?.['imagen']?.[0] || files?.['imagen2']?.[0] || files?.['imagen3']?.[0]) {
             try {
-                const [oldRows] = await pool.query<any[]>(`SELECT imagen_url, imagen_url_2, imagen_url_3 FROM productos WHERE id = ${idExpr}`, [id]);
+                const selectCols = ['imagen_url'];
+                if (img2Ok) selectCols.push('imagen_url_2');
+                if (img3Ok) selectCols.push('imagen_url_3');
+
+                const [oldRows] = await pool.query<any[]>(
+                    `SELECT ${selectCols.join(', ')} FROM productos WHERE id = ${idExpr}`, 
+                    [id]
+                );
                 if (oldRows.length > 0) {
                     const old = oldRows[0];
                     if ((req.file || files?.['imagen']?.[0]) && old.imagen_url) await deleteFile(old.imagen_url);
-                    if (files?.['imagen2']?.[0] && old.imagen_url_2) await deleteFile(old.imagen_url_2);
-                    if (files?.['imagen3']?.[0] && old.imagen_url_3) await deleteFile(old.imagen_url_3);
+                    if (img2Ok && files?.['imagen2']?.[0] && old.imagen_url_2) await deleteFile(old.imagen_url_2);
+                    if (img3Ok && files?.['imagen3']?.[0] && old.imagen_url_3) await deleteFile(old.imagen_url_3);
                 }
             } catch (err) {
                 console.warn('⚠️ No se pudo limpiar imágenes antiguas:', err);
             }
         }
+
 
         const query = `UPDATE productos SET ${updates.join(', ')} WHERE id = ${idExpr}`;
         params.push(id);
@@ -1411,9 +1419,10 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         console.error('Error updating product:', error);
         res.status(500).json({ 
             error: 'Error del servidor al actualizar', 
-            details: error.message,
+            details: [error.message],
             code: error.code
         });
+
     }
 };
 
@@ -1426,19 +1435,26 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
         // 1. Obtener URLs de imágenes para borrar de Storage
         let imagesToDelete: string[] = [];
         try {
+            const img2Ok = await detectImage2Schema();
+            const img3Ok = await detectImage3Schema();
+            const selectCols = ['imagen_url'];
+            if (img2Ok) selectCols.push('imagen_url_2');
+            if (img3Ok) selectCols.push('imagen_url_3');
+
             const [rows] = await pool.query<any[]>(
-                `SELECT imagen_url, imagen_url_2, imagen_url_3 FROM productos WHERE id = ${idExpr}`,
+                `SELECT ${selectCols.join(', ')} FROM productos WHERE id = ${idExpr}`,
                 [id]
             );
             if (rows.length > 0) {
                 const p = rows[0];
                 if (p.imagen_url) imagesToDelete.push(p.imagen_url);
-                if (p.imagen_url_2) imagesToDelete.push(p.imagen_url_2);
-                if (p.imagen_url_3) imagesToDelete.push(p.imagen_url_3);
+                if (img2Ok && p.imagen_url_2) imagesToDelete.push(p.imagen_url_2);
+                if (img3Ok && p.imagen_url_3) imagesToDelete.push(p.imagen_url_3);
             }
         } catch (err) {
             console.warn('⚠️ No se pudieron obtener las imágenes para borrar de Storage:', err);
         }
+
 
         // 2. Borrar de la base de datos
         const [result] = await pool.query<any>(`

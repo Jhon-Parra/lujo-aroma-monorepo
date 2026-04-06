@@ -1,9 +1,19 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Carga robusta de variables de entorno: busca el .env en la raíz del proyecto (backend/)
-// Esto funciona tanto en desarrollo (src/) como en producción (dist/)
-dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+// Carga robusta de variables de entorno.
+// En hosting es común que `process.cwd()` NO sea `backend/`.
+// Usamos rutas relativas a este archivo (sirve en src/ y dist/), y dejamos `process.cwd()` como fallback.
+const envCandidates = [
+    path.resolve(__dirname, '../.env'),
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(process.cwd(), 'backend/.env')
+];
+
+for (const p of envCandidates) {
+    const r = dotenv.config({ path: p });
+    if (!r.error) break;
+}
 
 import express from 'express';
 import cors from 'cors';

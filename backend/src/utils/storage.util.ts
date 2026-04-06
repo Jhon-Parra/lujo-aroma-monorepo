@@ -20,9 +20,12 @@ export async function uploadFile(
     file: Express.Multer.File,
     options: UploadOptions = {}
 ): Promise<string> {
-    if (!bucket) {
-        throw new Error('Firebase Storage no está configurado. Verifica FIREBASE_SERVICE_ACCOUNT_JSON y FIREBASE_STORAGE_BUCKET en tu entorno.');
+    const holdsFile = file && file.buffer && file.buffer.length > 0;
+    
+    if (!bucket && holdsFile) {
+        throw new Error('Firebase Storage no está configurado correctamente en este entorno. Verifica las credenciales en el servidor.');
     }
+
 
     const { folder = 'general', ...optimizeOptions } = options;
     

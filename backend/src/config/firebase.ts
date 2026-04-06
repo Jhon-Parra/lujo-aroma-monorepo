@@ -71,25 +71,31 @@ try {
                 storageBucket: storageBucket || undefined
             });
             console.log('✅ Firebase Admin inicializado con Service Account.');
+            isInitialized = true;
         } else {
             // Sin service account, en servidores fuera de GCP normalmente no funcionará.
-            // Igual inicializamos para no romper el arranque, y las subidas darán un error más claro.
             admin.initializeApp({
                 storageBucket: storageBucket || undefined
             });
-            console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_JSON no configurado. Firebase Storage puede fallar en este entorno.');
+            console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_JSON no configurado o inválido. Firebase Storage fallará en este entorno si se requiere autenticación.');
+            // No marcamos como fully initialized si no hay serviceAccount en un VPS externo
+            isInitialized = !!process.env.GOOGLE_APPLICATION_CREDENTIALS; 
         }
+    } else {
+        isInitialized = true;
     }
 
-    isInitialized = true;
-    if (storageBucket) {
-        console.log('✅ Firebase Storage bucket:', storageBucket);
-    } else {
-        console.warn('⚠️ FIREBASE_STORAGE_BUCKET no configurado. Se usará el bucket por defecto del proyecto si existe.');
+    if (isInitialized && storageBucket) {
+        console.log('✅ Firebase Storage bucket listo:', storageBucket);
+    } else if (!storageBucket) {
+        console.error('❌ Error: FIREBASE_STORAGE_BUCKET no configurado. Las subidas fallarán.');
+        isInitialized = false;
     }
-} catch (error) {
-    console.error('❌ Error crítico al inicializar Firebase Admin:', error);
+} catch (error: any) {
+    console.error('❌ Error crítico al inicializar Firebase Admin:', error?.message || error);
+    isInitialized = false;
 }
+
 
 // Exportar el bucket de forma segura. Si no se inicializó, las llamadas a bucket fallarán 
 // pero no detendrán el arranque del servidor.

@@ -75,4 +75,5 @@ function initializeFirebase() {
 // Exportamos el bucket. Si es null, los controllers deben manejar la situación con gracia.
 export const bucket = initializeFirebase();
 export const firebaseAdmin = admin;
-export default bucket;
+// Mantenemos admin como exportación predeterminada para compatibilidad con auth.controller.ts
+export default admin;

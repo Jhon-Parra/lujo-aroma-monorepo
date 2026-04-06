@@ -26,6 +26,9 @@ export async function uploadFile(
         throw new Error('Firebase Storage no está configurado correctamente en este entorno. Verifica las credenciales en el servidor.');
     }
 
+    // Usamos una referencia local para que TypeScript sepa que no es null después de esta validación
+    const b = bucket!;
+
 
     const { folder = 'general', ...optimizeOptions } = options;
     
@@ -51,7 +54,7 @@ export async function uploadFile(
     const uniqueName = `${Date.now()}-${uuidv4().slice(0, 8)}-${filename}`;
     const destination = `${folder}/${uniqueName}`;
 
-    const fileRef = bucket.file(destination);
+    const fileRef = b.file(destination);
 
     const saveOptions = {
         metadata: {
@@ -69,7 +72,7 @@ export async function uploadFile(
             public: true
         } as any);
 
-        return `https://storage.googleapis.com/${bucket.name}/${destination}`;
+        return `https://storage.googleapis.com/${b.name}/${destination}`;
     } catch (e: any) {
         const msg = String(e?.message || '');
         console.warn('⚠️ Firebase Storage: no se pudo marcar como público, usando URL firmada.', msg.slice(0, 300));
@@ -119,7 +122,8 @@ export async function deleteFile(urlOrPath: string): Promise<void> {
             }
         }
 
-        const fileRef = bucket.file(path);
+        const b = bucket!;
+        const fileRef = b.file(path);
         const [exists] = await fileRef.exists();
         if (exists) {
             await fileRef.delete();

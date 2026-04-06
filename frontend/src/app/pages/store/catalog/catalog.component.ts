@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,9 +13,10 @@ import { SkeletonCardComponent } from '../../../shared/components/skeleton-card/
   selector: 'app-catalog',
   standalone: true,
   imports: [CommonModule, FormsModule, ProductCardComponent, SkeletonCardComponent],
-  templateUrl: './catalog.component.html'
+  templateUrl: './catalog.component.html',
+  styleUrls: ['./catalog.component.css']
 })
-export class CatalogComponent implements OnInit {
+export class CatalogComponent implements OnInit, OnDestroy {
   products: Product[] = [];
   filteredProducts: Product[] = [];
   loading = true;
@@ -200,6 +201,23 @@ export class CatalogComponent implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.setBodyScrollLock(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (!this.isMobileMenuOpen) return;
+    this.isMobileMenuOpen = false;
+    this.setBodyScrollLock(false);
+  }
+
+  private setBodyScrollLock(lock: boolean): void {
+    if (typeof document === 'undefined') return;
+    // Prevent background scroll when the off-canvas is open.
+    document.body.style.overflow = lock ? 'hidden' : '';
+  }
+
   private updateCatalogSeo(): void {
     const categoryLabel = this.getCategoryLabel(this.selectedCategory);
     const genderLabel = this.selectedGender !== 'all' ? ` para ${this.getGenderLabel(this.selectedGender)}` : '';
@@ -364,10 +382,12 @@ export class CatalogComponent implements OnInit {
 
   toggleMobileMenu() {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    this.setBodyScrollLock(this.isMobileMenuOpen);
   }
 
   clearFilters(): void {
     this.isMobileMenuOpen = false;
+    this.setBodyScrollLock(false);
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { category: null, gender: null, page: null },
@@ -377,6 +397,7 @@ export class CatalogComponent implements OnInit {
 
   filterCategory(category: string) {
     this.isMobileMenuOpen = false; // Close menu on selection
+    this.setBodyScrollLock(false);
     const normalized = this.normalizeSlug(category);
     this.router.navigate([], {
       relativeTo: this.route,
@@ -387,6 +408,7 @@ export class CatalogComponent implements OnInit {
 
   filterGender(gender: 'all' | 'mujer' | 'hombre' | 'unisex') {
     this.isMobileMenuOpen = false;
+    this.setBodyScrollLock(false);
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { gender: gender !== 'all' ? gender : null, page: null },

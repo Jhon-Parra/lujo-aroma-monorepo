@@ -121,7 +121,8 @@ function initializeFirebase() {
             // Algunos panels envuelven el valor en comillas simples
             .replace(/^'|'$/g, '')
             .replace(/\\n/g, '\n');
-        const debug = process.env.FIREBASE_DEBUG === 'true';
+        const debugRaw = String(process.env.FIREBASE_DEBUG || '').trim().toLowerCase();
+        const debug = debugRaw === 'true' || debugRaw === '1';
         // Logs temporales (seguros) para validar que las variables llegan.
         // No imprimimos secretos; solo presencia/forma.
         console.log('--- [Firebase Admin Env Check] ---');

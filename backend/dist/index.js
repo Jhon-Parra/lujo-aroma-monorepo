@@ -267,12 +267,22 @@ app.get('/health/db', async (req, res) => {
     }
 });
 app.get('/health/firebase', (req, res) => {
-    const debug = process.env.FIREBASE_DEBUG === 'true';
+    // Flexibilidad con 'true' (espacios, mayúsculas, etc)
+    const debugRaw = String(process.env.FIREBASE_DEBUG || '').trim().toLowerCase();
+    const debug = debugRaw === 'true' || debugRaw === '1';
+    // Diagnóstico de presencia (seguro para cualquier entorno)
+    const envPresence = {
+        FIREBASE_PROJECT_ID: !!String(process.env.FIREBASE_PROJECT_ID || '').trim(),
+        FIREBASE_CLIENT_EMAIL: !!String(process.env.FIREBASE_CLIENT_EMAIL || '').trim(),
+        FIREBASE_PRIVATE_KEY: !!String(process.env.FIREBASE_PRIVATE_KEY || '').trim(),
+        FIREBASE_STORAGE_BUCKET: !!String(process.env.FIREBASE_STORAGE_BUCKET || '').trim(),
+    };
     const base = {
         ok: !!firebase_1.bucket,
         storage: firebase_1.bucket ? 'CONFIGURED' : 'NOT_CONFIGURED',
         bucket: firebase_1.bucket?.name || null,
-        apps: firebase_1.firebaseAdmin.apps.length
+        apps: firebase_1.firebaseAdmin.apps.length,
+        envPresence
     };
     if (!debug) {
         res.status(200).json(base);
@@ -281,28 +291,26 @@ app.get('/health/firebase', (req, res) => {
     const missing = Object.entries(firebase_1.firebaseDiagnostics.env)
         .filter(([, ok]) => !ok)
         .map(([k]) => k);
-    const projectId = String(process.env.FIREBASE_PROJECT_ID ?? '').trim();
-    const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL ?? '').trim();
-    const privateKeyRaw = String(process.env.FIREBASE_PRIVATE_KEY ?? '').trim();
-    const storageBucket = String(process.env.FIREBASE_STORAGE_BUCKET ?? '').trim();
-    const privateKeyNormalized = privateKeyRaw
-        .trim()
+    const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
+    const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || '').trim();
+    const privateKeyRaw = String(process.env.FIREBASE_PRIVATE_KEY || '').trim();
+    const pkNormalized = privateKeyRaw
         .replace(/^"|"$/g, '')
         .replace(/^'|'$/g, '')
         .replace(/\\n/g, '\n');
     res.status(200).json({
         ...base,
         diagnostics: {
-            loadedEnvFrom: firebase_1.firebaseDiagnostics.loadedEnvFrom ? 'loaded' : 'not-found',
+            loadedEnvFrom: firebase_1.firebaseDiagnostics.loadedEnvFrom ? 'found' : 'not-found',
             missing,
             lastInitError: firebase_1.firebaseDiagnostics.lastInitError || null,
             envShape: {
                 projectId: projectId ? `len=${projectId.length}` : 'MISSING',
                 clientEmail: clientEmail ? `len=${clientEmail.length}` : 'MISSING',
                 privateKey: privateKeyRaw
-                    ? `rawLen=${privateKeyRaw.length}, normalizedLen=${privateKeyNormalized.length}, hasBegin=${privateKeyNormalized.includes('BEGIN PRIVATE KEY')}, hasEnd=${privateKeyNormalized.includes('END PRIVATE KEY')}, hasNewlines=${privateKeyNormalized.includes('\n')}`
+                    ? `rawLen=${privateKeyRaw.length}, pkNormalizedLen=${pkNormalized.length}, hasBegin=${pkNormalized.includes('BEGIN')}, hasNewlines=${pkNormalized.includes('\n')}`
                     : 'MISSING',
-                storageBucket: storageBucket ? `len=${storageBucket.length}` : 'MISSING'
+                storageBucket: base.bucket || 'MISSING'
             }
         }
     });

@@ -1,8 +1,10 @@
 RewriteEngine On
 RewriteBase /
 
-# Redirigir todo a index.html si no es un archivo o directorio real
-RewriteRule ^index\.html$ - [L]
+# Asegurar MIME correcto para XML (sitemap, etc.)
+<IfModule mod_mime.c>
+    AddType application/xml .xml
+</IfModule>
 
 # Configuración de seguridad para Google OAuth (Formato Apache)
 <IfModule mod_headers.c>
@@ -11,6 +13,10 @@ RewriteRule ^index\.html$ - [L]
     Header set Access-Control-Allow-Origin "*"
 </IfModule>
 
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule . /index.html [L]
+# No reescribir archivos ni carpetas existentes
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# SPA Angular
+RewriteRule ^ index.html [L]

@@ -1,8 +1,15 @@
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
+RewriteEngine On
+RewriteBase /
+
+# Asegurar MIME correcto para XML (sitemap, etc.)
+<IfModule mod_mime.c>
+  AddType application/xml .xml
 </IfModule>
+
+# No reescribir archivos ni carpetas existentes
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# SPA Angular
+RewriteRule ^ index.html [L]

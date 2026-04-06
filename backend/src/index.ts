@@ -330,10 +330,11 @@ app.get('/health/firebase', (req, res) => {
     const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
     const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || '').trim();
     const privateKeyRaw = String(process.env.FIREBASE_PRIVATE_KEY || '').trim();
-    const pkNormalized = privateKeyRaw
-        .replace(/^"|"$/g, '')
-        .replace(/^'|'$/g, '')
-        .replace(/\\n/g, '\n');
+    
+    // Simular el mismo formateo que se usa en la inicialización
+    const pkr = privateKeyRaw.replace(/\\n/g, '\n');
+    const pkb64 = pkr.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g, '').replace(/\s+/g, '').trim();
+    const pkFormatted = `-----BEGIN PRIVATE KEY-----\n${pkb64.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----\n`;
 
     res.status(200).json({
         ...base,
@@ -345,7 +346,7 @@ app.get('/health/firebase', (req, res) => {
                 projectId: projectId ? `len=${projectId.length}` : 'MISSING',
                 clientEmail: clientEmail ? `len=${clientEmail.length}` : 'MISSING',
                 privateKey: privateKeyRaw 
-                    ? `rawLen=${privateKeyRaw.length}, pkNormalizedLen=${pkNormalized.length}, hasBegin=${pkNormalized.includes('BEGIN')}, hasNewlines=${pkNormalized.includes('\n')}`
+                    ? `rawLen=${privateKeyRaw.length}, formattedLen=${pkFormatted.length}, hasBegin=${pkFormatted.includes('BEGIN')}, lines=${pkFormatted.split('\n').length}`
                     : 'MISSING',
                 storageBucket: base.bucket || 'MISSING'
             }

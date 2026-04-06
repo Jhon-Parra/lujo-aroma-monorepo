@@ -114,13 +114,13 @@ function initializeFirebase() {
         const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY;
         const projectId = String(projectIdRaw ?? '').trim();
         const clientEmail = String(clientEmailRaw ?? '').trim();
-        // Transformación exacta solicitada por el usuario
-        const privateKey = String(privateKeyRaw ?? '')
-            .trim()
-            .replace(/^"|"$/g, '')
-            // Algunos panels envuelven el valor en comillas simples
-            .replace(/^'|'$/g, '')
-            .replace(/\\n/g, '\n');
+        // Súper Formateador de PEM: Extrae la base64 y la re-envuelve correctamente
+        const pkRaw = String(privateKeyRaw ?? '').replace(/\\n/g, '\n');
+        const pkBase64 = pkRaw
+            .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g, '')
+            .replace(/\s+/g, '')
+            .trim();
+        const privateKey = `-----BEGIN PRIVATE KEY-----\n${pkBase64.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----\n`;
         const debugRaw = String(process.env.FIREBASE_DEBUG || '').trim().toLowerCase();
         const debug = debugRaw === 'true' || debugRaw === '1';
         // Logs temporales (seguros) para validar que las variables llegan.

@@ -71,15 +71,16 @@ const unquote = (v) => {
     }
     return s;
 };
-const normalizeBucketName = (raw) => {
-    const v = String(raw ?? '').trim();
-    if (!v)
-        return undefined;
+const normalizeBucketName = (projectId, rawBucket) => {
+    const v = String(rawBucket ?? '').trim();
+    if (!v) {
+        // Fallback estándar si falta el bucket: <project-id>.appspot.com o <project-id>.firebasestorage.app
+        return projectId ? `${projectId}.firebasestorage.app` : undefined;
+    }
     // gs://bucket-name
     if (v.startsWith('gs://'))
         return v.slice('gs://'.length);
     // If someone pastes the Firebase REST endpoint, try to extract bucket name.
-    // Example: https://firebasestorage.googleapis.com/v0/b/<bucket>/o/...
     const m = v.match(/\/v0\/b\/([^/]+)\//i);
     if (m?.[1])
         return m[1];
@@ -95,7 +96,8 @@ exports.firebaseDiagnostics = {
         FIREBASE_PRIVATE_KEY: !!String(process.env.FIREBASE_PRIVATE_KEY ?? '').trim(),
         FIREBASE_STORAGE_BUCKET: !!String(process.env.FIREBASE_STORAGE_BUCKET ?? '').trim(),
     },
-    lastInitError
+    lastInitError,
+    storageStatus: 'NOT_CONFIGURED'
 };
 /**
  * Inicialización Robusta de Firebase Admin
@@ -103,32 +105,53 @@ exports.firebaseDiagnostics = {
  */
 function initializeFirebase() {
     try {
-        const storageBucketRaw = process.env.FIREBASE_STORAGE_BUCKET;
-        const storageBucket = normalizeBucketName(storageBucketRaw)?.trim();
-        // Evitar re-inicialización
         if (admin.apps.length > 0) {
+            const storageBucket = normalizeBucketName(process.env.FIREBASE_PROJECT_ID || '', process.env.FIREBASE_STORAGE_BUCKET);
             return storageBucket ? admin.storage().bucket(storageBucket) : admin.storage().bucket();
         }
+        // VÍA 1: JSON completo (La más segura)
+        const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+        if (serviceAccountJson) {
+            try {
+                const serviceAccount = JSON.parse(serviceAccountJson);
+                admin.initializeApp({
+                    credential: admin.credential.cert(serviceAccount),
+                    storageBucket: normalizeBucketName(serviceAccount.project_id, process.env.FIREBASE_STORAGE_BUCKET)
+                });
+                exports.firebaseDiagnostics.storageStatus = 'CONFIGURED';
+                console.log('Firebase initialized via SERVICE_ACCOUNT_JSON');
+                return admin.storage().bucket();
+            }
+            catch (jsonErr) {
+                console.error('Error parsing FIREBASE_SERVICE_ACCOUNT_JSON:', jsonErr.message);
+                // Si falla el JSON, intentamos las variables granulares
+            }
+        }
+        // VÍA 2: Variables granulares
         const projectIdRaw = process.env.FIREBASE_PROJECT_ID;
         const clientEmailRaw = process.env.FIREBASE_CLIENT_EMAIL;
         const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY;
+        const storageBucketRaw = process.env.FIREBASE_STORAGE_BUCKET;
+        const storageBucket = normalizeBucketName(projectIdRaw || '', storageBucketRaw);
         const projectId = String(projectIdRaw ?? '').trim();
         const clientEmail = String(clientEmailRaw ?? '').trim();
-        // Súper Formateador de PEM: Extrae la base64 y la re-envuelve correctamente
-        const pkRaw = String(privateKeyRaw ?? '').replace(/\\n/g, '\n');
+        // Súper Formateador PEM Anti-Balas
+        const pkRaw = String(privateKeyRaw ?? '').replace(/\\n/g, '\n').replace(/\r/g, '');
         const pkBase64 = pkRaw
-            .replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g, '')
-            .replace(/\s+/g, '')
+            .replace(/-----BEGIN[^-]*-----/, '')
+            .replace(/-----END[^-]*-----/, '')
+            .replace(/[^A-Za-z0-9+/=]/g, '')
             .trim();
+        if (!pkBase64)
+            throw new Error('Private key base64 content is empty');
         const privateKey = `-----BEGIN PRIVATE KEY-----\n${pkBase64.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----\n`;
         const debugRaw = String(process.env.FIREBASE_DEBUG || '').trim().toLowerCase();
         const debug = debugRaw === 'true' || debugRaw === '1';
-        // Logs temporales (seguros) para validar que las variables llegan.
-        // No imprimimos secretos; solo presencia/forma.
         console.log('--- [Firebase Admin Env Check] ---');
+        console.log('Method: Granular Variables');
         console.log('FIREBASE_PROJECT_ID:', projectId ? `✅ (${projectId})` : '❌ MISSING');
-        console.log('FIREBASE_CLIENT_EMAIL:', clientEmail ? `✅ (${clientEmail.slice(0, 3)}...${clientEmail.slice(-12)})` : '❌ MISSING');
-        console.log('FIREBASE_PRIVATE_KEY:', privateKey ? `✅ (len=${privateKey.length}, hasBegin=${privateKey.includes('BEGIN PRIVATE KEY')}, hasNewlines=${privateKey.includes('\n')})` : '❌ MISSING');
+        console.log('FIREBASE_CLIENT_EMAIL:', clientEmail ? `✅` : '❌ MISSING');
+        console.log('PRIVATE_KEY_B64_INTEGRITY:', pkBase64.length % 4 === 0 ? '✅ OK' : '⚠️ WARNING (Not multiple of 4)');
         console.log('FIREBASE_STORAGE_BUCKET:', storageBucket ? `✅ (${storageBucket})` : '❌ MISSING');
         if (!projectId || !clientEmail || !privateKey || !storageBucket) {
             const missing = [

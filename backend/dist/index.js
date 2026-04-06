@@ -294,12 +294,19 @@ app.get('/health/firebase', (req, res) => {
     const projectId = String(process.env.FIREBASE_PROJECT_ID || '').trim();
     const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL || '').trim();
     const privateKeyRaw = String(process.env.FIREBASE_PRIVATE_KEY || '').trim();
+    const storageBucketVar = String(process.env.FIREBASE_STORAGE_BUCKET || '').trim();
+    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
     // Simular el mismo formateo que se usa en la inicialización
-    const pkr = privateKeyRaw.replace(/\\n/g, '\n');
-    const pkb64 = pkr.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----/g, '').replace(/\s+/g, '').trim();
-    const pkFormatted = `-----BEGIN PRIVATE KEY-----\n${pkb64.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----\n`;
+    const pkr = privateKeyRaw.replace(/\\n/g, '\n').replace(/\r/g, '');
+    const pkb64 = pkr.replace(/-----BEGIN[^-]*-----/, '').replace(/-----END[^-]*-----/, '').replace(/[^A-Za-z0-9+/=]/g, '').trim();
+    const pkFormatted = pkb64 ? `-----BEGIN PRIVATE KEY-----\n${pkb64.match(/.{1,64}/g)?.join('\n')}\n-----END PRIVATE KEY-----\n` : '';
     res.status(200).json({
         ...base,
+        envPresence: {
+            ...base.envPresence,
+            FIREBASE_SERVICE_ACCOUNT_JSON: !!serviceAccountJson,
+            FIREBASE_STORAGE_BUCKET_VAR: !!storageBucketVar
+        },
         diagnostics: {
             loadedEnvFrom: firebase_1.firebaseDiagnostics.loadedEnvFrom ? 'found' : 'not-found',
             missing,
@@ -308,9 +315,10 @@ app.get('/health/firebase', (req, res) => {
                 projectId: projectId ? `len=${projectId.length}` : 'MISSING',
                 clientEmail: clientEmail ? `len=${clientEmail.length}` : 'MISSING',
                 privateKey: privateKeyRaw
-                    ? `rawLen=${privateKeyRaw.length}, formattedLen=${pkFormatted.length}, hasBegin=${pkFormatted.includes('BEGIN')}, lines=${pkFormatted.split('\n').length}`
+                    ? `rawLen=${privateKeyRaw.length}, b64Len=${pkb64.length}, formattedLen=${pkFormatted.length}, integrity=${pkb64.length % 4 === 0}`
                     : 'MISSING',
-                storageBucket: base.bucket || 'MISSING'
+                storageBucketVar: storageBucketVar || 'MISSING',
+                actualBucketUsed: base.bucket || 'NOT_INITIALIZED'
             }
         }
     });

@@ -83,21 +83,36 @@ export async function uploadFile(
 }
 
 /**
- * Elimina un archivo de Firebase Storage a partir de su URL pública o path
+ * Elimina un archivo de Firebase Storage a partir de su URL pública, URL de descarga o path
  * @param urlOrPath URL completa o path del archivo
  */
 export async function deleteFile(urlOrPath: string): Promise<void> {
     try {
+        if (!urlOrPath || typeof urlOrPath !== 'string') {
+            return;
+        }
+
         if (!bucket) {
             console.warn('⚠️ No se puede eliminar archivo: Firebase Storage no configurado.');
             return;
         }
 
         let path = urlOrPath;
+
+        // Caso 1: URL de Storage de Google Cloud (https://storage.googleapis.com/bucket/path)
         if (urlOrPath.includes('storage.googleapis.com')) {
             const parts = urlOrPath.split(`${bucket.name}/`);
             if (parts.length > 1) {
                 path = decodeURIComponent(parts[1]);
+            }
+        } 
+        // Caso 2: URL de descarga de Firebase (https://firebasestorage.googleapis.com/v0/b/bucket/o/path?alt=media)
+        else if (urlOrPath.includes('firebasestorage.googleapis.com')) {
+            const parts = urlOrPath.split('/o/');
+            if (parts.length > 1) {
+                // El path está codificado y termina antes de cualquier query param (?)
+                const encodedPath = parts[1].split('?')[0];
+                path = decodeURIComponent(encodedPath);
             }
         }
 
@@ -105,9 +120,12 @@ export async function deleteFile(urlOrPath: string): Promise<void> {
         const [exists] = await fileRef.exists();
         if (exists) {
             await fileRef.delete();
-            console.log(`✅ Archivo eliminado: ${path}`);
+            console.log(`✅ Archivo eliminado físicamente de Firebase Storage: ${path}`);
+        } else {
+            console.warn(`⚠️ Intento de borrar archivo inexistente en Storage: ${path}`);
         }
-    } catch (error) {
-        console.error('❌ Error eliminando archivo de Storage:', error);
+    } catch (error: any) {
+        console.error('❌ Error eliminando archivo de Storage:', error?.message || String(error));
     }
 }
+

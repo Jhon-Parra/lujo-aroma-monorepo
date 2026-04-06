@@ -3,7 +3,8 @@ import { pool } from '../config/database';
 import { supabase } from '../config/supabase';
 import { sanitizeFilename } from '../middleware/upload.middleware';
 import { optimizeImage, isOptimizableImage } from '../utils/image.util';
-import { uploadFile } from '../utils/storage.util';
+import { uploadFile, deleteFile } from '../utils/storage.util';
+
 import { encryptString } from '../utils/encryption.util';
 import { logAdminAction } from '../services/audit.service';
 
@@ -620,10 +621,11 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
 
         if (wantsHomePremium && (!columns.home_carousel || !columns.home_categories)) {
             res.status(400).json({
-                error: 'Tu base de datos no soporta Home Premium. Ejecuta backend/database/migrations/20260328_settings_home_premium.sql (Postgres) o backend/database/migrations/20260328_settings_home_premium_mysql.sql (MySQL) y vuelve a intentar.'
+                error: 'Tu base de datos no soporta Home Premium. Ejecuta las migraciones de base de datos y vuelve a intentar.'
             });
             return;
         }
+
 
         // Home premium: si hay archivos pero no hay JSON en body, cargar actual desde DB.
         const needsHomeFromDb = (anySlideUpload || anyCategoryUpload || anyCategoryPosterUpload) && (home_carousel === undefined || home_categories === undefined);
@@ -1025,7 +1027,6 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
         // Si no subió archivo pero cambió el tipo (requestedType), aplicarlo si hay columnas
         if (columns.hero_media_type) {
             const finalType = hero_media_type_final || requestedType || 'image';
-            query += `, hero_media_type = ?`;
             params.push(finalType);
         }
 
@@ -1034,13 +1035,33 @@ export const updateSettings = async (req: Request, res: Response): Promise<void>
             params.push(logo_url);
         }
 
+        // Obtener valores antiguos antes de actualizar para limpieza de Storage
+        const [oldSettingsRows] = await pool.query<any>('SELECT hero_image_url, hero_media_url, logo_url, envio_prioritario_image_url, perfume_lujo_image_url FROM configuracionglobal WHERE id = 1');
+        const oldSettings = oldSettingsRows[0];
+
         query += ` WHERE id = 1`;
 
         const [result] = await pool.query<any>(query, params);
 
         if (result.affectedRows === 0) {
-            res.status(404).json({ error: 'No se pudo actualizar la configuración' });
+            res.status(404).json({ error: 'No se encontró la configuración para actualizar' });
             return;
+        }
+
+        // Limpieza de archivos antiguos de Storage (Best-effort)
+        const filesToDelete: string[] = [];
+        if (hero_image_url && oldSettings?.hero_image_url && hero_image_url !== oldSettings.hero_image_url) filesToDelete.push(oldSettings.hero_image_url);
+        if (hero_media_url && oldSettings?.hero_media_url && hero_media_url !== oldSettings.hero_media_url) filesToDelete.push(oldSettings.hero_media_url);
+        if (logo_url && oldSettings?.logo_url && logo_url !== oldSettings.logo_url) filesToDelete.push(oldSettings.logo_url);
+        if (envio_prioritario_image_url && oldSettings?.envio_prioritario_image_url && envio_prioritario_image_url !== oldSettings.envio_prioritario_image_url) filesToDelete.push(oldSettings.envio_prioritario_image_url);
+        if (perfume_lujo_image_url && oldSettings?.perfume_lujo_image_url && perfume_lujo_image_url !== oldSettings.perfume_lujo_image_url) filesToDelete.push(oldSettings.perfume_lujo_image_url);
+
+        for (const url of filesToDelete) {
+            try {
+                if (url) await deleteFile(url);
+            } catch (err) {
+                console.warn(`⚠️ Error limpiando archivo de settings antiguo (${url}):`, err);
+            }
         }
 
         const actorUserId = String((req as any)?.user?.id || '').trim();

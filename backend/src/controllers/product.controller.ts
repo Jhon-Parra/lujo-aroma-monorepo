@@ -4,7 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import * as XLSX from 'xlsx';
 
 import { appCache, CACHE_KEYS } from '../utils/cache.util';
-import { uploadFile } from '../utils/storage.util';
+import { uploadFile, deleteFile } from '../utils/storage.util';
+
 
 /**
  * Helper to upload a file to Firebase Storage /products/
@@ -1341,7 +1342,8 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         if (nuevoHastaParsed !== undefined) {
             if (!newUntilOk) {
                 res.status(400).json({
-                    error: 'Tu base de datos no soporta expiración de etiqueta NUEVO. Ejecuta database/migrations/20260312_products_new_badge_expiration.sql en Supabase y vuelve a intentar.'
+                    error: 'Tu base de datos no soporta expiración de etiqueta NUEVO. Ejecuta las migraciones de base de datos y vuelve a intentar.'
+
                 });
                 return;
             }
@@ -1373,10 +1375,28 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         }
 
         const idExpr = await productIdWhereExpr();
+
+        // Intentar limpiar imágenes antiguas si se subieron nuevas
+        if (req.file || files?.['imagen']?.[0] || files?.['imagen2']?.[0] || files?.['imagen3']?.[0]) {
+            try {
+                const [oldRows] = await pool.query<any[]>(`SELECT imagen_url, imagen_url_2, imagen_url_3 FROM productos WHERE id = ${idExpr}`, [id]);
+                if (oldRows.length > 0) {
+                    const old = oldRows[0];
+                    if ((req.file || files?.['imagen']?.[0]) && old.imagen_url) await deleteFile(old.imagen_url);
+                    if (files?.['imagen2']?.[0] && old.imagen_url_2) await deleteFile(old.imagen_url_2);
+                    if (files?.['imagen3']?.[0] && old.imagen_url_3) await deleteFile(old.imagen_url_3);
+                }
+            } catch (err) {
+                console.warn('⚠️ No se pudo limpiar imágenes antiguas:', err);
+            }
+        }
+
         const query = `UPDATE productos SET ${updates.join(', ')} WHERE id = ${idExpr}`;
         params.push(id);
 
+
         const [result] = await pool.query<any>(query, params);
+
 
         if (result.affectedRows === 0) {
             res.status(404).json({ error: 'Producto no encontrado' });
@@ -1401,9 +1421,26 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
 export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-
         const idExpr = await productIdWhereExpr();
 
+        // 1. Obtener URLs de imágenes para borrar de Storage
+        let imagesToDelete: string[] = [];
+        try {
+            const [rows] = await pool.query<any[]>(
+                `SELECT imagen_url, imagen_url_2, imagen_url_3 FROM productos WHERE id = ${idExpr}`,
+                [id]
+            );
+            if (rows.length > 0) {
+                const p = rows[0];
+                if (p.imagen_url) imagesToDelete.push(p.imagen_url);
+                if (p.imagen_url_2) imagesToDelete.push(p.imagen_url_2);
+                if (p.imagen_url_3) imagesToDelete.push(p.imagen_url_3);
+            }
+        } catch (err) {
+            console.warn('⚠️ No se pudieron obtener las imágenes para borrar de Storage:', err);
+        }
+
+        // 2. Borrar de la base de datos
         const [result] = await pool.query<any>(`
             DELETE FROM productos WHERE id = ${idExpr}
         `, [id]);
@@ -1413,10 +1450,16 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
             return;
         }
 
+        // 3. Si se borró de la BD, borrar de Firebase Storage
+        for (const imgUrl of imagesToDelete) {
+            await deleteFile(imgUrl);
+        }
+
         // Bust catalog cache so deleted product is gone immediately
         appCache.invalidateByPrefix('catalog:');
 
         res.status(200).json({ message: 'Producto eliminado exitosamente' });
+
     } catch (error) {
         // Caso tipico: el producto ya fue vendido y existe en detalleordenes.
         // En ese escenario el FK bloquea el DELETE y MySQL/MariaDB devuelve errno 1451.

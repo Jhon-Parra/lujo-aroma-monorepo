@@ -4,7 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../config/supabase';
 import { sanitizeFilename } from '../middleware/upload.middleware';
 import { optimizeImage, isOptimizableImage } from '../utils/image.util';
-import { uploadFile } from '../utils/storage.util';
+import { uploadFile, deleteFile } from '../utils/storage.util';
+
 
 let promotionAssignmentReady: boolean | null = null;
 let promotionMediaReady: boolean | null = null;
@@ -513,7 +514,8 @@ export const updatePromotion = async (req: Request, res: Response): Promise<void
 
         if (wantsAdvanced && !advancedReady) {
             res.status(400).json({
-                error: 'Tu base de datos no soporta descuento fijo/prioridad. Ejecuta database/migrations/20260312_promotions_amount_and_priority.sql en Supabase.'
+                error: 'Tu base de datos no soporta descuento fijo/prioridad. Ejecuta las migraciones de base de datos y vuelve a intentar.'
+
             });
             return;
         }
@@ -594,9 +596,26 @@ export const updatePromotion = async (req: Request, res: Response): Promise<void
             if (audience_segment !== undefined) { updates.push('audience_segment = ?'); params.push(audience_segment || null); }
 
             if (updates.length > 0) {
+                // Borrar imagen antigua si se subió una nueva
+                if (imagen_url !== undefined && mediaReady) {
+                    try {
+                        const [oldRows] = (await connection.query(
+                            'SELECT imagen_url FROM promociones WHERE id = ?',
+                            [id]
+                        )) as [any[], any];
+
+                        if (oldRows.length > 0 && oldRows[0].imagen_url) {
+                            await deleteFile(oldRows[0].imagen_url);
+                        }
+                    } catch (err) {
+                        console.warn('⚠️ No se pudo limpiar imagen antigua de promocion:', err);
+                    }
+                }
+
                 params.push(id);
                 const query = `UPDATE promociones SET ${updates.join(', ')} WHERE id = ?`;
                 const [result] = await connection.query(query, params);
+
                 const affected = Number((result as any)?.affectedRows ?? 0);
                 if (affected === 0) {
                     await connection.rollback();
@@ -697,6 +716,21 @@ export const deletePromotion = async (req: Request, res: Response): Promise<void
     try {
         const { id } = req.params;
 
+        // 1. Obtener URL de imagen para borrar de Storage
+        let imageToDelete: string | null = null;
+        try {
+            const [rows] = await pool.query<any[]>(
+                'SELECT imagen_url FROM promociones WHERE id = ?',
+                [id]
+            );
+            if (rows.length > 0) {
+                imageToDelete = rows[0].imagen_url;
+            }
+        } catch (err) {
+            console.warn('⚠️ No se pudo obtener la imagen para borrar de Storage:', err);
+        }
+
+        // 2. Borrar de la base de datos
         const [result] = await pool.query<any>(
             `DELETE FROM promociones WHERE id = ?`,
             [id]
@@ -708,7 +742,13 @@ export const deletePromotion = async (req: Request, res: Response): Promise<void
             return;
         }
 
+        // 3. Si se borró de la BD, borrar de Firebase Storage
+        if (imageToDelete) {
+            await deleteFile(imageToDelete);
+        }
+
         res.status(200).json({ message: 'Promocion eliminada exitosamente' });
+
     } catch (error) {
         console.error('Error deleting promo:', error);
         res.status(500).json({ error: 'Error al eliminar promocion' });

@@ -1267,7 +1267,7 @@ const updateProduct = async (req, res) => {
         if (nuevoHastaParsed !== undefined) {
             if (!newUntilOk) {
                 res.status(400).json({
-                    error: 'Tu base de datos no soporta expiración de etiqueta NUEVO. Ejecuta database/migrations/20260312_products_new_badge_expiration.sql en Supabase y vuelve a intentar.'
+                    error: 'Tu base de datos no soporta expiración de etiqueta NUEVO. Ejecuta las migraciones de base de datos y vuelve a intentar.'
                 });
                 return;
             }
@@ -1299,6 +1299,24 @@ const updateProduct = async (req, res) => {
             return;
         }
         const idExpr = await productIdWhereExpr();
+        // Intentar limpiar imágenes antiguas si se subieron nuevas
+        if (req.file || files?.['imagen']?.[0] || files?.['imagen2']?.[0] || files?.['imagen3']?.[0]) {
+            try {
+                const [oldRows] = await database_1.pool.query(`SELECT imagen_url, imagen_url_2, imagen_url_3 FROM productos WHERE id = ${idExpr}`, [id]);
+                if (oldRows.length > 0) {
+                    const old = oldRows[0];
+                    if ((req.file || files?.['imagen']?.[0]) && old.imagen_url)
+                        await (0, storage_util_1.deleteFile)(old.imagen_url);
+                    if (files?.['imagen2']?.[0] && old.imagen_url_2)
+                        await (0, storage_util_1.deleteFile)(old.imagen_url_2);
+                    if (files?.['imagen3']?.[0] && old.imagen_url_3)
+                        await (0, storage_util_1.deleteFile)(old.imagen_url_3);
+                }
+            }
+            catch (err) {
+                console.warn('⚠️ No se pudo limpiar imágenes antiguas:', err);
+            }
+        }
         const query = `UPDATE productos SET ${updates.join(', ')} WHERE id = ${idExpr}`;
         params.push(id);
         const [result] = await database_1.pool.query(query, params);
@@ -1325,12 +1343,34 @@ const deleteProduct = async (req, res) => {
     try {
         const { id } = req.params;
         const idExpr = await productIdWhereExpr();
+        // 1. Obtener URLs de imágenes para borrar de Storage
+        let imagesToDelete = [];
+        try {
+            const [rows] = await database_1.pool.query(`SELECT imagen_url, imagen_url_2, imagen_url_3 FROM productos WHERE id = ${idExpr}`, [id]);
+            if (rows.length > 0) {
+                const p = rows[0];
+                if (p.imagen_url)
+                    imagesToDelete.push(p.imagen_url);
+                if (p.imagen_url_2)
+                    imagesToDelete.push(p.imagen_url_2);
+                if (p.imagen_url_3)
+                    imagesToDelete.push(p.imagen_url_3);
+            }
+        }
+        catch (err) {
+            console.warn('⚠️ No se pudieron obtener las imágenes para borrar de Storage:', err);
+        }
+        // 2. Borrar de la base de datos
         const [result] = await database_1.pool.query(`
             DELETE FROM productos WHERE id = ${idExpr}
         `, [id]);
         if (result.affectedRows === 0) {
             res.status(404).json({ error: 'Producto no encontrado' });
             return;
+        }
+        // 3. Si se borró de la BD, borrar de Firebase Storage
+        for (const imgUrl of imagesToDelete) {
+            await (0, storage_util_1.deleteFile)(imgUrl);
         }
         // Bust catalog cache so deleted product is gone immediately
         cache_util_1.appCache.invalidateByPrefix('catalog:');

@@ -465,7 +465,7 @@ const updateSettings = async (req, res) => {
             anyCategoryPosterUpload;
         if (wantsHomePremium && (!columns.home_carousel || !columns.home_categories)) {
             res.status(400).json({
-                error: 'Tu base de datos no soporta Home Premium. Ejecuta backend/database/migrations/20260328_settings_home_premium.sql (Postgres) o backend/database/migrations/20260328_settings_home_premium_mysql.sql (MySQL) y vuelve a intentar.'
+                error: 'Tu base de datos no soporta Home Premium. Ejecuta las migraciones de base de datos y vuelve a intentar.'
             });
             return;
         }
@@ -819,18 +819,41 @@ const updateSettings = async (req, res) => {
         // Si no subió archivo pero cambió el tipo (requestedType), aplicarlo si hay columnas
         if (columns.hero_media_type) {
             const finalType = hero_media_type_final || requestedType || 'image';
-            query += `, hero_media_type = ?`;
             params.push(finalType);
         }
         if (logo_url && columns.logo_url) {
             query += `, logo_url = ?`;
             params.push(logo_url);
         }
+        // Obtener valores antiguos antes de actualizar para limpieza de Storage
+        const [oldSettingsRows] = await database_1.pool.query('SELECT hero_image_url, hero_media_url, logo_url, envio_prioritario_image_url, perfume_lujo_image_url FROM configuracionglobal WHERE id = 1');
+        const oldSettings = oldSettingsRows[0];
         query += ` WHERE id = 1`;
         const [result] = await database_1.pool.query(query, params);
         if (result.affectedRows === 0) {
-            res.status(404).json({ error: 'No se pudo actualizar la configuración' });
+            res.status(404).json({ error: 'No se encontró la configuración para actualizar' });
             return;
+        }
+        // Limpieza de archivos antiguos de Storage (Best-effort)
+        const filesToDelete = [];
+        if (hero_image_url && oldSettings?.hero_image_url && hero_image_url !== oldSettings.hero_image_url)
+            filesToDelete.push(oldSettings.hero_image_url);
+        if (hero_media_url && oldSettings?.hero_media_url && hero_media_url !== oldSettings.hero_media_url)
+            filesToDelete.push(oldSettings.hero_media_url);
+        if (logo_url && oldSettings?.logo_url && logo_url !== oldSettings.logo_url)
+            filesToDelete.push(oldSettings.logo_url);
+        if (envio_prioritario_image_url && oldSettings?.envio_prioritario_image_url && envio_prioritario_image_url !== oldSettings.envio_prioritario_image_url)
+            filesToDelete.push(oldSettings.envio_prioritario_image_url);
+        if (perfume_lujo_image_url && oldSettings?.perfume_lujo_image_url && perfume_lujo_image_url !== oldSettings.perfume_lujo_image_url)
+            filesToDelete.push(oldSettings.perfume_lujo_image_url);
+        for (const url of filesToDelete) {
+            try {
+                if (url)
+                    await (0, storage_util_1.deleteFile)(url);
+            }
+            catch (err) {
+                console.warn(`⚠️ Error limpiando archivo de settings antiguo (${url}):`, err);
+            }
         }
         const actorUserId = String(req?.user?.id || '').trim();
         if (actorUserId) {

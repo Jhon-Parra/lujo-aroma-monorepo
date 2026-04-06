@@ -176,6 +176,16 @@ const detectProductNewUntilSchema = async () => {
         return false;
     }
 };
+const getProductImagesSql = async (alias = 'p') => {
+    const img2 = await detectImage2Schema();
+    const img3 = await detectImage3Schema();
+    let sql = `${alias}.imagen_url AS imageUrl, ${alias}.imagen_url`;
+    if (img2)
+        sql += `, ${alias}.imagen_url_2 AS imageUrl2, ${alias}.imagen_url_2`;
+    if (img3)
+        sql += `, ${alias}.imagen_url_3 AS imageUrl3, ${alias}.imagen_url_3`;
+    return sql;
+};
 let productCasaReady = null;
 const detectProductCasaSchema = async () => {
     if (productCasaReady === true)
@@ -303,20 +313,31 @@ const createProduct = async (req, res) => {
         let imagen_url = null;
         let imagen_url_2 = null;
         let imagen_url_3 = null;
-        if (files?.['imagen']?.[0]) {
-            imagen_url = await uploadToFirebase(files['imagen'][0]);
+        const img2Ok = await detectImage2Schema();
+        const img3Ok = await detectImage3Schema();
+        const slugOk = await detectSlugSchema();
+        // 3. Procesar Imágenes (Solo si se subieron archivos nuevos y de forma resiliente)
+        try {
+            if (files?.['imagen']?.[0]) {
+                imagen_url = await uploadToFirebase(files['imagen'][0]);
+            }
+            if (img2Ok && files?.['imagen2']?.[0]) {
+                imagen_url_2 = await uploadToFirebase(files['imagen2'][0]);
+            }
+            if (img3Ok && files?.['imagen3']?.[0]) {
+                imagen_url_3 = await uploadToFirebase(files['imagen3'][0]);
+            }
         }
-        if (files?.['imagen2']?.[0]) {
-            imagen_url_2 = await uploadToFirebase(files['imagen2'][0]);
-        }
-        if (files?.['imagen3']?.[0]) {
-            imagen_url_3 = await uploadToFirebase(files['imagen3'][0]);
+        catch (fbError) {
+            console.error('❌ Error crítico en Firebase Storage durante creación:', fbError.message);
+            res.status(500).json({
+                error: 'Error al procesar las imágenes. Firebase Storage no está configurado correctamente.',
+                details: [fbError.message]
+            });
+            return;
         }
         const id = (0, uuid_1.v4)();
         const slug = generateSlug(nombre);
-        const slugOk = await detectSlugSchema();
-        const img2Ok = await detectImage2Schema();
-        const img3Ok = await detectImage3Schema();
         const casaNormalized = normalizeCategorySlug(casa);
         // Convert UUID to BINARY(16) in MySQL logic
         const idExpr = await productIdWhereExpr();
@@ -367,7 +388,7 @@ const createProduct = async (req, res) => {
         console.error('Error creating product:', error);
         res.status(500).json({
             error: 'Error del servidor al crear producto',
-            details: error.message,
+            details: [error.message],
             code: error.code
         });
     }
@@ -391,12 +412,13 @@ const getProducts = async (req, res) => {
         const slugSelect = slugOk ? 'p.slug, ' : '';
         const extraSelect = newUntilOk ? ', p.nuevo_hasta' : '';
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
+        const imagesSelect = await getProductImagesSql('p');
         const [rows] = await database_1.pool.query(`SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
-                    p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, ${imagesSelect},
                     ${esNuevoExpr}${extraSelect}${casaSelect}, p.creado_en
              FROM productos p
+
              ${categoryJoin}
              ORDER BY p.creado_en DESC`);
         res.status(200).json(rows);
@@ -492,6 +514,7 @@ const getPublicCatalog = async (req, res) => {
         const slugOk = await detectSlugSchema();
         const slugSelect = slugOk ? 'p.slug, ' : '';
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
+        const imagesSelect = await getProductImagesSql('p');
         // 1. Fetch total count for pagination
         let countQuery = 'SELECT COUNT(*) as total FROM productos p WHERE p.stock >= 0';
         const queryParams = [];
@@ -522,9 +545,10 @@ const getPublicCatalog = async (req, res) => {
         let productsQuery = `
              SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, ${imagesSelect}, p.promocion_id,
                     ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
+
              ${categoryJoin}
               WHERE p.stock >= 0
         `;
@@ -985,13 +1009,14 @@ const getProductById = async (req, res) => {
         const whereClause = slugOk ? 'WHERE p.id = ? OR p.slug = ?' : 'WHERE p.id = ?';
         const queryParams = slugOk ? [id, id] : [id];
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
+        const imagesSelect = await getProductImagesSql('p');
         // 1. Fetch product
         const [pRows] = await database_1.pool.query(`SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
                     p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock, 
-                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url,
-                    p.imagen_url_2 AS imageUrl2, p.imagen_url_2, p.imagen_url_3 AS imageUrl3, p.imagen_url_3,
+                    p.unidades_vendidas AS soldCount, p.unidades_vendidas, ${imagesSelect},
                     p.promocion_id, ${esNuevoExpr}${casaSelect}, p.creado_en
              FROM productos p
+
              ${categoryJoin}
              ${whereClause}`, queryParams);
         if (!pRows || pRows.length === 0) {
@@ -1112,9 +1137,10 @@ const getRelatedProducts = async (req, res) => {
         const slugOk = await detectSlugSchema();
         const slugSelect = slugOk ? 'p.slug, ' : '';
         const casaSelect = casaOk ? ', p.casa AS casa, p.casa AS house' : '';
+        const imagesSelect = await getProductImagesSql('p');
         // 2. Fetch related products
         const [pRows] = await database_1.pool.query(`SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.notas_olfativas AS notes, p.notas_olfativas, 
-                    p.precio AS price, p.precio, p.stock, p.imagen_url AS imageUrl, p.imagen_url, p.promocion_id,
+                    p.precio AS price, p.precio, p.stock, ${imagesSelect}, p.promocion_id,
                     ${esNuevoExpr}${casaSelect}, p.creado_en, p.unidades_vendidas AS soldCount, p.unidades_vendidas
              FROM productos p
              ${categoryJoin}
@@ -1207,24 +1233,30 @@ const getRelatedProducts = async (req, res) => {
     }
 };
 exports.getRelatedProducts = getRelatedProducts;
-// 4. Actualizar producto (y manejar posible nueva imagen)
+// 4. Actualizar producto (y manejar posible nueva imagen de forma resiliente)
 const updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
         const { nombre, genero, casa, descripcion, notas_olfativas, notas, precio, stock, es_nuevo, nuevo_hasta } = req.body;
-        const hasValue = (val) => val !== undefined && val !== null && val !== '';
-        const notasFinal = hasValue(notas_olfativas) ? notas_olfativas : (hasValue(notas) ? notas : undefined);
-        let imagen_url;
-        if (req.file) {
-            imagen_url = await uploadToFirebase(req.file);
+        const files = req.files;
+        // 1. Verificar si el producto existe antes de hacer nada costoso
+        const idExpr = await productIdWhereExpr();
+        const [existing] = await database_1.pool.query(`SELECT id, imagen_url, imagen_url_2, imagen_url_3 FROM productos WHERE id = ${idExpr}`, [id]);
+        if (existing.length === 0) {
+            res.status(404).json({ error: 'Producto no encontrado' });
+            return;
         }
-        const img2Ok = await detectImage2Schema();
-        const img3Ok = await detectImage3Schema();
+        const oldProduct = existing[0];
         const updates = [];
         const params = [];
+        // 2. Detectar capacidades del esquema dinámicamente
+        const img2Ok = await detectImage2Schema();
+        const img3Ok = await detectImage3Schema();
         const newUntilOk = await detectProductNewUntilSchema();
         const casaOk = await detectProductCasaSchema();
         const slugOk = await detectSlugSchema();
+        // 3. Procesar campos de texto (independiente de Firebase)
+        const hasValue = (val) => val !== undefined && val !== null && val !== '';
         if (hasValue(nombre)) {
             updates.push('nombre = ?');
             params.push(nombre);
@@ -1234,19 +1266,18 @@ const updateProduct = async (req, res) => {
             }
         }
         if (hasValue(genero)) {
-            const generoNormalized = normalizeGeneroInput(genero);
             updates.push('genero = ?');
-            params.push(generoNormalized);
+            params.push(normalizeGeneroInput(genero));
         }
         if (casaOk && casa !== undefined) {
             updates.push('casa = ?');
-            const casaNormalized = normalizeCategorySlug(casa);
-            params.push(casaNormalized ? casaNormalized : null);
+            params.push(normalizeCategorySlug(casa) || null);
         }
         if (hasValue(descripcion)) {
             updates.push('descripcion = ?');
             params.push(descripcion);
         }
+        const notasFinal = hasValue(notas_olfativas) ? notas_olfativas : (hasValue(notas) ? notas : undefined);
         if (notasFinal !== undefined) {
             updates.push('notas_olfativas = ?');
             params.push(notasFinal);
@@ -1266,73 +1297,71 @@ const updateProduct = async (req, res) => {
         const nuevoHastaParsed = parseNuevoHastaInput(nuevo_hasta);
         if (nuevoHastaParsed !== undefined) {
             if (!newUntilOk) {
-                res.status(400).json({
-                    error: 'Tu base de datos no soporta expiración de etiqueta NUEVO. Ejecuta las migraciones de base de datos y vuelve a intentar.'
-                });
+                res.status(400).json({ error: 'La base de datos no soporta la fecha de expiración de etiqueta NUEVO.' });
                 return;
             }
             updates.push('nuevo_hasta = ?');
             params.push(nuevoHastaParsed);
         }
-        if (imagen_url) {
-            updates.push('imagen_url = ?');
-            params.push(imagen_url);
+        // 4. Procesar Imágenes (Solo si se subieron archivos nuevos)
+        // Usamos un bloque try-catch específico para Firebase para no tumbar toda la petición
+        const newImages = {};
+        try {
+            // Imagen principal (puede venir en 'imagen' o en req.file por compatibilidad)
+            const mainImgFile = files?.['imagen']?.[0] || req.file;
+            if (mainImgFile && mainImgFile.size > 0) {
+                newImages.imagen_url = await uploadToFirebase(mainImgFile);
+                updates.push('imagen_url = ?');
+                params.push(newImages.imagen_url);
+            }
+            // Imagen 2
+            if (img2Ok && files?.['imagen2']?.[0] && files['imagen2'][0].size > 0) {
+                newImages.imagen_url_2 = await uploadToFirebase(files['imagen2'][0]);
+                updates.push('imagen_url_2 = ?');
+                params.push(newImages.imagen_url_2);
+            }
+            // Imagen 3
+            if (img3Ok && files?.['imagen3']?.[0] && files['imagen3'][0].size > 0) {
+                newImages.imagen_url_3 = await uploadToFirebase(files['imagen3'][0]);
+                updates.push('imagen_url_3 = ?');
+                params.push(newImages.imagen_url_3);
+            }
         }
-        const files = req.files;
-        if (files?.['imagen']?.[0]) {
-            const url = await uploadToFirebase(files['imagen'][0]);
-            updates.push('imagen_url = ?');
-            params.push(url);
-        }
-        if (img2Ok && files?.['imagen2']?.[0]) {
-            const url = await uploadToFirebase(files['imagen2'][0]);
-            updates.push('imagen_url_2 = ?');
-            params.push(url);
-        }
-        if (img3Ok && files?.['imagen3']?.[0]) {
-            const url = await uploadToFirebase(files['imagen3'][0]);
-            updates.push('imagen_url_3 = ?');
-            params.push(url);
-        }
-        if (updates.length === 0) {
-            res.status(200).json({ message: 'Sin cambios aplicados' });
+        catch (fbError) {
+            console.error('❌ Error crítico en Firebase Storage durante update:', fbError.message);
+            res.status(500).json({
+                error: 'Error al procesar las imágenes. Firebase Storage no está configurado o falló.',
+                details: [fbError.message]
+            });
             return;
         }
-        const idExpr = await productIdWhereExpr();
-        // Intentar limpiar imágenes antiguas si se subieron nuevas
-        if (req.file || files?.['imagen']?.[0] || files?.['imagen2']?.[0] || files?.['imagen3']?.[0]) {
-            try {
-                const [oldRows] = await database_1.pool.query(`SELECT imagen_url, imagen_url_2, imagen_url_3 FROM productos WHERE id = ${idExpr}`, [id]);
-                if (oldRows.length > 0) {
-                    const old = oldRows[0];
-                    if ((req.file || files?.['imagen']?.[0]) && old.imagen_url)
-                        await (0, storage_util_1.deleteFile)(old.imagen_url);
-                    if (files?.['imagen2']?.[0] && old.imagen_url_2)
-                        await (0, storage_util_1.deleteFile)(old.imagen_url_2);
-                    if (files?.['imagen3']?.[0] && old.imagen_url_3)
-                        await (0, storage_util_1.deleteFile)(old.imagen_url_3);
-                }
-            }
-            catch (err) {
-                console.warn('⚠️ No se pudo limpiar imágenes antiguas:', err);
-            }
+        // 5. Ejecutar Actualización
+        if (updates.length === 0) {
+            res.status(200).json({ message: 'No se detectaron cambios para actualizar' });
+            return;
         }
         const query = `UPDATE productos SET ${updates.join(', ')} WHERE id = ${idExpr}`;
         params.push(id);
-        const [result] = await database_1.pool.query(query, params);
-        if (result.affectedRows === 0) {
-            res.status(404).json({ error: 'Producto no encontrado' });
-            return;
+        await database_1.pool.query(query, params);
+        // 6. Limpieza en segundo plano (No bloqueante)
+        // Si la DB ya se actualizó, intentamos borrar las viejas pero no fallamos si falla Firebase
+        if (Object.keys(newImages).length > 0) {
+            if (newImages.imagen_url && oldProduct.imagen_url)
+                (0, storage_util_1.deleteFile)(oldProduct.imagen_url).catch(e => console.warn('Non-blocking delete error:', e.message));
+            if (newImages.imagen_url_2 && oldProduct.imagen_url_2)
+                (0, storage_util_1.deleteFile)(oldProduct.imagen_url_2).catch(e => console.warn('Non-blocking delete error:', e.message));
+            if (newImages.imagen_url_3 && oldProduct.imagen_url_3)
+                (0, storage_util_1.deleteFile)(oldProduct.imagen_url_3).catch(e => console.warn('Non-blocking delete error:', e.message));
         }
-        // Bust catalog cache so updated data is visible immediately
+        // Invalidar cache
         cache_util_1.appCache.invalidateByPrefix('catalog:');
         res.status(200).json({ message: 'Producto actualizado exitosamente' });
     }
     catch (error) {
-        console.error('Error updating product:', error);
+        console.error('Error in updateProduct controller:', error);
         res.status(500).json({
-            error: 'Error del servidor al actualizar',
-            details: error.message,
+            error: 'Error interno del servidor al actualizar el producto',
+            details: [error.message],
             code: error.code
         });
     }
@@ -1346,14 +1375,21 @@ const deleteProduct = async (req, res) => {
         // 1. Obtener URLs de imágenes para borrar de Storage
         let imagesToDelete = [];
         try {
-            const [rows] = await database_1.pool.query(`SELECT imagen_url, imagen_url_2, imagen_url_3 FROM productos WHERE id = ${idExpr}`, [id]);
+            const img2Ok = await detectImage2Schema();
+            const img3Ok = await detectImage3Schema();
+            const selectCols = ['imagen_url'];
+            if (img2Ok)
+                selectCols.push('imagen_url_2');
+            if (img3Ok)
+                selectCols.push('imagen_url_3');
+            const [rows] = await database_1.pool.query(`SELECT ${selectCols.join(', ')} FROM productos WHERE id = ${idExpr}`, [id]);
             if (rows.length > 0) {
                 const p = rows[0];
                 if (p.imagen_url)
                     imagesToDelete.push(p.imagen_url);
-                if (p.imagen_url_2)
+                if (img2Ok && p.imagen_url_2)
                     imagesToDelete.push(p.imagen_url_2);
-                if (p.imagen_url_3)
+                if (img3Ok && p.imagen_url_3)
                     imagesToDelete.push(p.imagen_url_3);
             }
         }

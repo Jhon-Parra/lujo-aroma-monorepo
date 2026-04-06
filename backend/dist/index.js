@@ -5,9 +5,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
-// Carga robusta de variables de entorno: busca el .env en la raíz del proyecto (backend/)
-// Esto funciona tanto en desarrollo (src/) como en producción (dist/)
-dotenv_1.default.config({ path: path_1.default.resolve(process.cwd(), '.env') });
+// Carga robusta de variables de entorno.
+// En hosting es común que `process.cwd()` NO sea `backend/`.
+// Usamos rutas relativas a este archivo (sirve en src/ y dist/), y dejamos `process.cwd()` como fallback.
+const envCandidates = [
+    path_1.default.resolve(__dirname, '../.env'),
+    path_1.default.resolve(process.cwd(), '.env'),
+    path_1.default.resolve(process.cwd(), 'backend/.env')
+];
+for (const p of envCandidates) {
+    const r = dotenv_1.default.config({ path: p });
+    if (!r.error)
+        break;
+}
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
@@ -33,6 +43,7 @@ const email_templates_routes_1 = __importDefault(require("./routes/email-templat
 const intelligence_routes_1 = __importDefault(require("./routes/intelligence.routes"));
 const seo_routes_1 = __importDefault(require("./routes/seo.routes"));
 const database_1 = require("./config/database");
+const firebase_1 = require("./config/firebase");
 const security_middleware_1 = require("./middleware/security.middleware");
 const error_middleware_1 = require("./middleware/error.middleware");
 const order_model_1 = require("./models/order.model");
@@ -254,6 +265,30 @@ app.get('/health/db', async (req, res) => {
             error_message: e?.message
         });
     }
+});
+app.get('/health/firebase', (req, res) => {
+    const debug = process.env.FIREBASE_DEBUG === 'true';
+    const base = {
+        ok: !!firebase_1.bucket,
+        storage: firebase_1.bucket ? 'CONFIGURED' : 'NOT_CONFIGURED',
+        bucket: firebase_1.bucket?.name || null,
+        apps: firebase_1.firebaseAdmin.apps.length
+    };
+    if (!debug) {
+        res.status(200).json(base);
+        return;
+    }
+    const missing = Object.entries(firebase_1.firebaseDiagnostics.env)
+        .filter(([, ok]) => !ok)
+        .map(([k]) => k);
+    res.status(200).json({
+        ...base,
+        diagnostics: {
+            loadedEnvFrom: firebase_1.firebaseDiagnostics.loadedEnvFrom ? 'loaded' : 'not-found',
+            missing,
+            lastInitError: firebase_1.firebaseDiagnostics.lastInitError || null
+        }
+    });
 });
 app.use(error_middleware_1.notFoundHandler);
 // Verificación de esquema al arranque para detectar migraciones pendientes

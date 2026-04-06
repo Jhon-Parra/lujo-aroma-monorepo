@@ -57,8 +57,6 @@ export const firebaseDiagnostics: {
         FIREBASE_CLIENT_EMAIL: boolean;
         FIREBASE_PRIVATE_KEY: boolean;
         FIREBASE_STORAGE_BUCKET: boolean;
-        FIREBASE_SERVICE_ACCOUNT_JSON: boolean;
-        FIREBASE_SERVICE_ACCOUNT_JSON_BASE64: boolean;
     };
     lastInitError: string | null;
 } = {
@@ -69,8 +67,6 @@ export const firebaseDiagnostics: {
         FIREBASE_CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
         FIREBASE_PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY,
         FIREBASE_STORAGE_BUCKET: !!process.env.FIREBASE_STORAGE_BUCKET,
-        FIREBASE_SERVICE_ACCOUNT_JSON: !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
-        FIREBASE_SERVICE_ACCOUNT_JSON_BASE64: !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64,
     },
     lastInitError
 };
@@ -81,82 +77,65 @@ export const firebaseDiagnostics: {
  */
 function initializeFirebase() {
     try {
-        const storageBucket = normalizeBucketName(process.env.FIREBASE_STORAGE_BUCKET);
+        const storageBucketRaw = process.env.FIREBASE_STORAGE_BUCKET;
+        const storageBucket = normalizeBucketName(storageBucketRaw)?.trim();
 
         // Evitar re-inicialización
         if (admin.apps.length > 0) {
             return storageBucket ? admin.storage().bucket(storageBucket) : admin.storage().bucket();
         }
 
-        const projectId = process.env.FIREBASE_PROJECT_ID;
-        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-        const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+        const projectIdRaw = process.env.FIREBASE_PROJECT_ID;
+        const clientEmailRaw = process.env.FIREBASE_CLIENT_EMAIL;
+        const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY;
 
-        // Logging de diagnóstico seguro (no muestra secretos)
-        console.log('--- [Firebase Admin Diagnostics] ---');
-        console.log('Project ID:', projectId ? '✅ OK' : '❌ Miss');
-        console.log('Client Email:', clientEmail ? '✅ OK' : '❌ Miss');
-        console.log('Private Key:', privateKey ? '✅ OK' : '❌ Miss');
-        console.log('Bucket Name:', storageBucket ? '✅ OK' : '❌ Miss');
+        const projectId = String(projectIdRaw ?? '').trim();
+        const clientEmail = String(clientEmailRaw ?? '').trim();
+        // Transformación exacta solicitada por el usuario
+        const privateKey = String(privateKeyRaw ?? '')
+            .trim()
+            .replace(/^"|"$/g, '')
+            .replace(/\\n/g, '\n');
 
-        // 1. Intentar inicializar con variables granulares (RECOMENDADO)
-        if (projectId && clientEmail && privateKey) {
-            const formattedPrivateKey = unquote(privateKey).replace(/\\n/g, '\n');
-            admin.initializeApp({
-                credential: admin.credential.cert({
-                    projectId: String(projectId).trim(),
-                    clientEmail: String(clientEmail).trim(),
-                    privateKey: formattedPrivateKey,
-                }),
-                storageBucket: storageBucket || undefined
-            });
-            console.log('✅ Firebase Admin inicializado exitosamente con variables granulares.');
-            return storageBucket ? admin.storage().bucket(storageBucket) : admin.storage().bucket();
+        const debug = process.env.FIREBASE_DEBUG === 'true';
+
+        // Logs temporales (seguros) para validar que las variables llegan.
+        // No imprimimos secretos; solo presencia/forma.
+        console.log('--- [Firebase Admin Env Check] ---');
+        console.log('FIREBASE_PROJECT_ID:', projectId ? `✅ (${projectId})` : '❌ MISSING');
+        console.log('FIREBASE_CLIENT_EMAIL:', clientEmail ? `✅ (${clientEmail.slice(0, 3)}...${clientEmail.slice(-12)})` : '❌ MISSING');
+        console.log('FIREBASE_PRIVATE_KEY:', privateKey ? `✅ (len=${privateKey.length}, hasBegin=${privateKey.includes('BEGIN PRIVATE KEY')}, hasNewlines=${privateKey.includes('\n')})` : '❌ MISSING');
+        console.log('FIREBASE_STORAGE_BUCKET:', storageBucket ? `✅ (${storageBucket})` : '❌ MISSING');
+
+        if (!projectId || !clientEmail || !privateKey || !storageBucket) {
+            const missing = [
+                !projectId ? 'FIREBASE_PROJECT_ID' : '',
+                !clientEmail ? 'FIREBASE_CLIENT_EMAIL' : '',
+                !privateKey ? 'FIREBASE_PRIVATE_KEY' : '',
+                !storageBucket ? 'FIREBASE_STORAGE_BUCKET' : ''
+            ].filter(Boolean);
+
+            lastInitError = `Missing required env vars: ${missing.join(', ')}`;
+            firebaseDiagnostics.lastInitError = lastInitError;
+            console.warn('⚠️ No se pudo inicializar Firebase Admin:', lastInitError);
+            return null;
         }
 
-        // 2. Fallback: Intentar con JSON completo (Legacy)
-        // Soporte adicional: JSON en base64 (algunos hostings/panels lo requieren)
-        const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-        const serviceAccountJsonB64 = process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64;
+        // Inicializar SOLO con las 4 variables (sin JSON de service account)
+        admin.initializeApp({
+            credential: admin.credential.cert({
+                projectId,
+                clientEmail,
+                privateKey
+            }),
+            storageBucket
+        });
 
-        const resolveServiceAccountJson = (): string | undefined => {
-            const raw = String(serviceAccountJson ?? '').trim();
-            if (raw) return raw;
-            const b64 = String(serviceAccountJsonB64 ?? '').trim();
-            if (!b64) return undefined;
-            try {
-                return Buffer.from(b64, 'base64').toString('utf8').trim();
-            } catch (e: any) {
-                lastInitError = `Error decodificando FIREBASE_SERVICE_ACCOUNT_JSON_BASE64: ${String(e?.message || e)}`;
-                firebaseDiagnostics.lastInitError = lastInitError;
-                return undefined;
-            }
-        };
-
-        const saJson = resolveServiceAccountJson();
-        if (saJson) {
-            try {
-                const serviceAccount = JSON.parse(saJson);
-                // Si la private_key viene con escapes literales, los corregimos
-                if (serviceAccount.private_key) {
-                    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-                }
-                
-                admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccount),
-                    storageBucket: storageBucket || undefined
-                });
-                console.log('✅ Firebase Admin inicializado exitosamente con JSON de cuenta de servicio.');
-                return storageBucket ? admin.storage().bucket(storageBucket) : admin.storage().bucket();
-            } catch (jsonErr) {
-                lastInitError = `Error parseando FIREBASE_SERVICE_ACCOUNT_JSON: ${String((jsonErr as any)?.message || jsonErr)}`;
-                firebaseDiagnostics.lastInitError = lastInitError;
-                console.error('❌ Error parseando FIREBASE_SERVICE_ACCOUNT_JSON:', jsonErr);
-            }
+        if (debug) {
+            console.log('✅ Firebase Admin inicializado con variables de entorno (4 vars).');
         }
 
-        console.warn('⚠️ No se pudo inicializar Firebase Storage: Faltan credenciales válidas en el entorno.');
-        return null;
+        return admin.storage().bucket(storageBucket);
     } catch (error: any) {
         lastInitError = String(error?.message || error);
         firebaseDiagnostics.lastInitError = lastInitError;

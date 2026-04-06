@@ -28,8 +28,7 @@ const varsToCheck = [
     'FIREBASE_CLIENT_EMAIL',
     'FIREBASE_PRIVATE_KEY',
     'FIREBASE_STORAGE_BUCKET',
-    'FIREBASE_SERVICE_ACCOUNT_JSON',
-    'FIREBASE_SERVICE_ACCOUNT_JSON_BASE64'
+    // NOTE: backend no usa FIREBASE_SERVICE_ACCOUNT_JSON (solo 4 vars granulares)
 ];
 
 console.log('\n--- ESTADO DE VARIABLES CLAVE ---');

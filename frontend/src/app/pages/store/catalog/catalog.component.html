@@ -60,18 +60,18 @@
                         <i class="bi bi-search absolute right-3 top-2.5 text-white/30 text-xs"></i>
                     </div>
 
-                    <div class="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                    <div class="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar mt-4">
                         <button (click)="filterCategory('todos')"
-                            [class.text-[#d8c08a]]="selectedCategory === 'todos'"
-                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors text-xs tracking-[0.18em] uppercase font-bold py-1">
+                            [ngClass]="selectedCategory === 'todos' ? 'text-[#d8c08a]' : 'text-white/70'"
+                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors text-xs tracking-[0.18em] uppercase font-bold py-1.5">
                             <span>Todas las Casas</span>
-                            <span *ngIf="selectedCategory === 'todos'" class="w-1.5 h-1.5 rounded-full bg-[#d8c08a]"></span>
+                            <span *ngIf="selectedCategory === 'todos'" class="w-1.5 h-1.5 rounded-full bg-[#d8c08a] shadow-[0_0_8px_rgba(216,192,138,0.8)]"></span>
                         </button>
                         <button *ngFor="let c of filteredHouses" (click)="filterCategory(c.slug)"
-                            [class.text-[#d8c08a]]="selectedCategory === c.slug"
-                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors text-xs tracking-[0.18em] uppercase font-bold py-1">
+                            [ngClass]="selectedCategory === c.slug ? 'text-[#d8c08a]' : 'text-white/70'"
+                            class="w-full text-left flex items-center justify-between group hover:text-white transition-colors text-xs tracking-[0.18em] uppercase font-bold py-1.5">
                             <span class="truncate">{{ c.nombre }}</span>
-                            <span *ngIf="selectedCategory === c.slug" class="w-1.5 h-1.5 rounded-full bg-[#d8c08a]"></span>
+                            <span *ngIf="selectedCategory === c.slug" class="w-1.5 h-1.5 rounded-full bg-[#d8c08a] shadow-[0_0_8px_rgba(216,192,138,0.8)]"></span>
                         </button>
                     </div>
                 </div>

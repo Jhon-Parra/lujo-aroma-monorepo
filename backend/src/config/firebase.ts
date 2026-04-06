@@ -63,10 +63,10 @@ export const firebaseDiagnostics: {
     loadedEnvFrom,
     // keep this safe: booleans and sanitized values only
     env: {
-        FIREBASE_PROJECT_ID: !!process.env.FIREBASE_PROJECT_ID,
-        FIREBASE_CLIENT_EMAIL: !!process.env.FIREBASE_CLIENT_EMAIL,
-        FIREBASE_PRIVATE_KEY: !!process.env.FIREBASE_PRIVATE_KEY,
-        FIREBASE_STORAGE_BUCKET: !!process.env.FIREBASE_STORAGE_BUCKET,
+        FIREBASE_PROJECT_ID: !!String(process.env.FIREBASE_PROJECT_ID ?? '').trim(),
+        FIREBASE_CLIENT_EMAIL: !!String(process.env.FIREBASE_CLIENT_EMAIL ?? '').trim(),
+        FIREBASE_PRIVATE_KEY: !!String(process.env.FIREBASE_PRIVATE_KEY ?? '').trim(),
+        FIREBASE_STORAGE_BUCKET: !!String(process.env.FIREBASE_STORAGE_BUCKET ?? '').trim(),
     },
     lastInitError
 };
@@ -95,6 +95,8 @@ function initializeFirebase() {
         const privateKey = String(privateKeyRaw ?? '')
             .trim()
             .replace(/^"|"$/g, '')
+            // Algunos panels envuelven el valor en comillas simples
+            .replace(/^'|'$/g, '')
             .replace(/\\n/g, '\n');
 
         const debug = process.env.FIREBASE_DEBUG === 'true';

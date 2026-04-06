@@ -315,12 +315,30 @@ app.get('/health/firebase', (req, res) => {
         .filter(([, ok]) => !ok)
         .map(([k]) => k);
 
+    const projectId = String(process.env.FIREBASE_PROJECT_ID ?? '').trim();
+    const clientEmail = String(process.env.FIREBASE_CLIENT_EMAIL ?? '').trim();
+    const privateKeyRaw = String(process.env.FIREBASE_PRIVATE_KEY ?? '').trim();
+    const storageBucket = String(process.env.FIREBASE_STORAGE_BUCKET ?? '').trim();
+    const privateKeyNormalized = privateKeyRaw
+        .trim()
+        .replace(/^"|"$/g, '')
+        .replace(/^'|'$/g, '')
+        .replace(/\\n/g, '\n');
+
     res.status(200).json({
         ...base,
         diagnostics: {
             loadedEnvFrom: firebaseDiagnostics.loadedEnvFrom ? 'loaded' : 'not-found',
             missing,
-            lastInitError: firebaseDiagnostics.lastInitError || null
+            lastInitError: firebaseDiagnostics.lastInitError || null,
+            envShape: {
+                projectId: projectId ? `len=${projectId.length}` : 'MISSING',
+                clientEmail: clientEmail ? `len=${clientEmail.length}` : 'MISSING',
+                privateKey: privateKeyRaw
+                    ? `rawLen=${privateKeyRaw.length}, normalizedLen=${privateKeyNormalized.length}, hasBegin=${privateKeyNormalized.includes('BEGIN PRIVATE KEY')}, hasEnd=${privateKeyNormalized.includes('END PRIVATE KEY')}, hasNewlines=${privateKeyNormalized.includes('\n')}`
+                    : 'MISSING',
+                storageBucket: storageBucket ? `len=${storageBucket.length}` : 'MISSING'
+            }
         }
     });
 });

@@ -41,9 +41,10 @@ const normalizeBucketName = (raw: string | undefined): string | undefined => {
     if (!v) return undefined;
     // gs://bucket-name
     if (v.startsWith('gs://')) return v.slice('gs://'.length);
-    // People sometimes paste Firebase REST host; Admin SDK expects the GCS bucket name.
-    // Default Firebase bucket is: <project-id>.appspot.com
-    if (v.endsWith('.firebasestorage.app')) return v.replace(/\.firebasestorage\.app$/i, '.appspot.com');
+    // If someone pastes the Firebase REST endpoint, try to extract bucket name.
+    // Example: https://firebasestorage.googleapis.com/v0/b/<bucket>/o/...
+    const m = v.match(/\/v0\/b\/([^/]+)\//i);
+    if (m?.[1]) return m[1];
     return v;
 };
 

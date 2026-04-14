@@ -1,16 +1,10 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateAIDescription = void 0;
-const openai_1 = __importDefault(require("openai"));
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-// Instanciar cliente apuntando a la API de Groq
-const openai = new openai_1.default({
-    apiKey: GROQ_API_KEY || '',
-    baseURL: "https://api.groq.com/openai/v1"
-});
+const genai_1 = require("@google/genai");
+// Preferir GEMINI_API_KEY. Se mantiene fallback a GROQ_API_KEY para facilitar migracion.
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY;
+const gemini = GEMINI_API_KEY ? new genai_1.GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 /**
  * Endpoint: POST /api/ai/generate-description
  * Descripción: Asistente IA para CMS. Genera una descripción de lujo basada en producto y notas.
@@ -40,8 +34,8 @@ const generateAIDescription = async (req, res) => {
             });
             return;
         }
-        if (!GROQ_API_KEY) {
-            console.warn('GROQ_API_KEY no proporcionada. Usando respuesta simulada...');
+        if (!GEMINI_API_KEY || !gemini) {
+            console.warn('GEMINI_API_KEY no proporcionada. Usando respuesta simulada...');
             res.status(200).json({
                 message: 'Descripción generada exitosamente (Modo Simulación).',
                 mode: 'SIMULATION',
@@ -56,29 +50,32 @@ const generateAIDescription = async (req, res) => {
 - Notas Olfativas Presentes: ${String(notasFinal).slice(0, 300)}
 
 IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total. Solo una o dos oraciones contundentes. No agregues saludos, código, ni frases genéricas vacías. Usa un tono sensorial puro y cautivador.`;
-        // Generación de contenido usando la API de Groq
-        const contentResponse = await openai.chat.completions.create({
-            model: 'llama-3.1-8b-instant', // Modelo veloz y asertivo de Groq
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 300
+        const contentResponse = await gemini.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `${systemPrompt}\n\n${userPrompt}`
         });
-        const generatedText = contentResponse.choices[0]?.message?.content || '';
+        const generatedText = String(contentResponse.text || '').trim();
+        if (!generatedText) {
+            res.status(200).json({
+                message: 'Descripción generada exitosamente (Modo Simulación).',
+                mode: 'SIMULATION',
+                warning: 'GEMINI_EMPTY',
+                data: makeSimulated()
+            });
+            return;
+        }
         res.status(200).json({
-            message: 'Descripción generada exitosamente mediante Groq.',
-            mode: 'GROQ',
+            message: 'Descripción generada exitosamente mediante Gemini.',
+            mode: 'GEMINI',
             data: generatedText
         });
     }
     catch (error) {
-        // No romper el flujo del CMS: si Groq falla, devolvemos una descripción simulada.
+        // No romper el flujo del CMS: si Gemini falla, devolvemos una descripción simulada.
         const anyErr = error;
         const status = Number(anyErr?.status || anyErr?.response?.status || 0) || null;
         const message = String(anyErr?.message || anyErr?.error?.message || '').slice(0, 500);
-        console.error('Error Generando AI description (Groq):', { status, message });
+        console.error('Error Generando AI description (Gemini):', { status, message });
         const nombreFinal = (req.body?.name || req.body?.nombre || '').toString();
         const notasFinal = (req.body?.notes || req.body?.notas_olfativas || '').toString();
         const safeName = String(nombreFinal || '').trim().slice(0, 60);
@@ -93,7 +90,7 @@ IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total.
         res.status(200).json({
             message: 'Descripción generada exitosamente (Modo Simulación).',
             mode: 'SIMULATION',
-            warning: status ? `GROQ_ERROR_${status}` : 'GROQ_ERROR',
+            warning: status ? `GEMINI_ERROR_${status}` : 'GEMINI_ERROR',
             data: text
         });
     }

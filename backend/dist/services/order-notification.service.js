@@ -30,7 +30,7 @@ const resolveLogoUrl = async () => {
     catch {
         // ignore
     }
-    const fallback = `${FRONTEND_URL}/assets/images/logo.svg`;
+    const fallback = `${FRONTEND_URL}/assets/images/logo.png`;
     cachedLogoUrl = { value: fallback, expiresAt: now + LOGO_CACHE_MS };
     return fallback;
 };

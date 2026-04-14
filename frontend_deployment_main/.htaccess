@@ -1,10 +1,19 @@
 RewriteEngine On
 RewriteBase /
 
-# Asegurar MIME correcto para XML (sitemap, etc.)
+# Forzar explícitamente el tipo de contenido para el sitemap
 <IfModule mod_mime.c>
     AddType application/xml .xml
 </IfModule>
+
+<Files "sitemap.xml">
+    <IfModule mod_mime.c>
+        ForceType application/xml
+    </IfModule>
+    <IfModule mod_headers.c>
+        Header set Content-Type "application/xml"
+    </IfModule>
+</Files>
 
 # Configuración de seguridad para Google OAuth (Formato Apache)
 <IfModule mod_headers.c>
@@ -12,6 +21,9 @@ RewriteBase /
     Header set Cross-Origin-Embedder-Policy "unsafe-none"
     Header set Access-Control-Allow-Origin "*"
 </IfModule>
+
+# Redirigir sitemap.xml al generador dinámico en tiempo real del backend
+RewriteRule ^sitemap\.xml$ https://api.perfumesbogota.com/sitemap.xml [R=301,L]
 
 # No reescribir archivos ni carpetas existentes
 RewriteCond %{REQUEST_FILENAME} -f [OR]

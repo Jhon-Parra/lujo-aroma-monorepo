@@ -1,16 +1,11 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.recordRecommendationEvent = exports.recommendSimilar = exports.recommendFromFreeText = exports.recommendFromQuiz = void 0;
-const openai_1 = __importDefault(require("openai"));
+const genai_1 = require("@google/genai");
 const database_1 = require("../config/database");
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const openai = new openai_1.default({
-    apiKey: GROQ_API_KEY || '',
-    baseURL: 'https://api.groq.com/openai/v1'
-});
+// Preferir GEMINI_API_KEY. Se mantiene fallback a GROQ_API_KEY para facilitar migracion.
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY;
+const gemini = GEMINI_API_KEY ? new genai_1.GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 let categoriesReady = null;
 const detectCategoriesSchema = async () => {
     if (categoriesReady !== null)
@@ -285,7 +280,7 @@ const safeParseJsonObject = (raw) => {
     }
 };
 const runAiRanking = async (payload) => {
-    if (!GROQ_API_KEY)
+    if (!GEMINI_API_KEY || !gemini)
         return null;
     if (!payload.candidates?.length)
         return [];
@@ -319,23 +314,18 @@ const runAiRanking = async (payload) => {
         '- solo IDs existentes\n' +
         '- no repitas perfumes\n' +
         '- evita razones negativas; si no hay match perfecto, explica por que es la mejor opcion disponible\n';
-    const resp = await openai.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
-        messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: prompt + '\nINPUT:\n' + JSON.stringify(user) }
-        ],
-        temperature: 0.3,
-        max_tokens: 600
+    const resp = await gemini.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: system + '\n\n' + prompt + '\nINPUT:\n' + JSON.stringify(user)
     });
-    const content = resp.choices?.[0]?.message?.content || '';
+    const content = String(resp.text || '').trim();
     if (!content) {
-        console.warn('[AI] Respuesta vacía de Groq');
+        console.warn('[AI] Respuesta vacía de Gemini');
         return null;
     }
     const parsed = safeParseJsonObject(content);
     if (!parsed) {
-        console.warn('[AI] Error parseando JSON de Groq:', content.slice(0, 100));
+        console.warn('[AI] Error parseando JSON de Gemini:', content.slice(0, 100));
         return null;
     }
     const list = parsed?.recommendations;

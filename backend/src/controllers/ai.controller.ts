@@ -1,13 +1,9 @@
 import { Request, Response } from 'express';
-import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-
-// Instanciar cliente apuntando a la API de Groq
-const openai = new OpenAI({
-    apiKey: GROQ_API_KEY || '',
-    baseURL: "https://api.groq.com/openai/v1"
-});
+// Preferir GEMINI_API_KEY. Se mantiene fallback a GROQ_API_KEY para facilitar migracion.
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY;
+const gemini = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 /**
  * Endpoint: POST /api/ai/generate-description
@@ -42,8 +38,8 @@ export const generateAIDescription = async (req: Request, res: Response): Promis
             return;
         }
 
-        if (!GROQ_API_KEY) {
-            console.warn('GROQ_API_KEY no proporcionada. Usando respuesta simulada...');
+        if (!GEMINI_API_KEY || !gemini) {
+            console.warn('GEMINI_API_KEY no proporcionada. Usando respuesta simulada...');
             res.status(200).json({
                 message: 'Descripción generada exitosamente (Modo Simulación).',
                 mode: 'SIMULATION',
@@ -61,30 +57,33 @@ export const generateAIDescription = async (req: Request, res: Response): Promis
 
 IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total. Solo una o dos oraciones contundentes. No agregues saludos, código, ni frases genéricas vacías. Usa un tono sensorial puro y cautivador.`;
 
-        // Generación de contenido usando la API de Groq
-        const contentResponse = await openai.chat.completions.create({
-            model: 'llama-3.1-8b-instant', // Modelo veloz y asertivo de Groq
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 300
+        const contentResponse = await gemini.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: `${systemPrompt}\n\n${userPrompt}`
         });
 
-        const generatedText = contentResponse.choices[0]?.message?.content || '';
+        const generatedText = String(contentResponse.text || '').trim();
+        if (!generatedText) {
+            res.status(200).json({
+                message: 'Descripción generada exitosamente (Modo Simulación).',
+                mode: 'SIMULATION',
+                warning: 'GEMINI_EMPTY',
+                data: makeSimulated()
+            });
+            return;
+        }
 
         res.status(200).json({
-            message: 'Descripción generada exitosamente mediante Groq.',
-            mode: 'GROQ',
+            message: 'Descripción generada exitosamente mediante Gemini.',
+            mode: 'GEMINI',
             data: generatedText
         });
     } catch (error) {
-        // No romper el flujo del CMS: si Groq falla, devolvemos una descripción simulada.
+        // No romper el flujo del CMS: si Gemini falla, devolvemos una descripción simulada.
         const anyErr: any = error as any;
         const status = Number(anyErr?.status || anyErr?.response?.status || 0) || null;
         const message = String(anyErr?.message || anyErr?.error?.message || '').slice(0, 500);
-        console.error('Error Generando AI description (Groq):', { status, message });
+        console.error('Error Generando AI description (Gemini):', { status, message });
 
         const nombreFinal = (req.body?.name || req.body?.nombre || '').toString();
         const notasFinal = (req.body?.notes || req.body?.notas_olfativas || '').toString();
@@ -102,7 +101,7 @@ IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total.
         res.status(200).json({
             message: 'Descripción generada exitosamente (Modo Simulación).',
             mode: 'SIMULATION',
-            warning: status ? `GROQ_ERROR_${status}` : 'GROQ_ERROR',
+            warning: status ? `GEMINI_ERROR_${status}` : 'GEMINI_ERROR',
             data: text
         });
     }

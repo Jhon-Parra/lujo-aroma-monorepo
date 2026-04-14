@@ -105,6 +105,6 @@ export class PermissionsComponent implements OnInit {
         }
       } catch (e) {}
     }
-    return '/assets/images/logo.svg';
+    return '/assets/images/logo.png';
   }
 }

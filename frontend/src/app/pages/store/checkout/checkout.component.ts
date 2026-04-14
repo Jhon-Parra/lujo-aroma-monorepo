@@ -72,6 +72,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     private cartRecoveryPendingAction: 'cancel' | 'clear' | null = null;
     private readonly cartRecoveryStoragePrefix = 'lujo_aroma_cart_recovery';
     private readonly cartRecoveryTtlMs = 5 * 60 * 60 * 1000;
+
+    // Mostrar oferta solo 1 vez y solo en primera compra
+    private readonly hasPurchasedStoragePrefix = 'lujo_aroma_has_purchased_v1';
+    cartRecoveryFirstPurchaseEligible = false;
+    cartRecoveryEligibilityChecked = false;
+    private cartRecoveryEligibilityUserId: string | null = null;
+    private authSub: any;
     private cartRecoveryExpiryTimer?: any;
     private cartRecoveryAppliedAt = 0;
     cartRecoveryExpiredNotice = false;
@@ -247,6 +254,20 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
         // Guardar inmediatamente el estado restaurado
         this.scheduleDraftSave();
+
+        // Determinar si el usuario esta en su primera compra (para habilitar oferta solo una vez)
+        this.authSub = this.authService.currentUser$.subscribe((u) => {
+            const userId = u?.id || null;
+            if (!userId) {
+                this.cartRecoveryEligibilityUserId = null;
+                this.cartRecoveryEligibilityChecked = false;
+                this.cartRecoveryFirstPurchaseEligible = false;
+                return;
+            }
+            if (this.cartRecoveryEligibilityUserId === userId && this.cartRecoveryEligibilityChecked) return;
+            this.cartRecoveryEligibilityUserId = userId;
+            this.computeCartRecoveryEligibility();
+        });
     }
 
     ngOnDestroy(): void {
@@ -258,6 +279,12 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
         try {
             this.settingsSub?.unsubscribe?.();
+        } catch {
+            // ignore
+        }
+
+        try {
+            this.authSub?.unsubscribe?.();
         } catch {
             // ignore
         }
@@ -392,8 +419,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             if (this.orderSuccess) return;
         if (!this.cartItems || this.cartItems.length === 0) return;
         if (this.cartRecoveryApplied) return;
-        const shown = this.getRecoveryShown();
-        if (shown) return;
+        if (!this.shouldOfferCartRecovery()) return;
 
             const related = (event as any).relatedTarget;
             if (related) return;
@@ -482,6 +508,70 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         return `${this.cartRecoveryStoragePrefix}_${suffix}_${userId || 'guest'}`;
     }
 
+    private getHasPurchasedStorageKey(): string {
+        const userId = this.authService.getUserId();
+        return `${this.hasPurchasedStoragePrefix}_${userId || 'guest'}`;
+    }
+
+    private getHasPurchasedMarker(): boolean {
+        const key = this.getHasPurchasedStorageKey();
+        try {
+            return localStorage.getItem(key) === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    private setHasPurchasedMarker(): void {
+        const key = this.getHasPurchasedStorageKey();
+        try {
+            localStorage.setItem(key, '1');
+        } catch {
+            // ignore
+        }
+    }
+
+    private computeCartRecoveryEligibility(): void {
+        // Requiere sesion.
+        const userId = this.authService.getUserId();
+        if (!userId || !this.authService.isAuthenticated()) {
+            this.cartRecoveryEligibilityChecked = false;
+            this.cartRecoveryFirstPurchaseEligible = false;
+            return;
+        }
+
+        // Si ya marcamos que compro (o al menos inicio compra), no mostrar.
+        if (this.getHasPurchasedMarker()) {
+            this.cartRecoveryFirstPurchaseEligible = false;
+            this.cartRecoveryEligibilityChecked = true;
+            return;
+        }
+
+        this.orderService.getMyOrders().subscribe({
+            next: (orders) => {
+                const list = Array.isArray(orders) ? orders : [];
+                this.cartRecoveryFirstPurchaseEligible = list.length === 0;
+                this.cartRecoveryEligibilityChecked = true;
+            },
+            error: () => {
+                // Modo seguro: si no podemos validar primera compra, no mostramos la oferta.
+                this.cartRecoveryFirstPurchaseEligible = false;
+                this.cartRecoveryEligibilityChecked = true;
+            }
+        });
+    }
+
+    private shouldOfferCartRecovery(): boolean {
+        if (!this.cartRecoveryEnabled) return false;
+        if (this.orderSuccess) return false;
+        if (!this.cartItems || this.cartItems.length === 0) return false;
+        if (this.cartRecoveryApplied) return false;
+        if (!this.cartRecoveryEligibilityChecked) return false;
+        if (!this.cartRecoveryFirstPurchaseEligible) return false;
+        if (this.getRecoveryShown()) return false; // solo 1 vez
+        return true;
+    }
+
     private expireRecoveryDiscount(): void {
         this.clearRecoveryState();
         this.cartRecoveryApplied = false;
@@ -567,14 +657,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
     private clearRecoveryState(): void {
         const appliedKey = this.getRecoveryStorageKey('applied');
-        const shownKey = this.getRecoveryStorageKey('shown');
         try {
             localStorage.removeItem(appliedKey);
-        } catch {
-            // ignore
-        }
-        try {
-            sessionStorage.removeItem(shownKey);
         } catch {
             // ignore
         }
@@ -594,7 +678,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     private getRecoveryShown(): boolean {
         const key = this.getRecoveryStorageKey('shown');
         try {
-            return sessionStorage.getItem(key) === '1';
+            return localStorage.getItem(key) === '1';
         } catch {
             return false;
         }
@@ -603,7 +687,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     private setRecoveryShown(): void {
         const key = this.getRecoveryStorageKey('shown');
         try {
-            sessionStorage.setItem(key, '1');
+            localStorage.setItem(key, '1');
         } catch {
             // ignore
         }
@@ -622,7 +706,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
         this.saveCheckoutDraft();
 
-        if (this.cartRecoveryEnabled && this.cartItems.length > 0 && !this.cartRecoveryApplied) {
+        if (this.shouldOfferCartRecovery()) {
             this.cartRecoveryPendingAction = 'cancel';
             this.openCartRecovery();
             return;
@@ -632,7 +716,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     clearCart(): void {
-        if (this.cartRecoveryEnabled && this.cartItems.length > 0 && !this.cartRecoveryApplied) {
+        if (this.shouldOfferCartRecovery()) {
             this.cartRecoveryPendingAction = 'clear';
             this.openCartRecovery();
             return;
@@ -965,14 +1049,15 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 installments: inst
             };
 
-            this.wompiService.createCardCheckout(payload as any).subscribe({
-                next: (res) => {
-                    this.isPlacingOrder = false;
-                    this.clearRecoveryState();
-                    this.clearCheckoutDraft();
-                    this.cartService.clearCart();
-                    this.router.navigate(['/order-success', res.orderId]);
-                },
+                this.wompiService.createCardCheckout(payload as any).subscribe({
+                 next: (res) => {
+                     this.isPlacingOrder = false;
+                     this.setHasPurchasedMarker();
+                     this.clearRecoveryState();
+                     this.clearCheckoutDraft();
+                     this.cartService.clearCart();
+                     this.router.navigate(['/order-success', res.orderId]);
+                 },
                 error: (err) => {
                     console.error('Error creando checkout tarjeta:', err);
                     const status = err?.status;
@@ -1115,6 +1200,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.wompiService.createNequiCheckout(payload as any).subscribe({
                 next: (res) => {
                     this.isPlacingOrder = false;
+                    this.setHasPurchasedMarker();
                     this.clearRecoveryState();
                     this.clearCheckoutDraft();
                     this.cartService.clearCart();
@@ -1183,6 +1269,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.wompiService.createPseCheckout(payload as any).subscribe({
                 next: (res) => {
                     this.isPlacingOrder = false;
+                    this.setHasPurchasedMarker();
                     // La orden ya fue creada (y se reservo stock). Evitar duplicados en el carrito.
                     this.clearRecoveryState();
                     this.clearCheckoutDraft();
@@ -1247,6 +1334,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.orderService.createOrder(orderData).subscribe({
             next: (response) => {
                 this.createdOrderId = response.orderId;
+                this.setHasPurchasedMarker();
                 this.clearRecoveryState();
                 this.clearCheckoutDraft();
                 this.cartService.clearCart();

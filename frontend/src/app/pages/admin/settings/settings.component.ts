@@ -362,7 +362,7 @@ export class SettingsComponent implements OnInit {
 
   getLogoUrl(): string {
     const url = (this.settings.logo_url || '').trim();
-    if (!url) return 'assets/images/logo.svg';
+    if (!url) return 'assets/images/logo.png';
 
     if (url.startsWith('assets/') || url.startsWith('/assets/')) return url.replace(/^\/+/, '');
     if (url.startsWith('data:') || url.startsWith('http')) return url;
@@ -664,6 +664,6 @@ export class SettingsComponent implements OnInit {
         }
       } catch (e) {}
     }
-    return '/assets/images/logo.svg';
+    return '/assets/images/logo.png';
   }
 }

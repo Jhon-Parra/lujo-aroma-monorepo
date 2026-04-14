@@ -23,7 +23,7 @@ INSERT INTO configuracionglobal (
   TRUE,
   'ENVIO GRATIS EN PEDIDOS SUPERIORES A $400.000',
   '/assets/images/hero_bg.webp',
-  '/assets/images/logo.svg',
+  '/assets/images/logo.png',
   '+573105133401',
   'Hola, quiero mas informacion sobre sus perfumes.',
   TRUE

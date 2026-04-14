@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 
 import { pool } from '../config/database';
 
@@ -25,11 +25,9 @@ type RecoItem = {
     score?: number;
 };
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const openai = new OpenAI({
-    apiKey: GROQ_API_KEY || '',
-    baseURL: 'https://api.groq.com/openai/v1'
-});
+// Preferir GEMINI_API_KEY. Se mantiene fallback a GROQ_API_KEY para facilitar migracion.
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY;
+const gemini = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 let categoriesReady: boolean | null = null;
 const detectCategoriesSchema = async (): Promise<boolean> => {
@@ -308,7 +306,7 @@ const runAiRanking = async (payload: {
     base_product?: any;
     candidates: ProductRow[];
 }): Promise<RecoItem[] | null> => {
-    if (!GROQ_API_KEY) return null;
+    if (!GEMINI_API_KEY || !gemini) return null;
     if (!payload.candidates?.length) return [];
 
     const system =
@@ -347,25 +345,20 @@ const runAiRanking = async (payload: {
         '- no repitas perfumes\n' +
         '- evita razones negativas; si no hay match perfecto, explica por que es la mejor opcion disponible\n';
 
-    const resp = await openai.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
-        messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: prompt + '\nINPUT:\n' + JSON.stringify(user) }
-        ],
-        temperature: 0.3,
-        max_tokens: 600
+    const resp = await gemini.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: system + '\n\n' + prompt + '\nINPUT:\n' + JSON.stringify(user)
     });
 
-    const content = resp.choices?.[0]?.message?.content || '';
+    const content = String(resp.text || '').trim();
     if (!content) {
-        console.warn('[AI] Respuesta vacía de Groq');
+        console.warn('[AI] Respuesta vacía de Gemini');
         return null;
     }
 
     const parsed = safeParseJsonObject(content);
     if (!parsed) {
-        console.warn('[AI] Error parseando JSON de Groq:', content.slice(0, 100));
+        console.warn('[AI] Error parseando JSON de Gemini:', content.slice(0, 100));
         return null;
     }
 

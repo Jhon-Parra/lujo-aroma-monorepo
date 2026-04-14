@@ -57,7 +57,7 @@ export class FooterComponent {
 
   private resolveLogoUrl(raw: string | null | undefined): string {
     const url = String(raw || '').trim();
-    if (!url) return 'assets/images/logo.svg';
+    if (!url) return 'assets/images/logo.png';
     if (url.startsWith('assets/') || url.startsWith('/assets/')) return url.replace(/^\/+/, '');
     if (url.startsWith('data:')) return url;
     if (/^https?:\/\//i.test(url)) {
@@ -76,9 +76,9 @@ export class FooterComponent {
   onLogoError(event: Event): void {
     const img = event.target as HTMLImageElement | null;
     if (!img) return;
-    if (img.src && img.src.includes('/assets/images/logo.svg')) return;
+    if (img.src && img.src.includes('/assets/images/logo.png')) return;
     this.forceLocalLogo = true;
-    img.src = 'assets/images/logo.svg';
+    img.src = 'assets/images/logo.png';
   }
 
   private normalizeExternalUrl(raw: string, expectedHost: string): string {
@@ -101,7 +101,7 @@ export class FooterComponent {
   }
 
   getLogoUrl(): string {
-    if (this.forceLocalLogo) return 'assets/images/logo.svg';
+    if (this.forceLocalLogo) return 'assets/images/logo.png';
     return this.resolveLogoUrl(this.settings?.logo_url);
   }
 }

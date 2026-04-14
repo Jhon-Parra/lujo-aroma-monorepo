@@ -469,7 +469,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private resolveLogoUrl(raw: string | null | undefined): string {
     const url = String(raw || '').trim();
 
-    if (!url) return 'assets/images/logo.svg';
+    if (!url) return 'assets/images/logo.png';
 
     if (url.startsWith('assets/') || url.startsWith('/assets/')) {
       return url.replace(/^\/+/, '');

@@ -4,7 +4,7 @@
       <a routerLink="/" class="flex flex-col items-center justify-center transition-transform hover:scale-105 duration-300 w-full px-6">
         <div class="w-full flex justify-center">
           <span class="brand-logo-badge">
-            <img [src]="getAdminLogoUrl() || '/assets/images/logo.svg'" alt="Lujo & Aroma Admin" class="h-12 w-auto object-contain brand-logo-img" />
+            <img [src]="getAdminLogoUrl() || '/assets/images/logo.png'" alt="Lujo & Aroma Admin" class="h-12 w-auto object-contain brand-logo-img" />
           </span>
         </div>
         <span class="text-[9px] text-gray-400 font-sans tracking-widest mt-3 uppercase font-bold">Panel Admin</span>
@@ -127,7 +127,6 @@
       <div class="bg-white rounded-xl shadow-sm border border-[#ecece5] p-6">
         <h2 class="font-serif text-xl text-charcoal mb-4">Vista previa</h2>
         <div class="border border-dashed border-[#dcdcd4] rounded-xl p-6 bg-[#f9f9f6]">
-          <div class="text-xs font-bold uppercase tracking-widest text-gold">Oferta de recuperación</div>
           <h3 class="font-serif text-2xl text-charcoal mt-2">{{ form.discountPct }}% de descuento</h3>
           <p class="text-sm text-soft-charcoal mt-2">{{ form.message }}</p>
           <div class="mt-4 flex items-center gap-3">

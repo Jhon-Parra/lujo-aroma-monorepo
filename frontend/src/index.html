@@ -169,6 +169,24 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <!-- Google Sign In migrado a Firebase SDK -->
   <meta name="referrer" content="no-referrer-when-downgrade">
+
+  <script type="speculationrules">
+    {
+      "prerender": [
+        {
+          "where": {
+            "and": [
+              { "href_matches": "/*" },
+              { "not": { "href_matches": "/logout" } },
+              { "not": { "selector_matches": "[rel~=nofollow]" } },
+              { "not": { "selector_matches": "[data-no-prerender]" } }
+            ]
+          },
+          "eagerness": "moderate"
+        }
+      ]
+    }
+  </script>
 </head>
 
 <body>

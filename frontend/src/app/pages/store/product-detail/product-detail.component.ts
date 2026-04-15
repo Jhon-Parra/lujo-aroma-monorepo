@@ -190,6 +190,10 @@ export class ProductDetailComponent implements OnDestroy {
             name: ap.name || ap.nombre,
             notes: ap.notes || ap.notas_olfativas || ap.descripcion,
             price: Number.isFinite(final) ? final : 0,
+            stock: (() => {
+              const n = Number((ap as any)?.stock);
+              return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : undefined;
+            })(),
             imageUrl: ap.imageUrl || ap.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
             soldCount: String(ap.soldCount || ap.unidades_vendidas || 0),
             isNew: !!(ap.isNew ?? ap.es_nuevo),
@@ -425,8 +429,11 @@ export class ProductDetailComponent implements OnDestroy {
     const qty = Math.max(1, Math.trunc(Number(this.quantity || 1)));
     this.quantity = qty;
 
-    const stock = Number((this.product as any)?.stock ?? 0);
-    if (Number.isFinite(stock) && stock <= 0) {
+    const rawStock = Number((this.product as any)?.stock);
+    const hasStock = Number.isFinite(rawStock);
+    const stock = hasStock ? Math.max(0, Math.trunc(rawStock)) : Number.POSITIVE_INFINITY;
+
+    if (hasStock && stock <= 0) {
       this.addedToCartNotice = 'Este producto no tiene stock.';
       if (this.noticeTimer) clearTimeout(this.noticeTimer);
       this.noticeTimer = setTimeout(() => {
@@ -435,14 +442,14 @@ export class ProductDetailComponent implements OnDestroy {
       return;
     }
 
-    const finalQty = Number.isFinite(stock) && stock > 0 ? Math.min(qty, stock) : qty;
+    const finalQty = hasStock && stock > 0 ? Math.min(qty, stock) : qty;
     if (finalQty !== qty) {
       this.quantity = finalQty;
     }
 
     this.cartService.addToCart(card, finalQty);
 
-    this.addedToCartNotice = finalQty !== qty && Number.isFinite(stock)
+    this.addedToCartNotice = finalQty !== qty && hasStock
       ? `Agregado al carrito (máximo disponible: ${stock}).`
       : 'Agregado al carrito.';
     if (this.noticeTimer) clearTimeout(this.noticeTimer);
@@ -462,6 +469,10 @@ export class ProductDetailComponent implements OnDestroy {
       categoria_nombre: (this.product as any).categoria_nombre ?? null,
       categoria_slug: (this.product as any).categoria_slug ?? null,
       price: Number.isFinite(price) ? price : 0,
+      stock: (() => {
+        const n = Number((this.product as any)?.stock);
+        return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : undefined;
+      })(),
       imageUrl: this.product.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
       soldCount: String(this.product.unidades_vendidas || 0),
       isNew: !!this.product.es_nuevo,

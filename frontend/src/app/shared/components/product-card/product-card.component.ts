@@ -115,9 +115,23 @@ export class ProductCardComponent {
     this.favoritesService.toggleFavorite(this.product);
   }
 
+  private getNormalizedStock(): number | null {
+    const raw = (this.product as any)?.stock;
+    if (raw === null || raw === undefined || raw === '') return null;
+
+    const n = typeof raw === 'string' ? Number(raw) : Number(raw);
+    if (!Number.isFinite(n)) return null;
+    return Math.max(0, Math.trunc(n));
+  }
+
+  isOutOfStock(): boolean {
+    const stock = this.getNormalizedStock();
+    return stock !== null && stock <= 0;
+  }
+
   addToCart(event?: Event) {
     event?.stopPropagation();
-    if ((this.product as any)?.stock <= 0) {
+    if (this.isOutOfStock()) {
       this.toastService.error('Este producto se encuentra agotado temporalmente.');
       return;
     }

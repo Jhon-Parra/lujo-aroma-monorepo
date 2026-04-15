@@ -44,6 +44,10 @@ export class FavoritesService {
                     name: f.nombre || '',
                     notes: f.descripcion || '',
                     price: typeof f.precio === 'string' ? parseFloat(f.precio) : (f.precio || 0),
+                    stock: (() => {
+                        const n = Number((f as any)?.stock);
+                        return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : undefined;
+                    })(),
                     imageUrl: f.imagen_url || '',
                     soldCount: (f.unidades_vendidas || 0).toString(),
                     isNew: !!(f as any).es_nuevo,

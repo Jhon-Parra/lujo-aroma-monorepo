@@ -117,7 +117,7 @@
 
     <!-- Sidebar (Desktop) -->
     <aside
-        class="hidden xl:block w-72 2xl:w-80 xl:pr-6 mb-8 xl:mb-0 h-fit xl:self-start xl:sticky xl:top-40 z-10 transition-all duration-300">
+        class="hidden xl:block xl:w-[36rem] 2xl:w-[42rem] xl:pr-8 mb-8 xl:mb-0 h-fit xl:self-start xl:sticky xl:top-40 z-10 transition-all duration-300">
         <div class="rounded-3xl bg-white border border-[#ecece5] shadow-sm overflow-hidden">
             <div class="px-6 pt-6 pb-5 bg-[radial-gradient(circle_at_20%_0%,rgba(39,76,104,0.10),transparent_55%)]">
                 <div class="flex items-end justify-between">
@@ -135,138 +135,81 @@
                 </button>
             </div>
 
-             <div class="px-6 pb-6">
-                    <div class="mt-4 text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Genero</div>
+            <div class="px-6 pb-6">
+                <div class="grid grid-cols-2 gap-6 items-start">
+                    <section class="min-w-0">
+                        <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Genero</div>
 
-                <ul class="mt-4 space-y-2">
-                    <li>
-                        <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                            <input type="radio" name="gender" value="all" (change)="filterGender('all')"
-                                [checked]="selectedGender === 'all'" class="sr-only peer">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
-                                    <i class="bi bi-grid text-lg"></i>
-                                </div>
-                                <div class="min-w-0">
-                                    <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal">Todo</div>
-                                    <div class="text-xs text-soft-charcoal">Sin filtro de genero</div>
-                                </div>
-                            </div>
-                            <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                        </label>
-                    </li>
+                        <div class="mt-4 space-y-2">
+                            <button type="button" (click)="filterGender('all')"
+                                [ngClass]="selectedGender === 'all' ? 'border-[#b59a68]/45 bg-[#f9f4ea]' : 'border-[#ecece5] bg-white hover:bg-[#f9f9f6]'"
+                                class="w-full text-left border rounded-2xl px-3 py-3 transition-colors">
+                                <div class="text-[10px] font-bold uppercase tracking-[0.24em] text-charcoal">Todo</div>
+                                <div class="text-[11px] text-soft-charcoal mt-0.5">Sin filtro de genero</div>
+                            </button>
 
-                    <li>
-                        <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                            <input type="radio" name="gender" value="mujer" (change)="filterGender('mujer')"
-                                [checked]="selectedGender === 'mujer'" class="sr-only peer">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
-                                    <i class="bi bi-gender-female text-lg"></i>
-                                </div>
-                                <div class="min-w-0">
-                                    <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal">Ella</div>
-                                    <div class="text-xs text-soft-charcoal">Elegancia femenina</div>
-                                </div>
-                            </div>
-                            <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                        </label>
-                    </li>
+                            <button type="button" (click)="filterGender('mujer')"
+                                [ngClass]="selectedGender === 'mujer' ? 'border-[#b59a68]/45 bg-[#f9f4ea]' : 'border-[#ecece5] bg-white hover:bg-[#f9f9f6]'"
+                                class="w-full text-left border rounded-2xl px-3 py-3 transition-colors">
+                                <div class="text-[10px] font-bold uppercase tracking-[0.24em] text-charcoal">Mujer</div>
+                                <div class="text-[11px] text-soft-charcoal mt-0.5">Elegancia femenina</div>
+                            </button>
 
-                    <li>
-                        <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                            <input type="radio" name="gender" value="hombre" (change)="filterGender('hombre')"
-                                [checked]="selectedGender === 'hombre'" class="sr-only peer">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
-                                    <i class="bi bi-gender-male text-lg"></i>
-                                </div>
-                                <div class="min-w-0">
-                                    <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal">El</div>
-                                    <div class="text-xs text-soft-charcoal">Define tu presencia</div>
-                                </div>
-                            </div>
-                            <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                        </label>
-                    </li>
+                            <button type="button" (click)="filterGender('hombre')"
+                                [ngClass]="selectedGender === 'hombre' ? 'border-[#b59a68]/45 bg-[#f9f4ea]' : 'border-[#ecece5] bg-white hover:bg-[#f9f9f6]'"
+                                class="w-full text-left border rounded-2xl px-3 py-3 transition-colors">
+                                <div class="text-[10px] font-bold uppercase tracking-[0.24em] text-charcoal">Hombre</div>
+                                <div class="text-[11px] text-soft-charcoal mt-0.5">Define tu presencia</div>
+                            </button>
 
-                    <li>
-                        <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-3 border border-transparent hover:border-[#b59a68]/25 hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                            <input type="radio" name="gender" value="unisex" (change)="filterGender('unisex')"
-                                [checked]="selectedGender === 'unisex'" class="sr-only peer">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-10 h-10 rounded-2xl bg-[#07121a] text-[#d8c08a] flex items-center justify-center border border-[#07121a]/20 shadow-sm transition-colors peer-checked:bg-[#b59a68] peer-checked:text-[#07121a]">
-                                    <i class="bi bi-stars text-lg"></i>
-                                </div>
-                                <div class="min-w-0">
-                                    <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal">Unisex</div>
-                                    <div class="text-xs text-soft-charcoal">Versatil y moderna</div>
-                                </div>
-                            </div>
-                            <div class="h-2 w-2 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                        </label>
-                    </li>
-                 </ul>
+                            <button type="button" (click)="filterGender('unisex')"
+                                [ngClass]="selectedGender === 'unisex' ? 'border-[#b59a68]/45 bg-[#f9f4ea]' : 'border-[#ecece5] bg-white hover:bg-[#f9f9f6]'"
+                                class="w-full text-left border rounded-2xl px-3 py-3 transition-colors">
+                                <div class="text-[10px] font-bold uppercase tracking-[0.24em] text-charcoal">Unisex</div>
+                                <div class="text-[11px] text-soft-charcoal mt-0.5">Versatil y moderna</div>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="min-w-0">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Casas</div>
+                            <div class="text-[9px] text-soft-charcoal font-medium uppercase tracking-widest whitespace-nowrap">{{ filteredHouses.length }}</div>
+                        </div>
+
+                        <div class="mt-4 relative">
+                            <input type="text" [(ngModel)]="houseSearchTerm" placeholder="Filtrar marca..."
+                                class="w-full bg-[#f9f9f6] border border-[#ecece5] rounded-2xl px-4 py-2.5 text-[11px] text-charcoal placeholder:text-soft-charcoal/60 focus:outline-none focus:border-[#b59a68]/40 transition-all shadow-inner">
+                            <i class="bi bi-search absolute right-4 top-3 text-soft-charcoal/40 text-xs"></i>
+                        </div>
+
+                        <div class="mt-3 max-h-[340px] overflow-y-auto pr-2 custom-scrollbar space-y-1">
+                            <button type="button" (click)="filterCategory('todos')"
+                                [ngClass]="selectedCategory === 'todos' ? 'border-[#b59a68]/45 bg-[#f9f4ea]' : 'border-transparent hover:bg-[#f9f9f6]'"
+                                class="w-full text-left rounded-xl border px-3 py-2.5 transition-colors">
+                                <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-charcoal truncate">Todas las Casas</div>
+                            </button>
+
+                            <button *ngFor="let c of filteredHouses" type="button" (click)="filterCategory(c.slug)"
+                                [ngClass]="selectedCategory === c.slug ? 'border-[#b59a68]/45 bg-[#f9f4ea]' : 'border-transparent hover:bg-[#f9f9f6]'"
+                                class="w-full text-left rounded-xl border px-3 py-2.5 transition-colors">
+                                <div class="text-[10px] font-bold uppercase tracking-[0.2em] text-charcoal truncate">{{ c.nombre }}</div>
+                            </button>
+                        </div>
+                    </section>
+                </div>
 
                 <div class="mt-6 pt-5 border-t border-[#ecece5]">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#274C68]">Casas Perfumistas</div>
-                        <div class="text-[9px] text-soft-charcoal font-medium uppercase tracking-widest">{{ filteredHouses.length }} marcas</div>
-                    </div>
-
-                    <!-- House Search (Desktop) -->
-                    <div class="mb-4 relative">
-                        <input type="text" [(ngModel)]="houseSearchTerm" placeholder="Filtrar por marca..." 
-                            class="w-full bg-[#f9f9f6] border border-[#ecece5] rounded-2xl px-4 py-2.5 text-[11px] text-charcoal placeholder:text-soft-charcoal/60 focus:outline-none focus:border-[#b59a68]/40 transition-all shadow-inner">
-                        <i class="bi bi-search absolute right-4 top-3 text-soft-charcoal/40 text-xs"></i>
-                    </div>
-
-                    <ul class="mt-2 space-y-1 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                        <li>
-                            <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 border border-transparent hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                                <input type="radio" name="category" value="todos" (change)="filterCategory('todos')"
-                                    [checked]="selectedCategory === 'todos'" class="sr-only peer">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-8 h-8 rounded-xl bg-[#f9f9f6] text-[#274C68] flex items-center justify-center border border-[#ecece5] shadow-sm transition-colors peer-checked:bg-[#b59a68]/15 peer-checked:border-[#b59a68]/35 peer-checked:text-[#07121a]">
-                                        <i class="bi bi-grid-fill text-sm"></i>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal truncate">Todas las Casas</div>
-                                    </div>
-                                </div>
-                                <div class="h-1.5 w-1.5 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                            </label>
-                        </li>
-                        <li *ngFor="let c of filteredHouses">
-                            <label class="group flex items-center justify-between gap-3 rounded-2xl px-3 py-2.5 border border-transparent hover:bg-[#f9f9f6] transition-colors cursor-pointer">
-                                <input type="radio" name="category" [value]="c.slug" (change)="filterCategory(c.slug)"
-                                    [checked]="selectedCategory === c.slug" class="sr-only peer">
-                                <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-8 h-8 rounded-xl bg-[#f9f9f6] text-[#274C68] flex items-center justify-center border border-[#ecece5] shadow-sm transition-colors peer-checked:bg-[#b59a68]/15 peer-checked:border-[#b59a68]/35 peer-checked:text-[#07121a]">
-                                        <i class="bi bi-award text-sm"></i>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <div class="text-[11px] font-bold uppercase tracking-[0.22em] text-charcoal truncate">{{ c.nombre }}</div>
-                                    </div>
-                                </div>
-                                <div class="h-1.5 w-1.5 rounded-full bg-[#b59a68] opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-                            </label>
-                        </li>
-                    </ul>
-
-                    <!-- Promotions Toggle -->
-                    <div class="mt-6 pt-5 border-t border-[#ecece5]">
-                        <button (click)="togglePromotions()" 
-                            [class.bg-[#b59a68]]="showOnlyPromotions"
-                            [class.text-white]="showOnlyPromotions"
-                            class="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-[#ecece5] text-[10px] font-bold uppercase tracking-[0.28em] transition-all hover:shadow-md">
-                            <span class="flex items-center gap-2">
-                                <i class="bi bi-percent text-base"></i>
-                                Solo en Oferta
-                            </span>
-                            <div *ngIf="showOnlyPromotions" class="w-2 h-2 rounded-full bg-white animate-pulse"></div>
-                        </button>
-                    </div>
+                    <button (click)="togglePromotions()"
+                        [class.bg-[#b59a68]]="showOnlyPromotions"
+                        [class.text-white]="showOnlyPromotions"
+                        class="w-full flex items-center justify-between px-4 py-3 rounded-2xl border border-[#ecece5] text-[10px] font-bold uppercase tracking-[0.28em] transition-all hover:shadow-md">
+                        <span class="flex items-center gap-2">
+                            <i class="bi bi-percent text-base"></i>
+                            Solo en Oferta
+                        </span>
+                        <div *ngIf="showOnlyPromotions" class="w-2 h-2 rounded-full bg-white animate-pulse"></div>
+                    </button>
                 </div>
             </div>
         </div>

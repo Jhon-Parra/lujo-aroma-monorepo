@@ -101,6 +101,23 @@ export class SettingsService {
 
     constructor(private http: HttpClient) { }
 
+    private normalizeLogoUrl(raw: unknown): string | null {
+        const url = String(raw ?? '').trim();
+        if (!url) return null;
+
+        const bad = new Set(['video', 'image', 'gif', 'null', 'undefined', 'true', 'false']);
+        if (bad.has(url.toLowerCase())) return null;
+
+        return url;
+    }
+
+    private normalizeSettings(input: Settings): Settings {
+        return {
+            ...input,
+            logo_url: this.normalizeLogoUrl((input as any)?.logo_url)
+        };
+    }
+
     getSettings(): Observable<Settings> {
         const cached = this.settingsSubject.value;
         if (cached) return of(cached);
@@ -121,8 +138,9 @@ export class SettingsService {
 
         this.inflight$ = this.http.get<Settings>(this.apiUrl).pipe(
             tap((s) => {
-                this.settingsSubject.next(s);
-                this.saveToLocal(s);
+                const normalized = this.normalizeSettings(s || ({} as Settings));
+                this.settingsSubject.next(normalized);
+                this.saveToLocal(normalized);
             }),
             finalize(() => {
                 this.inflight$ = undefined;
@@ -152,7 +170,7 @@ export class SettingsService {
             if (!raw) return null;
             const parsed = JSON.parse(raw);
             if (!parsed || typeof parsed !== 'object') return null;
-            return parsed as Settings;
+            return this.normalizeSettings(parsed as Settings);
         } catch {
             return null;
         }
@@ -160,7 +178,7 @@ export class SettingsService {
 
     private saveToLocal(settings: Settings): void {
         try {
-            localStorage.setItem(this.CACHE_KEY, JSON.stringify(settings));
+            localStorage.setItem(this.CACHE_KEY, JSON.stringify(this.normalizeSettings(settings)));
         } catch {
             // ignore
         }

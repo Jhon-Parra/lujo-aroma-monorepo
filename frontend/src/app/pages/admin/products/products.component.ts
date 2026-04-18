@@ -23,12 +23,14 @@ export class ProductsComponent implements OnInit {
 
   productFilterText = '';
   productFilterGender: 'all' | string = 'all';
+  productFilterHouse: 'all' | string = 'all';
   productFilterStock: 'all' | 'low' | 'out' = 'all';
   productSort: 'name_asc' | 'price_desc' | 'price_asc' | 'stock_asc' | 'stock_desc' = 'name_asc';
   private readonly lowStockThreshold = 5;
 
   houseCategories: Category[] = [];
   houseCategoriesSupported = false;
+  houseOptions: Array<{ value: string; label: string }> = [];
 
   newProduct = {
     nombre: '',
@@ -72,11 +74,11 @@ export class ProductsComponent implements OnInit {
     this.categoryService.getAdminCategories().subscribe({
       next: (rows) => {
         this.houseCategories = (rows || []).slice().sort((a, b) => String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es'));
-        this.houseCategoriesSupported = this.houseCategories.length > 0;
+        this.rebuildHouseOptions();
       },
       error: () => {
         this.houseCategories = [];
-        this.houseCategoriesSupported = false;
+        this.rebuildHouseOptions();
       }
     });
   }
@@ -94,13 +96,54 @@ export class ProductsComponent implements OnInit {
   loadProducts() {
     this.productService.getProducts().subscribe(res => {
       this.products = res;
+      this.rebuildHouseOptions();
       this.applyProductFilters();
     });
+  }
+
+  private normalizeHouseKey(raw: any): string {
+    return String(raw ?? '').trim().toLowerCase();
+  }
+
+  private rebuildHouseOptions(): void {
+    const map = new Map<string, string>();
+
+    for (const c of this.getActiveHouseCategories()) {
+      const key = this.normalizeHouseKey(c?.slug || c?.nombre || '');
+      const label = String(c?.nombre || c?.slug || '').trim();
+      if (!key || !label) continue;
+      if (!map.has(key)) map.set(key, label);
+    }
+
+    for (const p of this.products || []) {
+      const raw = (p as any)?.categoria_slug || (p as any)?.casa || (p as any)?.house || '';
+      const key = this.normalizeHouseKey(raw);
+      const label = String((p as any)?.categoria_nombre || (p as any)?.casa || (p as any)?.house || '').trim();
+      if (!key || !label) continue;
+      if (!map.has(key)) map.set(key, label);
+    }
+
+    this.houseOptions = Array.from(map.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'es'));
+
+    this.houseCategoriesSupported = this.houseOptions.length > 0;
+  }
+
+  getHouseOptions(): Array<{ value: string; label: string }> {
+    return this.houseOptions;
+  }
+
+  hasHouseOption(value: string | null | undefined): boolean {
+    const key = this.normalizeHouseKey(value);
+    if (!key) return false;
+    return this.houseOptions.some((o) => o.value === key);
   }
 
   applyProductFilters(): void {
     const q = (this.productFilterText || '').trim().toLowerCase();
     const gender = this.productFilterGender;
+    const house = this.productFilterHouse;
     const stockFilter = this.productFilterStock;
 
     let items = (this.products || []).slice();
@@ -114,6 +157,13 @@ export class ProductsComponent implements OnInit {
 
     if (gender !== 'all') {
       items = items.filter((p) => (p.genero || 'unisex') === gender);
+    }
+
+    if (house !== 'all') {
+      items = items.filter((p) => {
+        const houseKey = this.normalizeHouseKey((p as any)?.categoria_slug || (p as any)?.casa || (p as any)?.house || '');
+        return houseKey === house;
+      });
     }
 
     if (stockFilter === 'out') {
@@ -159,6 +209,7 @@ export class ProductsComponent implements OnInit {
   clearProductFilters(): void {
     this.productFilterText = '';
     this.productFilterGender = 'all';
+    this.productFilterHouse = 'all';
     this.productFilterStock = 'all';
     this.productSort = 'name_asc';
     this.applyProductFilters();
@@ -356,11 +407,12 @@ export class ProductsComponent implements OnInit {
   }
 
   editProduct(product: Product) {
+    const casaRaw = (product as any).categoria_slug || (product as any).casa || (product as any).house || '';
     this.editingProductId = product.id || null;
     this.newProduct = {
       nombre: product.nombre,
       genero: product.genero || 'unisex',
-      casa: (product as any).categoria_slug || (product as any).casa || (product as any).house || '',
+      casa: this.normalizeHouseKey(casaRaw),
       notas: (product as any).notas_olfativas || '',
       precio: typeof product.precio === 'string' ? parseFloat(product.precio) : (product.precio || 0),
       stock: product.stock,

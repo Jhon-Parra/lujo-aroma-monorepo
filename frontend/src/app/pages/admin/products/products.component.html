@@ -196,7 +196,10 @@
                             <select name="casa" [(ngModel)]="newProduct.casa"
                                 class="w-full border border-[#dcdcd4] rounded-sm p-3 focus:outline-none focus:border-gold bg-white">
                                 <option value="">Sin categoría</option>
-                                <option *ngFor="let c of getActiveHouseCategories()" [value]="c.slug">{{ c.nombre }}</option>
+                                <option *ngFor="let h of getHouseOptions()" [value]="h.value">{{ h.label }}</option>
+                                <option *ngIf="newProduct.casa && !hasHouseOption(newProduct.casa)" [value]="newProduct.casa">
+                                    Actual: {{ newProduct.casa }}
+                                </option>
                             </select>
                         </ng-container>
                         <ng-template #casaFallback>
@@ -321,7 +324,7 @@
                         </p>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full lg:max-w-4xl">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 w-full lg:max-w-6xl">
                         <div>
                             <label class="block text-[10px] font-bold text-soft-charcoal uppercase tracking-widest mb-1">Buscar</label>
                             <input type="text" [(ngModel)]="productFilterText" (ngModelChange)="applyProductFilters()"
@@ -336,6 +339,14 @@
                                 <option value="mujer">Mujer</option>
                                 <option value="hombre">Hombre</option>
                                 <option value="unisex">Unisex</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-soft-charcoal uppercase tracking-widest mb-1">Casa</label>
+                            <select [(ngModel)]="productFilterHouse" (ngModelChange)="applyProductFilters()"
+                                class="w-full border border-[#dcdcd4] rounded-sm p-2.5 text-sm focus:outline-none focus:border-gold bg-white">
+                                <option value="all">Todas</option>
+                                <option *ngFor="let h of getHouseOptions()" [value]="h.value">{{ h.label }}</option>
                             </select>
                         </div>
                         <div>
@@ -369,12 +380,13 @@
             </div>
 
             <div class="overflow-x-auto">
-            <table class="min-w-[980px] w-full text-left text-sm text-soft-charcoal">
+            <table class="min-w-[1080px] w-full text-left text-sm text-soft-charcoal">
                 <thead
                     class="bg-cream border-b border-[#ecece5] text-xs uppercase tracking-widest font-bold text-charcoal">
                     <tr>
                         <th class="p-4">Producto</th>
                         <th class="p-4">Género</th>
+                        <th class="p-4">Casa</th>
                         <th class="p-4">Notas</th>
                         <th class="p-4 text-right">Precio</th>
                         <th class="p-4 text-center">Stock</th>
@@ -395,6 +407,9 @@
                             </div>
                           </td>
                         <td class="p-4 uppercase text-[10px] tracking-widest font-bold text-gold">{{ product.genero || 'UNISEX' }}</td>
+                        <td class="p-4 uppercase text-[10px] tracking-widest text-soft-charcoal">
+                            {{ product.categoria_nombre || product.casa || product.house || '—' }}
+                        </td>
                         <td class="p-4 truncate max-w-xs">{{ product.notas_olfativas || product.descripcion }}</td>
                         <td class="p-4 text-right font-bold text-charcoal">{{ product.precio | currency }}</td>
                         <td class="p-4 text-center cursor-pointer" (click)="!editingStockId && startEditStock(product)"

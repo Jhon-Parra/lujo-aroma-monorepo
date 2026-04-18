@@ -29,6 +29,7 @@ export class ProductsComponent implements OnInit {
   private readonly lowStockThreshold = 5;
 
   houseCategories: Category[] = [];
+  houseCatalog: Array<{ slug: string; nombre: string }> = [];
   houseCategoriesSupported = false;
   houseOptions: Array<{ value: string; label: string }> = [];
 
@@ -67,7 +68,27 @@ export class ProductsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadHouseCategories();
+    this.loadHouseCatalog();
     this.loadProducts();
+  }
+
+  loadHouseCatalog(): void {
+    this.productService.getPublicHouses().subscribe({
+      next: (rows) => {
+        this.houseCatalog = (rows || [])
+          .map((r: any) => ({
+            slug: this.normalizeHouseKey((r as any)?.slug || (r as any)?.casa || ''),
+            nombre: String((r as any)?.nombre || (r as any)?.casa || '').trim()
+          }))
+          .filter((r) => !!r.slug && !!r.nombre)
+          .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+        this.rebuildHouseOptions();
+      },
+      error: () => {
+        this.houseCatalog = [];
+        this.rebuildHouseOptions();
+      }
+    });
   }
 
   loadHouseCategories(): void {
@@ -111,6 +132,13 @@ export class ProductsComponent implements OnInit {
     for (const c of this.getActiveHouseCategories()) {
       const key = this.normalizeHouseKey(c?.slug || c?.nombre || '');
       const label = String(c?.nombre || c?.slug || '').trim();
+      if (!key || !label) continue;
+      if (!map.has(key)) map.set(key, label);
+    }
+
+    for (const h of this.houseCatalog || []) {
+      const key = this.normalizeHouseKey(h?.slug || h?.nombre || '');
+      const label = String(h?.nombre || h?.slug || '').trim();
       if (!key || !label) continue;
       if (!map.has(key)) map.set(key, label);
     }

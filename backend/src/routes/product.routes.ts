@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
     getProducts,
     getPublicCatalog,
+    getPublicHouses,
     getNewestProducts,
     getProductById,
     createProduct,
@@ -21,6 +22,7 @@ import { createProductSchema, updateProductSchema } from '../schemas/product.sch
 const router = Router();
 
 router.get('/catalog', optionalVerifyToken, getPublicCatalog);
+router.get('/houses', getPublicHouses);
 router.get('/newest', optionalVerifyToken, getNewestProducts);
 router.get('/bestsellers', optionalVerifyToken, getBestsellers);
 router.get('/', getProducts);

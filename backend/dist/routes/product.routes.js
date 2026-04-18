@@ -8,6 +8,7 @@ const validation_middleware_1 = require("../middleware/validation.middleware");
 const product_schema_1 = require("../schemas/product.schema");
 const router = (0, express_1.Router)();
 router.get('/catalog', auth_middleware_1.optionalVerifyToken, product_controller_1.getPublicCatalog);
+router.get('/houses', product_controller_1.getPublicHouses);
 router.get('/newest', auth_middleware_1.optionalVerifyToken, product_controller_1.getNewestProducts);
 router.get('/bestsellers', auth_middleware_1.optionalVerifyToken, product_controller_1.getBestsellers);
 router.get('/', product_controller_1.getProducts);

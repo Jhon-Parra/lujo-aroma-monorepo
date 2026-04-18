@@ -160,29 +160,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
       description: 'Explora nuestra colección exclusiva de perfumes originales en Bogotá. Envíos a toda Colombia. Filtra por categoría y encuentra tu aroma ideal.'
     });
 
-    this.categoryService.getPublicCategories().subscribe({
-      next: (rows) => {
-        const seen = new Set<string>();
-        const blocked = new Set(['mujer', 'hombre', 'unisex']);
-        this.categories = (rows || [])
-          .map((c) => {
-            const slug = this.normalizeSlug((c as any)?.slug);
-            return { ...c, slug } as Category;
-          })
-          .filter((c) => {
-            if (!c?.slug || c.slug === 'todos') return false;
-            if (blocked.has(String(c.slug || '').toLowerCase())) return false;
-            if (seen.has(c.slug)) return false;
-            seen.add(c.slug);
-            return true;
-          })
-          .slice()
-          .sort((a, b) => String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es'));
-      },
-      error: () => {
-        this.categories = [];
-      }
-    });
+    this.loadHouseFilters();
     this.route.queryParams.subscribe(params => {
       this.searchTerm = params['q'] || '';
       this.selectedCategory = this.normalizeSlug(params['category'] ?? params['house']);
@@ -198,6 +176,59 @@ export class CatalogComponent implements OnInit, OnDestroy {
       this.skeletonCards = Array.from({ length: this.itemsPerPage }, (_, i) => i);
 
       this.fetchProducts();
+    });
+  }
+
+  private normalizeHouseRows(rows: any[]): Category[] {
+    const seen = new Set<string>();
+    const blocked = new Set(['mujer', 'hombre', 'unisex']);
+
+    return (rows || [])
+      .map((c) => {
+        const slug = this.normalizeSlug((c as any)?.slug ?? (c as any)?.casa);
+        const nombre = String((c as any)?.nombre ?? (c as any)?.casa ?? '').trim();
+        return { ...(c as any), slug, nombre } as Category;
+      })
+      .filter((c) => {
+        if (!c?.slug || c.slug === 'todos') return false;
+        if (!String(c?.nombre || '').trim()) return false;
+        if (blocked.has(String(c.slug || '').toLowerCase())) return false;
+        if (seen.has(c.slug)) return false;
+        seen.add(c.slug);
+        return true;
+      })
+      .slice()
+      .sort((a, b) => String(a?.nombre || '').localeCompare(String(b?.nombre || ''), 'es'));
+  }
+
+  private loadHouseFilters(): void {
+    this.productService.getPublicHouses().subscribe({
+      next: (rows) => {
+        const normalized = this.normalizeHouseRows(rows || []);
+        if (normalized.length > 0) {
+          this.categories = normalized;
+          return;
+        }
+
+        this.categoryService.getPublicCategories().subscribe({
+          next: (fallbackRows) => {
+            this.categories = this.normalizeHouseRows(fallbackRows || []);
+          },
+          error: () => {
+            this.categories = [];
+          }
+        });
+      },
+      error: () => {
+        this.categoryService.getPublicCategories().subscribe({
+          next: (rows) => {
+            this.categories = this.normalizeHouseRows(rows || []);
+          },
+          error: () => {
+            this.categories = [];
+          }
+        });
+      }
     });
   }
 

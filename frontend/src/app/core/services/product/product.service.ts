@@ -60,6 +60,12 @@ export interface PaginatedResponse<T> {
   items: T[];
 }
 
+export interface ProductHouse {
+  slug: string;
+  nombre: string;
+  total_productos?: number;
+}
+
 import { API_CONFIG } from '../../config/api-config';
 
 @Injectable({
@@ -99,6 +105,10 @@ export class ProductService {
 
   getProducts(): Observable<Product[]> {
     return this.http.get<Product[]>(`${this.publicUrl}`);
+  }
+
+  getPublicHouses(): Observable<ProductHouse[]> {
+    return this.http.get<ProductHouse[]>(`${this.publicUrl}/houses`);
   }
 
   getPublicCatalog(

@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getLowStockProducts = exports.importProductsFromSpreadsheet = exports.downloadProductImportTemplate = exports.deleteProduct = exports.updateProduct = exports.getRelatedProducts = exports.getProductById = exports.getBestsellers = exports.getNewestProducts = exports.getPublicCatalog = exports.getProducts = exports.createProduct = void 0;
+exports.getLowStockProducts = exports.importProductsFromSpreadsheet = exports.downloadProductImportTemplate = exports.deleteProduct = exports.updateProduct = exports.getRelatedProducts = exports.getProductById = exports.getBestsellers = exports.getNewestProducts = exports.getPublicHouses = exports.getPublicCatalog = exports.getProducts = exports.createProduct = void 0;
 const database_1 = require("../config/database");
 const uuid_1 = require("uuid");
 const XLSX = __importStar(require("xlsx"));
@@ -701,6 +701,30 @@ const getPublicCatalog = async (req, res) => {
     }
 };
 exports.getPublicCatalog = getPublicCatalog;
+const getPublicHouses = async (_req, res) => {
+    try {
+        const casaOk = await detectProductCasaSchema();
+        if (!casaOk) {
+            res.status(200).json([]);
+            return;
+        }
+        const [rows] = await database_1.pool.query(`SELECT
+                LOWER(TRIM(p.casa)) AS slug,
+                MIN(TRIM(p.casa)) AS nombre,
+                COUNT(*) AS total_productos
+             FROM productos p
+             WHERE p.casa IS NOT NULL
+               AND TRIM(p.casa) <> ''
+             GROUP BY LOWER(TRIM(p.casa))
+             ORDER BY nombre ASC`);
+        res.status(200).json(rows || []);
+    }
+    catch (error) {
+        console.error('Error fetching public houses:', error);
+        res.status(500).json({ error: 'Error al cargar las casas perfumistas' });
+    }
+};
+exports.getPublicHouses = getPublicHouses;
 // 2.c Obtener productos mas nuevos (home)
 const getNewestProducts = async (req, res) => {
     try {

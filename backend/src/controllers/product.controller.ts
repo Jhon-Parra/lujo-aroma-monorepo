@@ -716,6 +716,33 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
     }
 };
 
+export const getPublicHouses = async (_req: Request, res: Response): Promise<void> => {
+    try {
+        const casaOk = await detectProductCasaSchema();
+        if (!casaOk) {
+            res.status(200).json([]);
+            return;
+        }
+
+        const [rows] = await pool.query<any[]>(
+            `SELECT
+                LOWER(TRIM(p.casa)) AS slug,
+                MIN(TRIM(p.casa)) AS nombre,
+                COUNT(*) AS total_productos
+             FROM productos p
+             WHERE p.casa IS NOT NULL
+               AND TRIM(p.casa) <> ''
+             GROUP BY LOWER(TRIM(p.casa))
+             ORDER BY nombre ASC`
+        );
+
+        res.status(200).json(rows || []);
+    } catch (error) {
+        console.error('Error fetching public houses:', error);
+        res.status(500).json({ error: 'Error al cargar las casas perfumistas' });
+    }
+};
+
 
 // 2.c Obtener productos mas nuevos (home)
 export const getNewestProducts = async (req: Request, res: Response): Promise<void> => {

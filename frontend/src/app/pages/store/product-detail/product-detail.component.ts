@@ -194,7 +194,7 @@ export class ProductDetailComponent implements OnDestroy {
               const n = Number((ap as any)?.stock);
               return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : undefined;
             })(),
-            imageUrl: ap.imageUrl || ap.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
+            imageUrl: ap.imageUrl || ap.imagen_url || '/assets/images/logo.png',
             soldCount: String(ap.soldCount || ap.unidades_vendidas || 0),
             isNew: !!(ap.isNew ?? ap.es_nuevo),
             genero: ap.genero,
@@ -473,7 +473,7 @@ export class ProductDetailComponent implements OnDestroy {
         const n = Number((this.product as any)?.stock);
         return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : undefined;
       })(),
-      imageUrl: this.product.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
+      imageUrl: (this.product as any).imageUrl || this.product.imagen_url || '/assets/images/logo.png',
       soldCount: String(this.product.unidades_vendidas || 0),
       isNew: !!this.product.es_nuevo,
       precio: this.getOriginalPriceNumber(),

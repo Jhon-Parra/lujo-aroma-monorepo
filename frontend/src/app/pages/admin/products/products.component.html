@@ -397,8 +397,8 @@
                      @for (product of filteredProducts; track product.id) {
                      <tr class="border-b border-[#ecece5] hover:bg-[#EAE8E3]">
                          <td class="p-4 flex items-center space-x-3">
-                             <img [src]="product.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?w=100&q=80'"
-                                 alt="Imagen Fragancia" class="w-10 h-10 rounded-sm object-cover">
+                             <img [src]="product.imagen_url || product.imageUrl || '/assets/images/logo.png'"
+                                  alt="Imagen Fragancia" class="w-10 h-10 rounded-sm object-cover">
                             <div class="min-w-0">
                                 <div class="font-bold text-charcoal truncate">{{ product.nombre }}</div>
                                 <div *ngIf="product.categoria_nombre || product.casa || product.house" class="text-[10px] uppercase tracking-widest text-soft-charcoal truncate">

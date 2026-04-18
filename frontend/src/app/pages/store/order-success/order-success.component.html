@@ -196,7 +196,7 @@
 
         <div class="space-y-4">
           <div *ngFor="let it of order.items" class="flex items-center gap-4">
-            <img [src]="it.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=120'" alt=""
+            <img [src]="it.imagen_url || '/assets/images/logo.png'" alt=""
               class="w-14 h-14 object-cover border border-gray-100" />
             <div class="flex-1 min-w-0">
               <div class="text-xs font-bold text-charcoal uppercase tracking-widest truncate">{{ it.nombre }}</div>

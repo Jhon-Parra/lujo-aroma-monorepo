@@ -673,7 +673,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         const n = Number((ap as any)?.stock);
         return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : undefined;
       })(),
-      imageUrl: ap.imageUrl || ap.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
+      imageUrl: ap.imageUrl || ap.imagen_url || '/assets/images/logo.png',
       soldCount: (ap.soldCount || ap.unidades_vendidas || 0).toString(),
       isNew: !!(ap.isNew ?? ap.es_nuevo),
       genero: ap.genero,

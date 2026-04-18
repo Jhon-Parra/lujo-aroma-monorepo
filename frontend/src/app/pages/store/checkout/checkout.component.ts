@@ -1380,6 +1380,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     getItemImage(item: CartItem): string {
-        return item.product.imageUrl || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=100';
+        return item.product.imageUrl || '/assets/images/logo.png';
     }
 }

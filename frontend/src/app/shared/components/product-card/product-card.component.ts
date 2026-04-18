@@ -43,7 +43,7 @@ export class ProductCardComponent {
     name: 'FLORAL ELEGANCE',
     notes: 'Jazmín, Rosas y Ámbar.',
     price: 75.00,
-    imageUrl: 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=800&auto=format&fit=crop',
+    imageUrl: '/assets/images/logo.png',
     soldCount: '0',
     isNew: true
   };

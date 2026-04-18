@@ -64,7 +64,7 @@
                 <div class="px-4 sm:px-6 py-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div *ngFor="let item of (order.items || [])" class="flex items-center gap-3">
-                            <img [src]="item.imagen_url || 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=100'"
+                            <img [src]="item.imagen_url || '/assets/images/logo.png'"
                                 [alt]="item.nombre" class="w-14 h-14 object-cover border border-gray-100 flex-shrink-0">
                             <div class="min-w-0">
                                 <p class="text-xs font-bold text-charcoal uppercase tracking-wide truncate">{{

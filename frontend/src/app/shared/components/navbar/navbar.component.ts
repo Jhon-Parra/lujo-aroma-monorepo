@@ -522,10 +522,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
     const raw = String(product.imageUrl || product.imagen_url || '').trim();
 
     if (!raw) {
-      return 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=100';
+      return '/assets/images/logo.png';
     }
 
-    if (raw.startsWith('http') || raw.startsWith('data:')) {
+    if (raw.startsWith('http') || raw.startsWith('data:') || raw.startsWith('/assets/')) {
       return raw;
     }
 
@@ -539,10 +539,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
     const raw = String(item?.product?.imageUrl || item?.product?.imagen_url || '').trim();
 
     if (!raw) {
-      return 'https://images.unsplash.com/photo-1594035910387-fea47714263f?q=80&w=100';
+      return '/assets/images/logo.png';
     }
 
-    if (raw.startsWith('http') || raw.startsWith('data:')) {
+    if (raw.startsWith('http') || raw.startsWith('data:') || raw.startsWith('/assets/')) {
       return raw;
     }
 

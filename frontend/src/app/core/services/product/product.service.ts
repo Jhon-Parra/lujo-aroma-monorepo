@@ -115,7 +115,8 @@ export class ProductService {
     page = 1,
     limit = 12,
     query = '',
-    filters?: { category?: string | null; house?: string | null; gender?: string | null }
+    filters?: { category?: string | null; house?: string | null; gender?: string | null },
+    smart = false
   ): Observable<PaginatedResponse<Product>> {
     const q = encodeURIComponent(query.trim());
     const category = String(filters?.category ?? filters?.house ?? '').trim();
@@ -124,6 +125,7 @@ export class ProductService {
     let url = `${this.publicUrl}/catalog?page=${page}&limit=${limit}&q=${q}`;
     if (category) url += `&category=${encodeURIComponent(category)}`;
     if (gender) url += `&gender=${encodeURIComponent(gender)}`;
+    if (smart) url += `&smart=true`;
 
     return this.http.get<any>(url).pipe(
       map(res => this.normalizePaginatedResponse<Product>(res, limit))
@@ -134,10 +136,11 @@ export class ProductService {
    * Returns up to 'limit' products whose name matches the query.
    * Used by the navbar autocomplete dropdown.
    */
-  searchSuggestions(query: string, limit = 5): Observable<Product[]> {
+  searchSuggestions(query: string, limit = 5, smart = false): Observable<Product[]> {
     const q = encodeURIComponent(query.trim());
+    const smartParam = smart ? '&smart=true' : '';
     return this.http.get<any>(
-      `${this.publicUrl}/catalog?q=${q}&limit=${limit}`
+      `${this.publicUrl}/catalog?q=${q}&limit=${limit}${smartParam}`
     ).pipe(
       map(res => this.normalizePaginatedResponse<Product>(res, limit).items.slice(0, limit))
     );

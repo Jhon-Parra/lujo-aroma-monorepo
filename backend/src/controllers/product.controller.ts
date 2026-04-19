@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { pool } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
+import { refineSearchQuery } from './ai.controller';
 import * as XLSX from 'xlsx';
 
 import { appCache, CACHE_KEYS } from '../utils/cache.util';
@@ -541,17 +542,31 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             countQuery += ' AND LOWER(p.casa) = ?';
             queryParams.push(house);
         }
-        if (q) {
-            // Very basic SQL search for total count, more robust filtering happens later if needed
-            // However, with indices, we can do some filtering here too.
-            const qLike = `%${q}%`;
-            if (casaOk) {
-                countQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)';
-                queryParams.push(qLike, qLike, qLike, qLike);
-            } else {
-                countQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
-                queryParams.push(qLike, qLike, qLike);
+        const smart = String(req.query.smart || '').trim() === 'true';
+        let searchTokens = q ? q.split(' ').filter(t => t.length > 1) : [];
+
+        if (smart && q && q.trim().length > 3) {
+            try {
+                const refined = await refineSearchQuery(q);
+                if (refined && refined.length > 0) searchTokens = refined;
+            } catch (err) {
+                console.error('Error in smart search refinement:', err);
             }
+        }
+
+        if (searchTokens.length > 0) {
+            const searchClauses = searchTokens.map(() => {
+                return casaOk 
+                    ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
+                    : '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
+            });
+            const searchSql = ` AND (${searchClauses.join(' AND ')})`;
+            countQuery += searchSql;
+            searchTokens.forEach(t => {
+                const tLike = `%${t}%`;
+                queryParams.push(tLike, tLike, tLike);
+                if (casaOk) queryParams.push(tLike);
+            });
         }
         const [countRows] = await pool.query<any[]>(countQuery, queryParams);
         const total = countRows?.[0]?.total || 0;
@@ -567,20 +582,28 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
              ${categoryJoin}
               WHERE p.stock >= 0
         `;
-        const productsParams: any[] = [...queryParams];
+        const productsParams: any[] = [];
 
         if (gender) {
             productsQuery += ' AND p.genero = ?';
+            productsParams.push(gender);
         }
         if (house && casaOk) {
             productsQuery += ' AND LOWER(p.casa) = ?';
+            productsParams.push(house);
         }
-        if (q) {
-            if (casaOk) {
-                productsQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)';
-            } else {
-                productsQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
-            }
+        if (searchTokens.length > 0) {
+            const searchClauses = searchTokens.map(() => {
+                return casaOk 
+                    ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
+                    : '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
+            });
+            productsQuery += ` AND (${searchClauses.join(' AND ')})`;
+            searchTokens.forEach(t => {
+                const tLike = `%${t}%`;
+                productsParams.push(tLike, tLike, tLike);
+                if (casaOk) productsParams.push(tLike);
+            });
         }
         // Stable ordering avoids duplicates/missing items across pages when creado_en ties.
         productsQuery += ' ORDER BY p.creado_en DESC, p.id DESC LIMIT ? OFFSET ?';

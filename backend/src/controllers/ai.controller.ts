@@ -106,3 +106,33 @@ IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total.
         });
     }
 };
+
+/**
+ * Función interna para refinar búsquedas mediante IA.
+ * Traduce lenguaje natural (ej: "fresco para oficina") en keywords técnicas.
+ */
+export const refineSearchQuery = async (query: string): Promise<string[]> => {
+    if (!GEMINI_API_KEY || !gemini || !query || query.length < 3) return [];
+    try {
+        const systemPrompt = `Eres un sumiller de perfumes experto. Convierte la consulta del usuario en una lista de 5-8 palabras clave técnicas (notas, familias olfativas o estilos) separadas por comas.
+Ejemplo: "dulce y para oficina" -> "vainilla, caramelo, ambar, elegante, profesional, limpio, suave"
+Ejemplo: "fresco para deporte" -> "citrico, acuatico, marino, fresco, sport, dinamico"
+
+IMPORTANTE: Responde ÚNICAMENTE con la lista de palabras clave separadas por comas, sin etiquetas, explicaciones ni números.`;
+
+        const contentResponse: any = await (gemini as any).models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: `${systemPrompt}\n\nConsulta: "${query}"`
+        });
+
+        const text = String(contentResponse.text || '').trim();
+        
+        // Limpiar y tokenizar
+        return text.split(',')
+            .map((s: string) => s.trim().toLowerCase())
+            .filter((s: string) => s.length > 2);
+    } catch (error) {
+        console.error('Error al refinar búsqueda con IA:', error);
+        return [];
+    }
+};

@@ -176,6 +176,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(params => {
       this.searchTerm = params['q'] || '';
       this.smartSearchTerm = this.searchTerm;
+      const isSmart = params['smart'] === 'true';
       this.selectedCategory = this.normalizeSlug(params['category'] ?? params['house']);
       this.selectedPromotionId = params['promo'] || '';
       const g = String(params['gender'] || '').trim().toLowerCase();
@@ -267,7 +268,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
           if (q.length < 2) {
             return of([] as Product[]);
           }
-          return this.productService.searchSuggestions(q, 7).pipe(
+          // Sugerencias inteligentes activan el refinamiento IA
+          return this.productService.searchSuggestions(q, 7, true).pipe(
             catchError(() => of([] as Product[]))
           );
         }),
@@ -424,10 +426,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.loading = true;
     const category = this.selectedCategory !== 'todos' ? this.selectedCategory : null;
     const gender = this.selectedGender !== 'all' ? this.selectedGender : null;
+    const isSmart = this.route.snapshot.queryParams['smart'] === 'true';
     
     // El backend ya filtra por category/house y q. 
-    // Agregamos soporte para solo promociones si el backend lo permite o lo filtramos aqui.
-    this.productService.getPublicCatalog(this.currentPage, this.itemsPerPage, this.searchTerm, { category, gender }).subscribe({
+    this.productService.getPublicCatalog(this.currentPage, this.itemsPerPage, this.searchTerm, { category, gender }, isSmart).subscribe({
       next: (res) => {
         const items = Array.isArray((res as any)?.items) ? (res as any).items : [];
         this.products = items.map((ap: any) => ({
@@ -588,6 +590,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
       queryParams: { 
         page: null,
         q: this.searchTerm || null,
+        smart: this.searchTerm ? 'true' : null, // Activar modo IA si hay busqueda
         category: this.selectedCategory !== 'todos' ? this.selectedCategory : null,
         gender: this.selectedGender !== 'all' ? this.selectedGender : null
       },

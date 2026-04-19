@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { GoogleGenAI } from '@google/genai';
+import { appCache, CACHE_KEYS } from '../utils/cache.util';
 
 // Preferir GEMINI_API_KEY. Se mantiene fallback a GROQ_API_KEY para facilitar migracion.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY;
@@ -113,6 +114,17 @@ IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total.
  */
 export const refineSearchQuery = async (query: string): Promise<string[]> => {
     if (!GEMINI_API_KEY || !gemini || !query || query.length < 3) return [];
+    
+    // Optimizacion 1: Bypass para palabras simples (marcas, notas directas)
+    // Si no hay espacios, es una busqueda directa que no necesita IA.
+    const trimmed = query.trim();
+    if (!trimmed.includes(' ')) return [trimmed.toLowerCase()];
+
+    // Optimizacion 2: Cache de resultados previos
+    const cacheKey = `${CACHE_KEYS.AI_REFINE}${trimmed.toLowerCase()}`;
+    const cached = appCache.get<string[]>(cacheKey);
+    if (cached) return cached;
+
     try {
         const systemPrompt = `Eres un sumiller de perfumes experto. Convierte la consulta del usuario en una lista de 5-8 palabras clave técnicas (notas, familias olfativas o estilos) separadas por comas.
 Ejemplo: "dulce y para oficina" -> "vainilla, caramelo, ambar, elegante, profesional, limpio, suave"
@@ -128,9 +140,16 @@ IMPORTANTE: Responde ÚNICAMENTE con la lista de palabras clave separadas por co
         const text = String(contentResponse.text || '').trim();
         
         // Limpiar y tokenizar
-        return text.split(',')
+        const tokens = text.split(',')
             .map((s: string) => s.trim().toLowerCase())
             .filter((s: string) => s.length > 2);
+
+        // Guardar en cache (6 horas = 21,600,000 ms)
+        if (tokens.length > 0) {
+            appCache.set(cacheKey, tokens, 6 * 60 * 60 * 1000);
+        }
+
+        return tokens;
     } catch (error) {
         console.error('Error al refinar búsqueda con IA:', error);
         return [];

@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateAIDescription = void 0;
+exports.refineSearchQuery = exports.generateAIDescription = void 0;
 const genai_1 = require("@google/genai");
+const cache_util_1 = require("../utils/cache.util");
 // Preferir GEMINI_API_KEY. Se mantiene fallback a GROQ_API_KEY para facilitar migracion.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY;
 const gemini = GEMINI_API_KEY ? new genai_1.GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
@@ -96,3 +97,47 @@ IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total.
     }
 };
 exports.generateAIDescription = generateAIDescription;
+/**
+ * Función interna para refinar búsquedas mediante IA.
+ * Traduce lenguaje natural (ej: "fresco para oficina") en keywords técnicas.
+ */
+const refineSearchQuery = async (query) => {
+    if (!GEMINI_API_KEY || !gemini || !query || query.length < 3)
+        return [];
+    // Optimizacion 1: Bypass para palabras simples (marcas, notas directas)
+    // Si no hay espacios, es una busqueda directa que no necesita IA.
+    const trimmed = query.trim();
+    if (!trimmed.includes(' '))
+        return [trimmed.toLowerCase()];
+    // Optimizacion 2: Cache de resultados previos
+    const cacheKey = `${cache_util_1.CACHE_KEYS.AI_REFINE}${trimmed.toLowerCase()}`;
+    const cached = cache_util_1.appCache.get(cacheKey);
+    if (cached)
+        return cached;
+    try {
+        const systemPrompt = `Eres un sumiller de perfumes experto. Convierte la consulta del usuario en una lista de 5-8 palabras clave técnicas (notas, familias olfativas o estilos) separadas por comas.
+Ejemplo: "dulce y para oficina" -> "vainilla, caramelo, ambar, elegante, profesional, limpio, suave"
+Ejemplo: "fresco para deporte" -> "citrico, acuatico, marino, fresco, sport, dinamico"
+
+IMPORTANTE: Responde ÚNICAMENTE con la lista de palabras clave separadas por comas, sin etiquetas, explicaciones ni números.`;
+        const contentResponse = await gemini.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: `${systemPrompt}\n\nConsulta: "${query}"`
+        });
+        const text = String(contentResponse.text || '').trim();
+        // Limpiar y tokenizar
+        const tokens = text.split(',')
+            .map((s) => s.trim().toLowerCase())
+            .filter((s) => s.length > 2);
+        // Guardar en cache (6 horas = 21,600,000 ms)
+        if (tokens.length > 0) {
+            cache_util_1.appCache.set(cacheKey, tokens, 6 * 60 * 60 * 1000);
+        }
+        return tokens;
+    }
+    catch (error) {
+        console.error('Error al refinar búsqueda con IA:', error);
+        return [];
+    }
+};
+exports.refineSearchQuery = refineSearchQuery;

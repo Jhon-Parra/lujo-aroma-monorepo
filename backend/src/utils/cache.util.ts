@@ -86,6 +86,7 @@ export const appCache = new TtlCache(5 * 60 * 1000);
 export const CACHE_KEYS = {
     CATALOG_ANON:  'catalog:anon',       // anonymous public catalog (no user)
     CATALOG_Q:     'catalog:q:',          // search queries  (prefix + query)
+    AI_REFINE:     'ai:refine:',          // AI search refinements
     NEWEST:        'catalog:newest:',     // newest products (prefix + limit)
     PROMOTIONS:    'promotions:active',   // active promotions list
 } as const;

@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getLowStockProducts = exports.importProductsFromSpreadsheet = exports.downloadProductImportTemplate = exports.deleteProduct = exports.updateProduct = exports.getRelatedProducts = exports.getProductById = exports.getBestsellers = exports.getNewestProducts = exports.getPublicHouses = exports.getPublicCatalog = exports.getProducts = exports.createProduct = void 0;
 const database_1 = require("../config/database");
 const uuid_1 = require("uuid");
+const ai_controller_1 = require("./ai.controller");
 const XLSX = __importStar(require("xlsx"));
 const cache_util_1 = require("../utils/cache.util");
 const storage_util_1 = require("../utils/storage.util");
@@ -531,18 +532,32 @@ const getPublicCatalog = async (req, res) => {
             countQuery += ' AND LOWER(p.casa) = ?';
             queryParams.push(house);
         }
-        if (q) {
-            // Very basic SQL search for total count, more robust filtering happens later if needed
-            // However, with indices, we can do some filtering here too.
-            const qLike = `%${q}%`;
-            if (casaOk) {
-                countQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)';
-                queryParams.push(qLike, qLike, qLike, qLike);
+        const smart = String(req.query.smart || '').trim() === 'true';
+        let searchTokens = q ? q.split(' ').filter(t => t.length > 1) : [];
+        if (smart && q && q.trim().length > 3) {
+            try {
+                const refined = await (0, ai_controller_1.refineSearchQuery)(q);
+                if (refined && refined.length > 0)
+                    searchTokens = refined;
             }
-            else {
-                countQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
-                queryParams.push(qLike, qLike, qLike);
+            catch (err) {
+                console.error('Error in smart search refinement:', err);
             }
+        }
+        if (searchTokens.length > 0) {
+            const searchClauses = searchTokens.map(() => {
+                return casaOk
+                    ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
+                    : '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
+            });
+            const searchSql = ` AND (${searchClauses.join(' AND ')})`;
+            countQuery += searchSql;
+            searchTokens.forEach(t => {
+                const tLike = `%${t}%`;
+                queryParams.push(tLike, tLike, tLike);
+                if (casaOk)
+                    queryParams.push(tLike);
+            });
         }
         const [countRows] = await database_1.pool.query(countQuery, queryParams);
         const total = countRows?.[0]?.total || 0;
@@ -557,20 +572,28 @@ const getPublicCatalog = async (req, res) => {
              ${categoryJoin}
               WHERE p.stock >= 0
         `;
-        const productsParams = [...queryParams];
+        const productsParams = [];
         if (gender) {
             productsQuery += ' AND p.genero = ?';
+            productsParams.push(gender);
         }
         if (house && casaOk) {
             productsQuery += ' AND LOWER(p.casa) = ?';
+            productsParams.push(house);
         }
-        if (q) {
-            if (casaOk) {
-                productsQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)';
-            }
-            else {
-                productsQuery += ' AND (p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
-            }
+        if (searchTokens.length > 0) {
+            const searchClauses = searchTokens.map(() => {
+                return casaOk
+                    ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
+                    : '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
+            });
+            productsQuery += ` AND (${searchClauses.join(' AND ')})`;
+            searchTokens.forEach(t => {
+                const tLike = `%${t}%`;
+                productsParams.push(tLike, tLike, tLike);
+                if (casaOk)
+                    productsParams.push(tLike);
+            });
         }
         // Stable ordering avoids duplicates/missing items across pages when creado_en ties.
         productsQuery += ' ORDER BY p.creado_en DESC, p.id DESC LIMIT ? OFFSET ?';

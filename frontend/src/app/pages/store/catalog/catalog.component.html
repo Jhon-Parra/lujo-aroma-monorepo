@@ -63,6 +63,11 @@
                                 (focus)="onSmartSearchInput()"
                                 placeholder="Nombre, casa o notas..."
                                 class="flex-1 min-w-0 bg-transparent px-2 py-2 text-xs text-white placeholder:text-white/40 focus:outline-none" />
+                            
+                            <div *ngIf="isSmartLoading" class="flex items-center gap-1.5 px-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-gold animate-bounce"></span>
+                                <span class="text-[9px] uppercase tracking-widest text-[#d8c08a] font-bold">Analizando...</span>
+                            </div>
 
                             <button type="button" (click)="clearSmartSearch()" *ngIf="smartSearchTerm.trim()"
                                 class="px-2 py-1.5 rounded-lg border border-white/20 text-[10px] uppercase tracking-widest font-bold text-white/80 hover:bg-white/10 transition-colors">
@@ -194,6 +199,15 @@
                                 (focus)="onSmartSearchInput()"
                                 placeholder="Nombre, casa o notas..."
                                 class="flex-1 min-w-0 bg-transparent px-2 py-2 text-[11px] text-white placeholder:text-white/40 focus:outline-none" />
+
+                            <div *ngIf="isSmartLoading" class="flex items-center gap-2 px-2">
+                                <span class="flex gap-1">
+                                    <span class="w-1 h-1 rounded-full bg-[#d8c08a] animate-bounce" style="animation-delay: 0s"></span>
+                                    <span class="w-1 h-1 rounded-full bg-[#d8c08a] animate-bounce" style="animation-delay: 0.2s"></span>
+                                    <span class="w-1 h-1 rounded-full bg-[#d8c08a] animate-bounce" style="animation-delay: 0.4s"></span>
+                                </span>
+                                <span class="text-[9px] uppercase tracking-widest text-[#d8c08a] font-bold">IA Analizando</span>
+                            </div>
 
                             <button type="button" (click)="clearSmartSearch()" *ngIf="smartSearchTerm.trim()"
                                 class="px-2 py-1.5 rounded-lg border border-white/20 text-[10px] uppercase tracking-widest font-bold text-white/80 hover:bg-white/10 transition-colors">

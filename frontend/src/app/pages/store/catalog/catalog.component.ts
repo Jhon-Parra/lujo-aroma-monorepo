@@ -43,6 +43,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
   smartSuggestions: any[] = [];
   smartSuggestionsLoading = false;
   showSmartSuggestions = false;
+  isSmartLoading = false;
 
   // Paginacion: siempre 12 por pagina.
   readonly itemsPerPage = 12;
@@ -303,6 +304,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.hideSmartSuggestions();
     this.isMobileMenuOpen = false;
     this.setBodyScrollLock(false);
+    this.isSmartLoading = true; // Empieza el proceso inteligente
     this.applyFilters();
   }
 
@@ -476,6 +478,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
         this.updateCatalogSeo(); // Update SEO with products loaded
         
         this.loading = false;
+        this.isSmartLoading = false;
 
         const trimmed = String(this.searchTerm || '').trim();
         if (trimmed && trimmed !== this.lastTrackedSearch) {
@@ -488,6 +491,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
         console.error(err);
         this.error = 'Error cargando el catálogo.';
         this.loading = false;
+        this.isSmartLoading = false;
       }
     });
   }

@@ -7,6 +7,8 @@ import { ProductService } from '../../../core/services/product/product.service';
 import { SeoService } from '../../../core/services/seo/seo.service';
 import { CategoryService, Category } from '../../../core/services/category/category.service';
 import { AnalyticsService } from '../../../core/services/analytics/analytics.service';
+import { Subject, of } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import { SkeletonCardComponent } from '../../../shared/components/skeleton-card/skeleton-card.component';
 @Component({
@@ -17,6 +19,9 @@ import { SkeletonCardComponent } from '../../../shared/components/skeleton-card/
   styleUrls: ['./catalog.component.css']
 })
 export class CatalogComponent implements OnInit, OnDestroy {
+  private readonly destroy$ = new Subject<void>();
+  private readonly smartSearch$ = new Subject<string>();
+
   products: Product[] = [];
   filteredProducts: Product[] = [];
   loading = true;
@@ -33,6 +38,11 @@ export class CatalogComponent implements OnInit, OnDestroy {
   categories: Category[] = [];
   houseSearchTerm = '';
   showOnlyPromotions = false;
+
+  smartSearchTerm = '';
+  smartSuggestions: any[] = [];
+  smartSuggestionsLoading = false;
+  showSmartSuggestions = false;
 
   // Paginacion: siempre 12 por pagina.
   readonly itemsPerPage = 12;
@@ -160,9 +170,12 @@ export class CatalogComponent implements OnInit, OnDestroy {
       description: 'Explora nuestra colección exclusiva de perfumes originales en Bogotá. Envíos a toda Colombia. Filtra por categoría y encuentra tu aroma ideal.'
     });
 
+    this.initSmartSearch();
+
     this.loadHouseFilters();
     this.route.queryParams.subscribe(params => {
       this.searchTerm = params['q'] || '';
+      this.smartSearchTerm = this.searchTerm;
       this.selectedCategory = this.normalizeSlug(params['category'] ?? params['house']);
       this.selectedPromotionId = params['promo'] || '';
       const g = String(params['gender'] || '').trim().toLowerCase();
@@ -234,6 +247,81 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.setBodyScrollLock(false);
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private initSmartSearch(): void {
+    this.smartSearch$
+      .pipe(
+        debounceTime(240),
+        distinctUntilChanged(),
+        tap((term) => {
+          if (term.length >= 2) {
+            this.smartSuggestionsLoading = true;
+            this.showSmartSuggestions = true;
+          }
+        }),
+        switchMap((term) => {
+          const q = term.trim();
+          if (q.length < 2) {
+            return of([] as Product[]);
+          }
+          return this.productService.searchSuggestions(q, 7).pipe(
+            catchError(() => of([] as Product[]))
+          );
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((results) => {
+        this.smartSuggestions = results || [];
+        this.smartSuggestionsLoading = false;
+        this.showSmartSuggestions = this.smartSearchTerm.trim().length >= 2;
+      });
+  }
+
+  onSmartSearchInput(): void {
+    const term = this.smartSearchTerm.trim();
+    if (!term) {
+      this.hideSmartSuggestions();
+      return;
+    }
+
+    this.showSmartSuggestions = true;
+    this.smartSearch$.next(term);
+  }
+
+  onSmartSearchBlur(): void {
+    setTimeout(() => this.hideSmartSuggestions(), 140);
+  }
+
+  submitSmartSearch(): void {
+    const term = this.smartSearchTerm.trim();
+    this.searchTerm = term;
+    this.hideSmartSuggestions();
+    this.isMobileMenuOpen = false;
+    this.setBodyScrollLock(false);
+    this.applyFilters();
+  }
+
+  clearSmartSearch(): void {
+    this.smartSearchTerm = '';
+    this.searchTerm = '';
+    this.hideSmartSuggestions();
+    this.applyFilters();
+  }
+
+  pickSmartSuggestion(product: any): void {
+    const term = String((product as any)?.name || (product as any)?.nombre || '').trim();
+    if (!term) return;
+    this.smartSearchTerm = term;
+    this.submitSmartSearch();
+  }
+
+  hideSmartSuggestions(): void {
+    this.smartSuggestions = [];
+    this.smartSuggestionsLoading = false;
+    this.showSmartSuggestions = false;
   }
 
   @HostListener('document:keydown.escape')

@@ -51,6 +51,51 @@
 
              <div class="flex-1 overflow-y-auto p-6">
                 <div class="mb-8">
+                    <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-white/60 mb-3">Busqueda IA</div>
+                    <div class="rounded-2xl border border-white/15 bg-white/5 p-2">
+                        <div class="flex items-center gap-2">
+                            <input
+                                type="text"
+                                [(ngModel)]="smartSearchTerm"
+                                (ngModelChange)="onSmartSearchInput()"
+                                (keyup.enter)="submitSmartSearch()"
+                                (blur)="onSmartSearchBlur()"
+                                (focus)="onSmartSearchInput()"
+                                placeholder="Nombre, casa o notas..."
+                                class="flex-1 min-w-0 bg-transparent px-2 py-2 text-xs text-white placeholder:text-white/40 focus:outline-none" />
+
+                            <button type="button" (click)="clearSmartSearch()" *ngIf="smartSearchTerm.trim()"
+                                class="px-2 py-1.5 rounded-lg border border-white/20 text-[10px] uppercase tracking-widest font-bold text-white/80 hover:bg-white/10 transition-colors">
+                                Limpiar
+                            </button>
+
+                            <button type="button" (click)="submitSmartSearch()"
+                                class="px-3 py-1.5 rounded-lg bg-[#d8c08a] text-[#07121a] text-[10px] uppercase tracking-widest font-bold hover:bg-[#e6d3a5] transition-colors">
+                                Buscar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div *ngIf="showSmartSuggestions" class="mt-2 rounded-xl border border-white/15 bg-[#0c1c29] overflow-hidden">
+                        <div *ngIf="smartSuggestionsLoading" class="px-3 py-2 text-[10px] uppercase tracking-widest text-white/60">
+                            Buscando coincidencias...
+                        </div>
+
+                        <ng-container *ngIf="!smartSuggestionsLoading">
+                            <button *ngFor="let s of smartSuggestions" type="button" (mousedown)="pickSmartSuggestion(s)"
+                                class="w-full text-left px-3 py-2.5 border-b border-white/10 last:border-b-0 hover:bg-white/10 transition-colors">
+                                <div class="text-[10px] font-bold uppercase tracking-[0.18em] text-white truncate">{{ s.name || s.nombre }}</div>
+                                <div class="text-[10px] text-white/60 mt-1 truncate">{{ s.categoria_nombre || s.casa || s.house || 'Catalogo' }}</div>
+                            </button>
+
+                            <div *ngIf="smartSuggestions.length === 0" class="px-3 py-2 text-[10px] text-white/60 uppercase tracking-widest">
+                                No hay coincidencias rápidas.
+                            </div>
+                        </ng-container>
+                    </div>
+                </div>
+
+                <div class="mb-8">
                     <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-white/60 mb-3">Casas Perfumistas</div>
                     
                     <!-- House Search (Mobile) -->
@@ -136,6 +181,51 @@
             </div>
 
             <div class="px-6 pb-6">
+                <div class="mb-6 pb-5 border-b border-white/10">
+                    <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#d8c08a] mb-3">Busqueda IA</div>
+                    <div class="rounded-2xl border border-white/15 bg-white/5 p-2">
+                        <div class="flex items-center gap-2">
+                            <input
+                                type="text"
+                                [(ngModel)]="smartSearchTerm"
+                                (ngModelChange)="onSmartSearchInput()"
+                                (keyup.enter)="submitSmartSearch()"
+                                (blur)="onSmartSearchBlur()"
+                                (focus)="onSmartSearchInput()"
+                                placeholder="Nombre, casa o notas..."
+                                class="flex-1 min-w-0 bg-transparent px-2 py-2 text-[11px] text-white placeholder:text-white/40 focus:outline-none" />
+
+                            <button type="button" (click)="clearSmartSearch()" *ngIf="smartSearchTerm.trim()"
+                                class="px-2 py-1.5 rounded-lg border border-white/20 text-[10px] uppercase tracking-widest font-bold text-white/80 hover:bg-white/10 transition-colors">
+                                Limpiar
+                            </button>
+
+                            <button type="button" (click)="submitSmartSearch()"
+                                class="px-3 py-1.5 rounded-lg bg-[#d8c08a] text-[#07121a] text-[10px] uppercase tracking-widest font-bold hover:bg-[#e6d3a5] transition-colors">
+                                Buscar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div *ngIf="showSmartSuggestions" class="mt-2 rounded-xl border border-white/15 bg-[#0c1c29] overflow-hidden max-h-[220px] overflow-y-auto custom-scrollbar">
+                        <div *ngIf="smartSuggestionsLoading" class="px-3 py-2 text-[10px] uppercase tracking-widest text-white/60">
+                            Buscando coincidencias...
+                        </div>
+
+                        <ng-container *ngIf="!smartSuggestionsLoading">
+                            <button *ngFor="let s of smartSuggestions" type="button" (mousedown)="pickSmartSuggestion(s)"
+                                class="w-full text-left px-3 py-2.5 border-b border-white/10 last:border-b-0 hover:bg-white/10 transition-colors">
+                                <div class="text-[10px] font-bold uppercase tracking-[0.18em] text-white truncate">{{ s.name || s.nombre }}</div>
+                                <div class="text-[10px] text-white/60 mt-1 truncate">{{ s.categoria_nombre || s.casa || s.house || 'Catalogo' }}</div>
+                            </button>
+
+                            <div *ngIf="smartSuggestions.length === 0" class="px-3 py-2 text-[10px] text-white/60 uppercase tracking-widest">
+                                No hay coincidencias rápidas.
+                            </div>
+                        </ng-container>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-6 items-start">
                     <section class="min-w-0">
                         <div class="text-[10px] font-bold uppercase tracking-[0.35em] text-[#d8c08a]">Genero</div>
@@ -297,9 +387,14 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
                     d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
             </svg>
-            <p class="text-soft-charcoal tracking-widest text-sm uppercase">
-                No se encontraron fragancias para esta categoría.
+            <p class="text-soft-charcoal tracking-widest text-sm uppercase" *ngIf="searchTerm; else emptyByCategory">
+                No se encontraron fragancias para "{{ searchTerm }}".
             </p>
+            <ng-template #emptyByCategory>
+                <p class="text-soft-charcoal tracking-widest text-sm uppercase">
+                    No se encontraron fragancias para esta categoría.
+                </p>
+            </ng-template>
         </div>
     </main>
 </div>

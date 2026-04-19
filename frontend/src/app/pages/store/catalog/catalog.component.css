@@ -77,7 +77,7 @@
     }
 }
 
-/* Ajustes para el grid de productos */
+/* Product grid adjustments */
 :host ::ng-deep app-product-card {
     display: block;
     width: 100%;
@@ -89,18 +89,53 @@
     width: 100%;
 }
 
-/* Mejora visual del catálogo */
-.catalog-grid-item {
-    width: 100%;
-    max-width: 280px;
-    margin: 0 auto;
+/* Scrollbar refinement for filters */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
 }
 
-/* Sticky Sidebar Stabilizer */
-.sticky-sidebar-container {
-    position: -webkit-sticky !important;
-    position: sticky !important;
-    top: 150px !important;
-    z-index: 10 !important;
-    align-self: flex-start !important;
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #d8c08a;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #b59a68;
+}
+
+@media (min-width: 1280px) {
+    .catalog-layout {
+        align-items: flex-start;
+    }
+
+    .catalog-sidebar {
+        position: sticky;
+        top: 0 !important;
+        align-self: flex-start;
+    }
+
+    .catalog-products-panel {
+        max-height: calc(100vh - 180px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding-right: 0.35rem;
+    }
+
+    .catalog-products-panel::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .catalog-products-panel::-webkit-scrollbar-thumb {
+        background: #d8c08a;
+        border-radius: 999px;
+    }
+
+    .catalog-products-panel::-webkit-scrollbar-track {
+        background: transparent;
+    }
 }

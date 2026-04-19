@@ -172,6 +172,14 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.router.navigate(['/recommender'], { queryParams: q ? { mode: 'free', q } : { mode: 'free' } });
   }
 
+  goToCatalogSearch(): void {
+    const q = String(this.recoQuery || '').trim();
+    this.router.navigate(['/catalog'], {
+      queryParams: { q: q || null, page: null },
+      queryParamsHandling: 'merge'
+    });
+  }
+
   filterByPromotions(): void {
     this.router.navigate(['/promotions']);
   }

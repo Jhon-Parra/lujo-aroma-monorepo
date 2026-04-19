@@ -44,9 +44,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
 
   private searchIndexCache = new Map<string, string>();
-  private previousHtmlOverscrollY = '';
-  private previousBodyOverscrollY = '';
-  private previousHtmlOverflowY = '';
 
   private normalizeSlug(raw: any): string {
     const v = String(raw ?? '').trim().toLowerCase();
@@ -158,8 +155,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    this.applyCatalogScrollGuard();
-
     this.seo.set({
       title: 'Lujo&Aroma | Perfumes Bogotá',
       description: 'Explora nuestra colección exclusiva de perfumes originales en Bogotá. Envíos a toda Colombia. Filtra por categoría y encuentra tu aroma ideal.'
@@ -239,33 +234,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.setBodyScrollLock(false);
-    this.restoreCatalogScrollGuard();
-  }
-
-  private applyCatalogScrollGuard(): void {
-    if (typeof document === 'undefined') return;
-
-    const html = document.documentElement;
-    const body = document.body;
-
-    this.previousHtmlOverscrollY = html.style.overscrollBehaviorY || '';
-    this.previousBodyOverscrollY = body.style.overscrollBehaviorY || '';
-    this.previousHtmlOverflowY = html.style.overflowY || '';
-
-    html.style.overscrollBehaviorY = 'none';
-    body.style.overscrollBehaviorY = 'none';
-    html.style.overflowY = 'auto';
-  }
-
-  private restoreCatalogScrollGuard(): void {
-    if (typeof document === 'undefined') return;
-
-    const html = document.documentElement;
-    const body = document.body;
-
-    html.style.overscrollBehaviorY = this.previousHtmlOverscrollY;
-    body.style.overscrollBehaviorY = this.previousBodyOverscrollY;
-    html.style.overflowY = this.previousHtmlOverflowY;
   }
 
   @HostListener('document:keydown.escape')
@@ -279,7 +247,6 @@ export class CatalogComponent implements OnInit, OnDestroy {
     if (typeof document === 'undefined') return;
     // Prevent background scroll when the off-canvas is open.
     document.body.style.overflow = lock ? 'hidden' : '';
-    document.documentElement.style.overflow = lock ? 'hidden' : '';
   }
 
   private updateCatalogSeo(): void {

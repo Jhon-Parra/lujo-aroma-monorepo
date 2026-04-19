@@ -7,7 +7,6 @@
   html,
   body {
     @apply overflow-x-hidden max-w-[100vw];
-    overscroll-behavior-y: none;
   }
 
   body {

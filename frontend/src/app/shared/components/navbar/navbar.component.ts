@@ -200,8 +200,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
     if (!term) return;
 
     this.router.navigate(['/catalog'], {
-      queryParams: { q: term },
-      queryParamsHandling: 'merge'
+      queryParams: {
+        q: term,
+        category: null,
+        gender: null,
+        promo: null,
+        page: null
+      }
     });
 
     this.searchTerm = '';
@@ -211,11 +216,18 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   selectSuggestion(product: Product): void {
-    const slug = product.slug || product.id;
+    const term = String(product?.name || product?.nombre || product?.slug || product?.id || '').trim();
+    if (!term) return;
 
-    if (slug) {
-      this.router.navigate(['/products', slug]);
-    }
+    this.router.navigate(['/catalog'], {
+      queryParams: {
+        q: term,
+        category: null,
+        gender: null,
+        promo: null,
+        page: null
+      }
+    });
 
     this.searchTerm = '';
     this.mobileSearchOpen = false;

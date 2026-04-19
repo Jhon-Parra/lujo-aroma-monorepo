@@ -175,8 +175,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   goToCatalogSearch(): void {
     const q = String(this.recoQuery || '').trim();
     this.router.navigate(['/catalog'], {
-      queryParams: { q: q || null, page: null },
-      queryParamsHandling: 'merge'
+      queryParams: {
+        q: q || null,
+        category: null,
+        gender: null,
+        promo: null,
+        page: null
+      }
     });
   }
 

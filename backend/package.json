@@ -10,7 +10,9 @@
     "build": "node -v && npm -v && tsc",
     "start": "node dist/index.js",
     "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
-    "test:firebase": "npx ts-node src/scripts/firetest.ts"
+    "test:firebase": "npx ts-node src/scripts/firetest.ts",
+    "job:product-images": "npx ts-node src/scripts/generate-product-images-firebase.ts",
+    "job:product-images:real": "npx ts-node src/scripts/apply-real-product-images.ts"
   },
   "keywords": [],
   "author": "",

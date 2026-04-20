@@ -458,6 +458,26 @@ const getPublicCatalog = async (req, res) => {
         };
         const qRaw = String(req.query['q'] || '').trim();
         const q = normalizeSearch(qRaw);
+        const smart = String(req.query.smart || '').trim() === 'true';
+        const tokenizeSearch = (raw) => {
+            return normalizeSearch(raw)
+                .split(' ')
+                .map((t) => t.trim())
+                .filter((t) => t.length > 1);
+        };
+        const baseSearchTokens = q ? tokenizeSearch(q) : [];
+        let refinedTokens = [];
+        if (smart && q && q.length > 2) {
+            try {
+                refinedTokens = await (0, ai_controller_1.refineSearchQuery)(qRaw);
+            }
+            catch (err) {
+                console.error('Error in smart search refinement:', err);
+            }
+        }
+        const refinedSearchTokens = refinedTokens.flatMap((t) => tokenizeSearch(t));
+        const searchTokens = Array.from(new Set([...(smart ? baseSearchTokens.concat(refinedSearchTokens) : baseSearchTokens)]))
+            .slice(0, 12);
         // Filtros
         const categoryRaw = req.query['category'] ?? req.query['house'];
         const categorySlug = normalizeSlug(categoryRaw);
@@ -473,6 +493,7 @@ const getPublicCatalog = async (req, res) => {
         const limit = Number.isFinite(limitRaw)
             ? Math.max(1, Math.min(maxLimit, Math.trunc(limitRaw)))
             : 12;
+        const targetSmartResults = Math.max(6, limit);
         const pageRaw = Number(req.query['page'] || 1);
         const page = Number.isFinite(pageRaw) ? Math.max(1, Math.trunc(pageRaw)) : 1;
         const offset = (page - 1) * limit;
@@ -482,7 +503,7 @@ const getPublicCatalog = async (req, res) => {
             const houseForKey = categorySlug && categorySlug !== 'mujer' && categorySlug !== 'hombre' && categorySlug !== 'unisex'
                 ? categorySlug
                 : '';
-            anonCacheKey = `${cache_util_1.CACHE_KEYS.CATALOG_ANON}:q=${encodeURIComponent(q)}:house=${encodeURIComponent(houseForKey)}:gender=${encodeURIComponent(gender || '')}:page=${page}:limit=${limit}`;
+            anonCacheKey = `${cache_util_1.CACHE_KEYS.CATALOG_ANON}:q=${encodeURIComponent(q)}:house=${encodeURIComponent(houseForKey)}:gender=${encodeURIComponent(gender || '')}:page=${page}:limit=${limit}:smart=${smart ? '1' : '0'}`;
             const cached = cache_util_1.appCache.get(anonCacheKey);
             if (cached) {
                 res.setHeader('X-Cache', 'HIT');
@@ -532,19 +553,7 @@ const getPublicCatalog = async (req, res) => {
             countQuery += ' AND LOWER(p.casa) = ?';
             queryParams.push(house);
         }
-        const smart = String(req.query.smart || '').trim() === 'true';
-        let searchTokens = q ? q.split(' ').filter(t => t.length > 1) : [];
-        if (smart && q && q.trim().length > 3) {
-            try {
-                const refined = await (0, ai_controller_1.refineSearchQuery)(q);
-                if (refined && refined.length > 0)
-                    searchTokens = refined;
-            }
-            catch (err) {
-                console.error('Error in smart search refinement:', err);
-            }
-        }
-        if (searchTokens.length > 0) {
+        if (!smart && searchTokens.length > 0) {
             const searchClauses = searchTokens.map(() => {
                 return casaOk
                     ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
@@ -560,7 +569,7 @@ const getPublicCatalog = async (req, res) => {
             });
         }
         const [countRows] = await database_1.pool.query(countQuery, queryParams);
-        const total = countRows?.[0]?.total || 0;
+        let total = countRows?.[0]?.total || 0;
         // 2. Fetch products for the current page
         let productsQuery = `
              SELECT p.id, p.nombre AS name, p.nombre, ${slugSelect}p.genero${categorySelect}, p.descripcion AS description, p.descripcion,
@@ -581,7 +590,7 @@ const getPublicCatalog = async (req, res) => {
             productsQuery += ' AND LOWER(p.casa) = ?';
             productsParams.push(house);
         }
-        if (searchTokens.length > 0) {
+        if (!smart && searchTokens.length > 0) {
             const searchClauses = searchTokens.map(() => {
                 return casaOk
                     ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
@@ -596,8 +605,10 @@ const getPublicCatalog = async (req, res) => {
             });
         }
         // Stable ordering avoids duplicates/missing items across pages when creado_en ties.
+        const candidateLimit = smart ? Math.max(targetSmartResults * 12, 72) : limit;
+        const candidateOffset = smart ? 0 : offset;
         productsQuery += ' ORDER BY p.creado_en DESC, p.id DESC LIMIT ? OFFSET ?';
-        productsParams.push(limit, offset);
+        productsParams.push(candidateLimit, candidateOffset);
         const [pRows] = await database_1.pool.query(productsQuery, productsParams);
         // 3. Fetch ONLY promotions related to the fetched products or global ones
         // This is a big optimization: instead of matching ALL promotions to ALL products,
@@ -679,36 +690,96 @@ const getPublicCatalog = async (req, res) => {
                 tiene_promocion: hasOffer
             };
         });
-        // Optional search and limit (used by navbar suggestions).
-        if (q) {
-            const tokens = q.split(' ').filter(Boolean);
-            products = products.filter((p) => {
-                const blob = normalizeSearch([
-                    p?.nombre,
-                    p?.name,
-                    p?.descripcion,
-                    p?.description,
-                    p?.notas_olfativas,
-                    p?.notes,
-                    p?.categoria_nombre,
-                    p?.categoria_slug,
-                    p?.genero,
-                    p?.casa,
-                    p?.house,
-                ].filter(Boolean).join(' '));
-                if (!blob)
-                    return false;
-                return tokens.every(t => blob.includes(t));
+        if (smart && q) {
+            const baseTokenSet = new Set(baseSearchTokens);
+            const refinedTokenSet = new Set(refinedSearchTokens.filter((t) => !baseTokenSet.has(t)));
+            const scoreSmartIntent = (p) => {
+                const name = normalizeSearch(`${p?.nombre || ''} ${p?.name || ''}`);
+                const notes = normalizeSearch(`${p?.notas_olfativas || ''} ${p?.notes || ''}`);
+                const houseText = normalizeSearch(`${p?.casa || ''} ${p?.house || ''} ${p?.categoria_nombre || ''}`);
+                const desc = normalizeSearch(`${p?.descripcion || ''} ${p?.description || ''}`);
+                const full = normalizeSearch(`${name} ${notes} ${houseText} ${desc} ${p?.genero || ''}`);
+                let score = 0;
+                if (q && full.includes(q))
+                    score += 60;
+                baseTokenSet.forEach((t) => {
+                    if (name.includes(t))
+                        score += 24;
+                    else if (notes.includes(t))
+                        score += 16;
+                    else if (houseText.includes(t))
+                        score += 14;
+                    else if (desc.includes(t))
+                        score += 10;
+                });
+                refinedTokenSet.forEach((t) => {
+                    if (name.includes(t))
+                        score += 14;
+                    else if (notes.includes(t))
+                        score += 11;
+                    else if (houseText.includes(t))
+                        score += 9;
+                    else if (desc.includes(t))
+                        score += 7;
+                });
+                if (gender && p?.genero === gender)
+                    score += 6;
+                if (house && normalizeSearch(p?.casa || '') === house)
+                    score += 6;
+                if (Number(p?.stock || 0) > 0)
+                    score += 2;
+                if (Number(p?.unidades_vendidas || 0) > 20)
+                    score += 2;
+                return score;
+            };
+            const ranked = products
+                .map((p) => ({ p, score: scoreSmartIntent(p) }))
+                .sort((a, b) => {
+                if (b.score !== a.score)
+                    return b.score - a.score;
+                const soldA = Number(a.p?.unidades_vendidas || 0);
+                const soldB = Number(b.p?.unidades_vendidas || 0);
+                if (soldB !== soldA)
+                    return soldB - soldA;
+                return String(b.p?.creado_en || '').localeCompare(String(a.p?.creado_en || ''));
             });
+            const strict = ranked.filter((r) => r.score > 0).map((r) => r.p);
+            const fallback = ranked.filter((r) => r.score <= 0).map((r) => r.p);
+            const smartTake = Math.max(targetSmartResults, 6);
+            products = strict.concat(fallback).slice(0, smartTake);
+            total = products.length;
         }
-        if (limit && limit > 0) {
-            products = products.slice(0, limit);
+        else {
+            if (q) {
+                const tokens = q.split(' ').filter(Boolean);
+                products = products.filter((p) => {
+                    const blob = normalizeSearch([
+                        p?.nombre,
+                        p?.name,
+                        p?.descripcion,
+                        p?.description,
+                        p?.notas_olfativas,
+                        p?.notes,
+                        p?.categoria_nombre,
+                        p?.categoria_slug,
+                        p?.genero,
+                        p?.casa,
+                        p?.house,
+                    ].filter(Boolean).join(' '));
+                    if (!blob)
+                        return false;
+                    return tokens.every(t => blob.includes(t));
+                });
+            }
+            if (limit && limit > 0) {
+                products = products.slice(0, limit);
+            }
         }
         const response = {
-            total,
-            page,
-            pageSize: limit,
-            totalPages: Math.ceil(total / limit),
+            total: smart && q ? products.length : total,
+            page: smart && q ? 1 : page,
+            pageSize: smart && q ? products.length : limit,
+            totalPages: smart && q ? 1 : Math.ceil(total / limit),
             items: products
         };
         // ── Cache: store result for anonymous requests ────────────────────────

@@ -188,7 +188,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
       this.updateCatalogSeo();
 
       // Make skeleton count match the requested page size.
-      this.skeletonCards = Array.from({ length: this.itemsPerPage }, (_, i) => i);
+      const skeletonCount = isSmart && this.searchTerm ? 6 : this.itemsPerPage;
+      this.skeletonCards = Array.from({ length: skeletonCount }, (_, i) => i);
 
       this.fetchProducts();
     });
@@ -429,9 +430,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
     const category = this.selectedCategory !== 'todos' ? this.selectedCategory : null;
     const gender = this.selectedGender !== 'all' ? this.selectedGender : null;
     const isSmart = this.route.snapshot.queryParams['smart'] === 'true';
+    const requestLimit = isSmart && this.searchTerm ? 6 : this.itemsPerPage;
     
     // El backend ya filtra por category/house y q. 
-    this.productService.getPublicCatalog(this.currentPage, this.itemsPerPage, this.searchTerm, { category, gender }, isSmart).subscribe({
+    this.productService.getPublicCatalog(this.currentPage, requestLimit, this.searchTerm, { category, gender }, isSmart).subscribe({
       next: (res) => {
         const items = Array.isArray((res as any)?.items) ? (res as any).items : [];
         this.products = items.map((ap: any) => ({

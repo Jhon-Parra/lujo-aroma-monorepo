@@ -6,6 +6,59 @@ const cache_util_1 = require("../utils/cache.util");
 // Preferir GEMINI_API_KEY. Se mantiene fallback a GROQ_API_KEY para facilitar migracion.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GROQ_API_KEY;
 const gemini = GEMINI_API_KEY ? new genai_1.GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
+const normalizeIntentText = (raw) => {
+    const s = String(raw ?? '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    return s.replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
+};
+const tokenizeIntent = (raw) => {
+    return normalizeIntentText(raw)
+        .split(' ')
+        .map((t) => t.trim())
+        .filter((t) => t.length > 1);
+};
+const mergeUniqueTokens = (...groups) => {
+    const out = [];
+    const seen = new Set();
+    for (const g of groups) {
+        for (const raw of g || []) {
+            const t = normalizeIntentText(raw);
+            if (!t || seen.has(t))
+                continue;
+            seen.add(t);
+            out.push(t);
+        }
+    }
+    return out;
+};
+const buildLocalIntentExpansion = (query) => {
+    const q = normalizeIntentText(query);
+    if (!q)
+        return [];
+    const expansions = [];
+    const add = (...tokens) => expansions.push(...tokens);
+    if (/oficina|trabajo|formal|elegante/.test(q))
+        add('limpio', 'suave', 'fresco', 'elegante', 'versatil');
+    if (/noche|fiesta|cita|seductor|sensual/.test(q))
+        add('ambar', 'vainilla', 'intenso', 'seductor', 'nocturno');
+    if (/calor|verano|dia|deporte|gym|gimnasio/.test(q))
+        add('citrico', 'acuatico', 'verde', 'refrescante', 'ligero');
+    if (/frio|invierno/.test(q))
+        add('amaderado', 'especiado', 'ambar', 'calido');
+    if (/dulce|gourmand/.test(q))
+        add('vainilla', 'caramelo', 'tonka', 'gourmand');
+    if (/fresco|limpio/.test(q))
+        add('citrico', 'acuatico', 'aldehidico', 'verde');
+    if (/amaderad|madera/.test(q))
+        add('cedro', 'sandalo', 'vetiver', 'amaderado');
+    if (/arabe|oriental/.test(q))
+        add('oud', 'incienso', 'ambar', 'especiado', 'oriental');
+    if (/romantic|romantico/.test(q))
+        add('floral', 'almizcle', 'suave', 'elegante');
+    return mergeUniqueTokens(tokenizeIntent(q), tokenizeIntent(expansions.join(' '))).slice(0, 12);
+};
 /**
  * Endpoint: POST /api/ai/generate-description
  * Descripción: Asistente IA para CMS. Genera una descripción de lujo basada en producto y notas.
@@ -102,33 +155,46 @@ exports.generateAIDescription = generateAIDescription;
  * Traduce lenguaje natural (ej: "fresco para oficina") en keywords técnicas.
  */
 const refineSearchQuery = async (query) => {
-    if (!GEMINI_API_KEY || !gemini || !query || query.length < 3)
+    if (!query || query.length < 3)
         return [];
     // Optimizacion 1: Bypass para palabras simples (marcas, notas directas)
     // Si no hay espacios, es una busqueda directa que no necesita IA.
     const trimmed = query.trim();
     if (!trimmed.includes(' '))
-        return [trimmed.toLowerCase()];
+        return [normalizeIntentText(trimmed)];
     // Optimizacion 2: Cache de resultados previos
-    const cacheKey = `${cache_util_1.CACHE_KEYS.AI_REFINE}${trimmed.toLowerCase()}`;
+    const cacheKey = `${cache_util_1.CACHE_KEYS.AI_REFINE}${normalizeIntentText(trimmed)}`;
     const cached = cache_util_1.appCache.get(cacheKey);
     if (cached)
         return cached;
+    const baseTokens = tokenizeIntent(trimmed);
+    const localIntentTokens = buildLocalIntentExpansion(trimmed);
+    if (!GEMINI_API_KEY || !gemini) {
+        const fallbackOnly = mergeUniqueTokens(baseTokens, localIntentTokens).slice(0, 12);
+        if (fallbackOnly.length > 0) {
+            cache_util_1.appCache.set(cacheKey, fallbackOnly, 6 * 60 * 60 * 1000);
+        }
+        return fallbackOnly;
+    }
     try {
-        const systemPrompt = `Eres un sumiller de perfumes experto. Convierte la consulta del usuario en una lista de 5-8 palabras clave técnicas (notas, familias olfativas o estilos) separadas por comas.
+        const systemPrompt = `Eres un sumiller de perfumes experto. Convierte la consulta del usuario en una lista de 6-10 palabras clave técnicas (notas, familias olfativas, estilo e intención de uso) separadas por comas.
 Ejemplo: "dulce y para oficina" -> "vainilla, caramelo, ambar, elegante, profesional, limpio, suave"
 Ejemplo: "fresco para deporte" -> "citrico, acuatico, marino, fresco, sport, dinamico"
 
-IMPORTANTE: Responde ÚNICAMENTE con la lista de palabras clave separadas por comas, sin etiquetas, explicaciones ni números.`;
+IMPORTANTE:
+- Prioriza palabras que ayuden a encontrar productos reales en catálogo.
+- Incluye intención de uso (ej. oficina, noche, diario) convertida a atributos olfativos.
+- Responde ÚNICAMENTE con la lista separada por comas, sin etiquetas ni explicaciones.`;
         const contentResponse = await gemini.models.generateContent({
             model: 'gemini-1.5-flash',
             contents: `${systemPrompt}\n\nConsulta: "${query}"`
         });
         const text = String(contentResponse.text || '').trim();
         // Limpiar y tokenizar
-        const tokens = text.split(',')
+        const aiTokens = text.split(',')
             .map((s) => s.trim().toLowerCase())
             .filter((s) => s.length > 2);
+        const tokens = mergeUniqueTokens(baseTokens, localIntentTokens, aiTokens).slice(0, 12);
         // Guardar en cache (6 horas = 21,600,000 ms)
         if (tokens.length > 0) {
             cache_util_1.appCache.set(cacheKey, tokens, 6 * 60 * 60 * 1000);
@@ -137,7 +203,11 @@ IMPORTANTE: Responde ÚNICAMENTE con la lista de palabras clave separadas por co
     }
     catch (error) {
         console.error('Error al refinar búsqueda con IA:', error);
-        return [];
+        const fallback = mergeUniqueTokens(baseTokens, localIntentTokens).slice(0, 12);
+        if (fallback.length > 0) {
+            cache_util_1.appCache.set(cacheKey, fallback, 6 * 60 * 60 * 1000);
+        }
+        return fallback;
     }
 };
 exports.refineSearchQuery = refineSearchQuery;

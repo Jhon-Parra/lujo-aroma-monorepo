@@ -553,13 +553,14 @@ const getPublicCatalog = async (req, res) => {
             countQuery += ' AND LOWER(p.casa) = ?';
             queryParams.push(house);
         }
-        if (!smart && searchTokens.length > 0) {
+        if (searchTokens.length > 0) {
+            const separator = smart ? ' OR ' : ' AND ';
             const searchClauses = searchTokens.map(() => {
                 return casaOk
                     ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
                     : '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
             });
-            const searchSql = ` AND (${searchClauses.join(' AND ')})`;
+            const searchSql = ` AND (${searchClauses.join(separator)})`;
             countQuery += searchSql;
             searchTokens.forEach(t => {
                 const tLike = `%${t}%`;
@@ -590,13 +591,14 @@ const getPublicCatalog = async (req, res) => {
             productsQuery += ' AND LOWER(p.casa) = ?';
             productsParams.push(house);
         }
-        if (!smart && searchTokens.length > 0) {
+        if (searchTokens.length > 0) {
+            const separator = smart ? ' OR ' : ' AND ';
             const searchClauses = searchTokens.map(() => {
                 return casaOk
                     ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
                     : '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
             });
-            productsQuery += ` AND (${searchClauses.join(' AND ')})`;
+            productsQuery += ` AND (${searchClauses.join(separator)})`;
             searchTokens.forEach(t => {
                 const tLike = `%${t}%`;
                 productsParams.push(tLike, tLike, tLike);

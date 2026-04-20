@@ -111,7 +111,7 @@ export const generateAIDescription = async (req: Request, res: Response): Promis
 IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total. Solo una o dos oraciones contundentes. No agregues saludos, código, ni frases genéricas vacías. Usa un tono sensorial puro y cautivador.`;
 
         const contentResponse = await gemini.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: `${systemPrompt}\n\n${userPrompt}`
         });
 

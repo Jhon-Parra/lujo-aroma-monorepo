@@ -51,8 +51,12 @@ const buildLocalIntentExpansion = (query) => {
         add('vainilla', 'caramelo', 'tonka', 'gourmand');
     if (/fresco|limpio/.test(q))
         add('citrico', 'acuatico', 'aldehidico', 'verde');
-    if (/amaderad|madera/.test(q))
-        add('cedro', 'sandalo', 'vetiver', 'amaderado');
+    if (/amaderad|madera|maderoso|madrescas/.test(q)) {
+        if (q.includes('madrescas') || q.includes('madreselva'))
+            add('madreselva', 'floral', 'suave', 'dulce');
+        else
+            add('cedro', 'sandalo', 'vetiver', 'amaderado');
+    }
     if (/arabe|oriental/.test(q))
         add('oud', 'incienso', 'ambar', 'especiado', 'oriental');
     if (/romantic|romantico/.test(q))
@@ -105,7 +109,7 @@ const generateAIDescription = async (req, res) => {
 
 IMPORTANTE: La salida debe tener ESTRICTAMENTE menos de 150 caracteres en total. Solo una o dos oraciones contundentes. No agregues saludos, código, ni frases genéricas vacías. Usa un tono sensorial puro y cautivador.`;
         const contentResponse = await gemini.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: `${systemPrompt}\n\n${userPrompt}`
         });
         const generatedText = String(contentResponse.text || '').trim();
@@ -180,10 +184,12 @@ const refineSearchQuery = async (query) => {
         const systemPrompt = `Eres un sumiller de perfumes experto. Convierte la consulta del usuario en una lista de 6-10 palabras clave técnicas (notas, familias olfativas, estilo e intención de uso) separadas por comas.
 Ejemplo: "dulce y para oficina" -> "vainilla, caramelo, ambar, elegante, profesional, limpio, suave"
 Ejemplo: "fresco para deporte" -> "citrico, acuatico, marino, fresco, sport, dinamico"
+Ejemplo: "notas madrescas" -> "madreselva, floral, suave, blanco"
 
 IMPORTANTE:
+- Corrige errores ortográficos comunes en notas (ej: "madrescas" a "madreselva", "maderoso" a "amaderado").
 - Prioriza palabras que ayuden a encontrar productos reales en catálogo.
-- Incluye intención de uso (ej. oficina, noche, diario) convertida a atributos olfativos.
+- Incluye intención de uso convertida a atributos olfativos.
 - Responde ÚNICAMENTE con la lista separada por comas, sin etiquetas ni explicaciones.`;
         const contentResponse = await gemini.models.generateContent({
             model: 'gemini-1.5-flash',

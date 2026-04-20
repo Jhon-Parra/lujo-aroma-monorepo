@@ -408,10 +408,17 @@ const runAiRanking = async (payload) => {
         '- solo IDs existentes\n' +
         '- no repitas perfumes\n' +
         '- evita razones negativas; justifica por qué cada opción es ideal para la intención\n';
-    const resp = await gemini.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: system + '\n\n' + prompt + '\nINPUT:\n' + JSON.stringify(user)
-    });
+    let resp;
+    try {
+        resp = await gemini.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: system + '\n\n' + prompt + '\nINPUT:\n' + JSON.stringify(user)
+        });
+    }
+    catch (err) {
+        console.error('[AI] Error llamando a Gemini:', err?.message || err);
+        return null; // El caller usará el fallback local
+    }
     const content = String(resp.text || '').trim();
     if (!content) {
         console.warn('[AI] Respuesta vacía de Gemini');

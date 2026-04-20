@@ -301,19 +301,37 @@ export class CatalogComponent implements OnInit, OnDestroy {
 
   submitSmartSearch(): void {
     const term = this.smartSearchTerm.trim();
-    this.searchTerm = term;
     this.hideSmartSuggestions();
     this.isMobileMenuOpen = false;
     this.setBodyScrollLock(false);
-    this.isSmartLoading = true; // Empieza el proceso inteligente
-    this.applyFilters();
+    if (!term) {
+      this.clearSmartSearch();
+      return;
+    }
+    this.isSmartLoading = true;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: term,
+        smart: 'true',
+        category: null,
+        gender: null,
+        promo: null,
+        page: null
+      },
+      queryParamsHandling: 'merge',
+    });
   }
 
   clearSmartSearch(): void {
     this.smartSearchTerm = '';
     this.searchTerm = '';
     this.hideSmartSuggestions();
-    this.applyFilters();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { q: null, smart: null, page: null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   pickSmartSuggestion(product: any): void {
@@ -431,63 +449,21 @@ export class CatalogComponent implements OnInit, OnDestroy {
     const gender = this.selectedGender !== 'all' ? this.selectedGender : null;
     const isSmart = this.route.snapshot.queryParams['smart'] === 'true';
     const requestLimit = isSmart && this.searchTerm ? 6 : this.itemsPerPage;
-    
-    // El backend ya filtra por category/house y q. 
+
     this.productService.getPublicCatalog(this.currentPage, requestLimit, this.searchTerm, { category, gender }, isSmart).subscribe({
       next: (res) => {
         const items = Array.isArray((res as any)?.items) ? (res as any).items : [];
-        this.products = items.map((ap: any) => ({
-          id: ap.id || '',
-          promo_id: (ap as any).promo_id || null,
-          name: ap.name || ap.nombre,
-          notes: ap.notes || ap.notas_olfativas || ap.descripcion,
-          price: ap.price ? Number(ap.price) : (ap.precio_con_descuento ? Number(ap.precio_con_descuento) : (typeof ap.precio === 'string' ? parseFloat(ap.precio) : ap.precio)),
-          stock: (() => {
-            const n = Number((ap as any)?.stock);
-            return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : undefined;
-          })(),
-          imageUrl: ap.imageUrl || ap.imagen_url || '/assets/images/logo.png',
-          soldCount: (ap.soldCount || ap.unidades_vendidas || 0).toString(),
-          isNew: !!(ap.isNew ?? ap.es_nuevo),
-          genero: ap.genero,
-          casa: (ap as any).casa ?? (ap as any).house ?? null,
-          house: (ap as any).house ?? (ap as any).casa ?? null,
-          categoria_nombre: (ap as any).categoria_nombre ?? null,
-          categoria_slug: (ap as any).categoria_slug ?? null,
-          precio: (() => {
-            const original = (ap as any).precio_original ?? ap.precio;
-            return typeof original === 'string' ? parseFloat(original) : original;
-          })(),
-          precio_con_descuento: ap.precio_con_descuento !== null && ap.precio_con_descuento !== undefined ? Number(ap.precio_con_descuento) : null,
-          tiene_promocion: ap.tiene_promocion || false
-        }));
+        const mapped = this.mapApiProducts(items);
 
-        if (this.showOnlyPromotions) {
-          this.products = this.products.filter(p => p.tiene_promocion);
-        }
-
-        this.filteredProducts = this.products; 
-        this.totalProducts = this.showOnlyPromotions ? this.products.length : Number((res as any)?.total || 0);
-        this.totalPages = Math.max(1, Number((res as any)?.totalPages || 1));
-
-        // Guard: if URL has page > totalPages, jump to last page so the catalog
-        // never looks "recortado" by showing an empty page.
-        if (this.currentPage > this.totalPages) {
-          this.setPage(this.totalPages);
+        if (isSmart && this.searchTerm && mapped.length < 6) {
+          const fallbackQueries = this.buildSmartFallbackQueries(this.searchTerm);
+          this.fillWithFallbackQueries(mapped, fallbackQueries, (finalProducts) => {
+            this.applyCatalogResponse(finalProducts, res, true);
+          });
           return;
         }
-        this.updatePaginationMetadata();
-        this.updateCatalogSeo(); // Update SEO with products loaded
-        
-        this.loading = false;
-        this.isSmartLoading = false;
 
-        const trimmed = String(this.searchTerm || '').trim();
-        if (trimmed && trimmed !== this.lastTrackedSearch) {
-          const ids = this.products.slice(0, 10).map(p => p.id).filter(Boolean);
-          this.analyticsService.trackSearch(trimmed, ids, this.totalProducts);
-          this.lastTrackedSearch = trimmed;
-        }
+        this.applyCatalogResponse(mapped, res, isSmart);
       },
       error: (err) => {
         console.error(err);
@@ -496,6 +472,128 @@ export class CatalogComponent implements OnInit, OnDestroy {
         this.isSmartLoading = false;
       }
     });
+  }
+
+  private mapApiProducts(items: any[]): Product[] {
+    return (items || []).map((ap: any) => ({
+      id: ap.id || '',
+      promo_id: (ap as any).promo_id || null,
+      name: ap.name || ap.nombre,
+      notes: ap.notes || ap.notas_olfativas || ap.descripcion,
+      price: ap.price ? Number(ap.price) : (ap.precio_con_descuento ? Number(ap.precio_con_descuento) : (typeof ap.precio === 'string' ? parseFloat(ap.precio) : ap.precio)),
+      stock: (() => {
+        const n = Number((ap as any)?.stock);
+        return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : undefined;
+      })(),
+      imageUrl: ap.imageUrl || ap.imagen_url || '/assets/images/logo.png',
+      soldCount: (ap.soldCount || ap.unidades_vendidas || 0).toString(),
+      isNew: !!(ap.isNew ?? ap.es_nuevo),
+      genero: ap.genero,
+      casa: (ap as any).casa ?? (ap as any).house ?? null,
+      house: (ap as any).house ?? (ap as any).casa ?? null,
+      categoria_nombre: (ap as any).categoria_nombre ?? null,
+      categoria_slug: (ap as any).categoria_slug ?? null,
+      precio: (() => {
+        const original = (ap as any).precio_original ?? ap.precio;
+        return typeof original === 'string' ? parseFloat(original) : original;
+      })(),
+      precio_con_descuento: ap.precio_con_descuento !== null && ap.precio_con_descuento !== undefined ? Number(ap.precio_con_descuento) : null,
+      tiene_promocion: ap.tiene_promocion || false
+    }));
+  }
+
+  private mergeUniqueProducts(base: Product[], extra: Product[]): Product[] {
+    const out = [...(base || [])];
+    const seen = new Set(out.map((p: any) => String(p?.id || '')));
+    for (const p of extra || []) {
+      const id = String((p as any)?.id || '');
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      out.push(p);
+    }
+    return out;
+  }
+
+  private buildSmartFallbackQueries(raw: string): string[] {
+    const normalized = this.normalizeText(raw);
+    if (!normalized) return [];
+
+    const stop = new Set(['para', 'el', 'la', 'los', 'las', 'de', 'del', 'y', 'en', 'con', 'un', 'una', 'por']);
+    const tokens = normalized.split(' ').filter((t) => t.length > 2 && !stop.has(t));
+    const suggestions: string[] = [];
+    const add = (...arr: string[]) => suggestions.push(...arr);
+
+    if (/fresco|fresca|limpio|limpia/.test(normalized)) add('fresco', 'citrico', 'acuatico');
+    if (/trabajo|oficina|diario/.test(normalized)) add('limpio', 'suave', 'elegante');
+    if (/noche|fiesta|cita|seductor/.test(normalized)) add('ambar', 'vainilla', 'intenso');
+    if (/dulce/.test(normalized)) add('vainilla', 'gourmand');
+    if (/amaderad|madera/.test(normalized)) add('amaderado', 'cedro');
+
+    const uniq: string[] = [];
+    const seen = new Set<string>();
+    for (const t of [...suggestions, ...tokens]) {
+      const v = this.normalizeText(t);
+      if (!v || seen.has(v)) continue;
+      seen.add(v);
+      uniq.push(v);
+    }
+    return uniq.slice(0, 6);
+  }
+
+  private fillWithFallbackQueries(current: Product[], queries: string[], done: (products: Product[]) => void, index = 0): void {
+    if ((current || []).length >= 6 || index >= queries.length) {
+      done((current || []).slice(0, 6));
+      return;
+    }
+
+    const q = String(queries[index] || '').trim();
+    if (!q) {
+      this.fillWithFallbackQueries(current, queries, done, index + 1);
+      return;
+    }
+
+    this.productService.getPublicCatalog(1, 6, q, { category: null, gender: null }, false).subscribe({
+      next: (res) => {
+        const extra = this.mapApiProducts(Array.isArray((res as any)?.items) ? (res as any).items : []);
+        const merged = this.mergeUniqueProducts(current || [], extra);
+        this.fillWithFallbackQueries(merged, queries, done, index + 1);
+      },
+      error: () => {
+        this.fillWithFallbackQueries(current, queries, done, index + 1);
+      }
+    });
+  }
+
+  private applyCatalogResponse(inputProducts: Product[], res: any, smartMode: boolean): void {
+    this.products = this.showOnlyPromotions ? (inputProducts || []).filter(p => p.tiene_promocion) : (inputProducts || []);
+    this.filteredProducts = this.products;
+
+    if (smartMode && this.searchTerm) {
+      this.currentPage = 1;
+      this.totalProducts = this.products.length;
+      this.totalPages = 1;
+    } else {
+      this.totalProducts = this.showOnlyPromotions ? this.products.length : Number((res as any)?.total || 0);
+      this.totalPages = Math.max(1, Number((res as any)?.totalPages || 1));
+
+      if (this.currentPage > this.totalPages) {
+        this.setPage(this.totalPages);
+        return;
+      }
+    }
+
+    this.updatePaginationMetadata();
+    this.updateCatalogSeo();
+
+    this.loading = false;
+    this.isSmartLoading = false;
+
+    const trimmed = String(this.searchTerm || '').trim();
+    if (trimmed && trimmed !== this.lastTrackedSearch) {
+      const ids = this.products.slice(0, 10).map(p => p.id).filter(Boolean);
+      this.analyticsService.trackSearch(trimmed, ids, this.totalProducts);
+      this.lastTrackedSearch = trimmed;
+    }
   }
 
   private updatePaginationMetadata(): void {
@@ -591,12 +689,13 @@ export class CatalogComponent implements OnInit, OnDestroy {
   applyFilters() {
     // With server-side pagination, applyFilters just re-fetches from server
     this.currentPage = 1;
+    const keepSmart = this.route.snapshot.queryParams['smart'] === 'true';
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { 
         page: null,
         q: this.searchTerm || null,
-        smart: this.searchTerm ? 'true' : null, // Activar modo IA si hay busqueda
+        smart: this.searchTerm && keepSmart ? 'true' : null,
         category: this.selectedCategory !== 'todos' ? this.selectedCategory : null,
         gender: this.selectedGender !== 'all' ? this.selectedGender : null
       },

@@ -202,6 +202,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.router.navigate(['/catalog'], {
       queryParams: {
         q: term,
+        smart: 'true',
         category: null,
         gender: null,
         promo: null,
@@ -222,6 +223,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.router.navigate(['/catalog'], {
       queryParams: {
         q: term,
+        smart: 'true',
         category: null,
         gender: null,
         promo: null,

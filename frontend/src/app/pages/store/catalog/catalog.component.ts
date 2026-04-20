@@ -191,7 +191,12 @@ export class CatalogComponent implements OnInit, OnDestroy {
       const skeletonCount = isSmart && this.searchTerm ? 6 : this.itemsPerPage;
       this.skeletonCards = Array.from({ length: skeletonCount }, (_, i) => i);
 
-      this.fetchProducts();
+      // Si viene de una búsqueda inteligente, activar el estado de carga de IA
+      if (isSmart && this.searchTerm) {
+        this.isSmartLoading = true;
+      }
+
+      this.fetchProducts(isSmart);
     });
   }
 
@@ -443,11 +448,13 @@ export class CatalogComponent implements OnInit, OnDestroy {
     document.head.appendChild(script);
   }
 
-  private fetchProducts(): void {
+  private fetchProducts(isSmartParam?: boolean): void {
     this.loading = true;
     const category = this.selectedCategory !== 'todos' ? this.selectedCategory : null;
     const gender = this.selectedGender !== 'all' ? this.selectedGender : null;
-    const isSmart = this.route.snapshot.queryParams['smart'] === 'true';
+    
+    // Prioritize passed param, otherwise fallback to snapshot
+    const isSmart = isSmartParam !== undefined ? isSmartParam : this.route.snapshot.queryParams['smart'] === 'true';
     const requestLimit = isSmart && this.searchTerm ? 6 : this.itemsPerPage;
 
     this.productService.getPublicCatalog(this.currentPage, requestLimit, this.searchTerm, { category, gender }, isSmart).subscribe({

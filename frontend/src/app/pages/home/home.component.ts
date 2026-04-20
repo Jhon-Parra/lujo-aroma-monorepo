@@ -177,6 +177,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.router.navigate(['/catalog'], {
       queryParams: {
         q: q || null,
+        smart: q ? 'true' : null,
         category: null,
         gender: null,
         promo: null,

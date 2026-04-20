@@ -165,7 +165,7 @@ const computeMatchRatio = (p, tokens) => {
     }
     return hit / Math.max(1, tokens.length);
 };
-const ensureRecoRange = (reco, fallback, min = 4, max = 6) => {
+const ensureRecoRange = (reco, fallback, min = 4, max = 8) => {
     const out = [];
     const seen = new Set();
     for (const it of reco || []) {
@@ -326,7 +326,7 @@ const selectCandidates = async (opts) => {
          FROM productos p
          ${join}
          ${whereSql}`;
-    // Mezclar candidatos: top vendidos + mas nuevos (evita siempre los mismos 6)
+    // Mezclar candidatos: top vendidos + mas nuevos (evita siempre los mismos top fijos)
     const [soldRows] = await database_1.pool.query(`${baseSelect}
          ORDER BY COALESCE(p.unidades_vendidas, 0) DESC, p.creado_en DESC
          LIMIT 140`, params);
@@ -373,7 +373,7 @@ const runAiRanking = async (payload) => {
     if (!payload.candidates?.length)
         return [];
     const system = 'Eres un asistente experto en recomendación de perfumes. ' +
-        'Interpreta intención (tipo de aroma, contexto de uso y perfil), y recomienda entre 4 y 6 opciones realmente útiles. ' +
+        'Interpreta intención (tipo de aroma, contexto de uso y perfil), y recomienda entre 4 y 8 opciones realmente útiles. ' +
         'Devuelve SOLO JSON valido, sin markdown. ' +
         'No inventes productos; solo puedes usar IDs presentes en candidates. ' +
         'Prioriza disponibilidad, relevancia por intención y popularidad. ' +
@@ -402,7 +402,7 @@ const runAiRanking = async (payload) => {
         '{"recommendations":[{"id":"<uuid>","rank":1,"reasons":["...","..."],"short_explanation":"..."}]}' +
         '\nReglas:\n' +
         '- rank empieza en 1\n' +
-        '- entrega entre 4 y 6 recomendaciones\n' +
+        '- entrega entre 4 y 8 recomendaciones\n' +
         '- reasons: 2 a 4 bullets cortos (sin emojis)\n' +
         '- short_explanation: max 140 caracteres\n' +
         '- solo IDs existentes\n' +
@@ -438,7 +438,7 @@ const runAiRanking = async (payload) => {
         const short = String(it?.short_explanation || '').trim();
         const rank = Math.max(1, Math.trunc(Number(it?.rank || items.length + 1)));
         items.push({ id, rank, reasons, short_explanation: short });
-        if (items.length >= 6)
+        if (items.length >= 8)
             break;
     }
     return items;
@@ -512,7 +512,7 @@ const recommendFromQuiz = async (req, res) => {
         const candidatesById = new Map(top.map((p) => [p.id, p]));
         const userText = `Respuestas quiz: ${JSON.stringify(answers)} ${freeText ? `| Texto: ${freeText}` : ''}`;
         const ai = await runAiRanking({ mode: 'quiz', user_text: userText, intent_profile: intent, quiz_answers: answers, candidates: top });
-        const fallbackReco = scored.slice(0, 6).map((x, idx) => ({
+        const fallbackReco = scored.slice(0, 8).map((x, idx) => ({
             id: x.p.id,
             rank: idx + 1,
             reasons: ['Compatible con tus preferencias', 'Basado en notas y descripcion'],
@@ -522,7 +522,7 @@ const recommendFromQuiz = async (req, res) => {
         let reco = (ai && ai.length) ? ai : fallbackReco;
         // Validar IDs: el modelo a veces devuelve IDs invalidos.
         const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
-        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 6) : ensureRecoRange([], fallbackReco, 4, 6);
+        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 8) : ensureRecoRange([], fallbackReco, 4, 8);
         recordEvent(req, 'quiz_submit', { answers, tokens: baseTokens.slice(0, 30), candidates: top.length }, session_id);
         // Enforce preferGenero: priorizar coincidencias vs unisex
         if (preferGenero && preferGenero !== 'unisex') {
@@ -533,11 +533,11 @@ const recommendFromQuiz = async (req, res) => {
             const preferred = withGenero.filter((x) => x.g === preferGenero).map((x) => x.it);
             const unisex = withGenero.filter((x) => x.g === 'unisex' || x.g == null).map((x) => x.it);
             const other = withGenero.filter((x) => x.g && x.g !== preferGenero && x.g !== 'unisex').map((x) => x.it);
-            reco = ensureRecoRange(preferred.concat(unisex, other), fallbackReco, 4, 6);
+            reco = ensureRecoRange(preferred.concat(unisex, other), fallbackReco, 4, 8);
         }
         res.status(200).json({
             mode: 'quiz',
-            recommendations: buildResponse(candidatesById, reco).slice(0, 6)
+            recommendations: buildResponse(candidatesById, reco).slice(0, 8)
         });
     }
     catch (e) {
@@ -570,7 +570,7 @@ const recommendFromFreeText = async (req, res) => {
         const top = candidatePool.map((x) => x.p).slice(0, 50);
         const candidatesById = new Map(top.map((p) => [p.id, p]));
         const ai = await runAiRanking({ mode: 'free', user_text: query, intent_profile: intent, candidates: top });
-        const fallbackReco = candidatePool.slice(0, 6).map((x, idx) => ({
+        const fallbackReco = candidatePool.slice(0, 8).map((x, idx) => ({
             id: x.p.id,
             rank: idx + 1,
             reasons: [
@@ -584,7 +584,7 @@ const recommendFromFreeText = async (req, res) => {
         }));
         let reco = (ai && ai.length) ? ai : fallbackReco;
         const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
-        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 6) : ensureRecoRange([], fallbackReco, 4, 6);
+        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 8) : ensureRecoRange([], fallbackReco, 4, 8);
         if (preferGenero && preferGenero !== 'unisex') {
             const withGenero = reco.map((it) => ({
                 it,
@@ -593,12 +593,12 @@ const recommendFromFreeText = async (req, res) => {
             const preferred = withGenero.filter((x) => x.g === preferGenero).map((x) => x.it);
             const unisex = withGenero.filter((x) => x.g === 'unisex' || x.g == null).map((x) => x.it);
             const other = withGenero.filter((x) => x.g && x.g !== preferGenero && x.g !== 'unisex').map((x) => x.it);
-            reco = ensureRecoRange(preferred.concat(unisex, other), fallbackReco, 4, 6);
+            reco = ensureRecoRange(preferred.concat(unisex, other), fallbackReco, 4, 8);
         }
         recordEvent(req, 'free_query', { query, tokens: tokens.slice(0, 40), candidates: top.length }, session_id);
         res.status(200).json({
             mode: 'free',
-            recommendations: buildResponse(candidatesById, reco).slice(0, 6)
+            recommendations: buildResponse(candidatesById, reco).slice(0, 8)
         });
     }
     catch (e) {
@@ -643,7 +643,7 @@ const recommendSimilar = async (req, res) => {
         const top = scored.map((x) => x.p);
         const candidatesById = new Map(top.map((p) => [p.id, p]));
         const ai = await runAiRanking({ mode: 'similar', user_text: 'Perfumes similares', base_product: base, candidates: top });
-        const fallbackReco = scored.slice(0, 6).map((x, idx) => ({
+        const fallbackReco = scored.slice(0, 8).map((x, idx) => ({
             id: x.p.id,
             rank: idx + 1,
             reasons: ['Similar por notas/estilo', 'Misma categoria o perfil cercano'],
@@ -652,14 +652,14 @@ const recommendSimilar = async (req, res) => {
         }));
         let reco = (ai && ai.length) ? ai : fallbackReco;
         const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
-        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 6) : ensureRecoRange([], fallbackReco, 4, 6);
+        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 8) : ensureRecoRange([], fallbackReco, 4, 8);
         recordEvent(req, 'similar', { base_product_id: base.id, candidates: top.length }, session_id);
         res.status(200).json({
             base_product: {
                 id: base.id,
                 nombre: base.nombre
             },
-            recommendations: buildResponse(candidatesById, reco).slice(0, 6)
+            recommendations: buildResponse(candidatesById, reco).slice(0, 8)
         });
     }
     catch (e) {

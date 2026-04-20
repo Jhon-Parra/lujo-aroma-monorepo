@@ -208,7 +208,7 @@ const computeMatchRatio = (p: ProductRow, tokens: string[]): number => {
     return hit / Math.max(1, tokens.length);
 };
 
-const ensureRecoRange = (reco: RecoItem[], fallback: RecoItem[], min = 4, max = 6): RecoItem[] => {
+const ensureRecoRange = (reco: RecoItem[], fallback: RecoItem[], min = 4, max = 8): RecoItem[] => {
     const out: RecoItem[] = [];
     const seen = new Set<string>();
 
@@ -352,7 +352,7 @@ const selectCandidates = async (opts: { preferGenero?: string | null }): Promise
          ${join}
          ${whereSql}`;
 
-    // Mezclar candidatos: top vendidos + mas nuevos (evita siempre los mismos 6)
+    // Mezclar candidatos: top vendidos + mas nuevos (evita siempre los mismos top fijos)
     const [soldRows] = await pool.query<ProductRow[]>(
         `${baseSelect}
          ORDER BY COALESCE(p.unidades_vendidas, 0) DESC, p.creado_en DESC
@@ -412,7 +412,7 @@ const runAiRanking = async (payload: {
 
     const system =
         'Eres un asistente experto en recomendación de perfumes. ' +
-        'Interpreta intención (tipo de aroma, contexto de uso y perfil), y recomienda entre 4 y 6 opciones realmente útiles. ' +
+        'Interpreta intención (tipo de aroma, contexto de uso y perfil), y recomienda entre 4 y 8 opciones realmente útiles. ' +
         'Devuelve SOLO JSON valido, sin markdown. ' +
         'No inventes productos; solo puedes usar IDs presentes en candidates. ' +
         'Prioriza disponibilidad, relevancia por intención y popularidad. ' +
@@ -445,7 +445,7 @@ const runAiRanking = async (payload: {
         '{"recommendations":[{"id":"<uuid>","rank":1,"reasons":["...","..."],"short_explanation":"..."}]}' +
         '\nReglas:\n' +
         '- rank empieza en 1\n' +
-        '- entrega entre 4 y 6 recomendaciones\n' +
+        '- entrega entre 4 y 8 recomendaciones\n' +
         '- reasons: 2 a 4 bullets cortos (sin emojis)\n' +
         '- short_explanation: max 140 caracteres\n' +
         '- solo IDs existentes\n' +
@@ -485,7 +485,7 @@ const runAiRanking = async (payload: {
         const short = String(it?.short_explanation || '').trim();
         const rank = Math.max(1, Math.trunc(Number(it?.rank || items.length + 1)));
         items.push({ id, rank, reasons, short_explanation: short });
-        if (items.length >= 6) break;
+        if (items.length >= 8) break;
     }
     return items;
 };
@@ -566,7 +566,7 @@ export const recommendFromQuiz = async (req: Request, res: Response): Promise<vo
         const userText = `Respuestas quiz: ${JSON.stringify(answers)} ${freeText ? `| Texto: ${freeText}` : ''}`;
         const ai = await runAiRanking({ mode: 'quiz', user_text: userText, intent_profile: intent, quiz_answers: answers, candidates: top });
 
-        const fallbackReco: RecoItem[] = scored.slice(0, 6).map((x, idx) => ({
+        const fallbackReco: RecoItem[] = scored.slice(0, 8).map((x, idx) => ({
             id: x.p.id,
             rank: idx + 1,
             reasons: ['Compatible con tus preferencias', 'Basado en notas y descripcion'],
@@ -578,7 +578,7 @@ export const recommendFromQuiz = async (req: Request, res: Response): Promise<vo
 
         // Validar IDs: el modelo a veces devuelve IDs invalidos.
         const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
-        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 6) : ensureRecoRange([], fallbackReco, 4, 6);
+        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 8) : ensureRecoRange([], fallbackReco, 4, 8);
 
         recordEvent(req, 'quiz_submit', { answers, tokens: baseTokens.slice(0, 30), candidates: top.length }, session_id);
 
@@ -591,12 +591,12 @@ export const recommendFromQuiz = async (req: Request, res: Response): Promise<vo
             const preferred = withGenero.filter((x) => x.g === preferGenero).map((x) => x.it);
             const unisex = withGenero.filter((x) => x.g === 'unisex' || x.g == null).map((x) => x.it);
             const other = withGenero.filter((x) => x.g && x.g !== preferGenero && x.g !== 'unisex').map((x) => x.it);
-            reco = ensureRecoRange(preferred.concat(unisex, other), fallbackReco, 4, 6);
+            reco = ensureRecoRange(preferred.concat(unisex, other), fallbackReco, 4, 8);
         }
 
         res.status(200).json({
             mode: 'quiz',
-            recommendations: buildResponse(candidatesById, reco).slice(0, 6)
+            recommendations: buildResponse(candidatesById, reco).slice(0, 8)
         });
     } catch (e: any) {
         res.status(500).json({ error: e?.message || 'No se pudo generar recomendacion' });
@@ -632,7 +632,7 @@ export const recommendFromFreeText = async (req: Request, res: Response): Promis
         const candidatesById = new Map(top.map((p) => [p.id, p] as const));
 
         const ai = await runAiRanking({ mode: 'free', user_text: query, intent_profile: intent, candidates: top });
-        const fallbackReco: RecoItem[] = candidatePool.slice(0, 6).map((x, idx) => ({
+        const fallbackReco: RecoItem[] = candidatePool.slice(0, 8).map((x, idx) => ({
             id: x.p.id,
             rank: idx + 1,
             reasons: [
@@ -648,7 +648,7 @@ export const recommendFromFreeText = async (req: Request, res: Response): Promis
         let reco: RecoItem[] = (ai && ai.length) ? ai : fallbackReco;
 
         const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
-        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 6) : ensureRecoRange([], fallbackReco, 4, 6);
+        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 8) : ensureRecoRange([], fallbackReco, 4, 8);
 
         if (preferGenero && preferGenero !== 'unisex') {
             const withGenero = reco.map((it) => ({
@@ -658,14 +658,14 @@ export const recommendFromFreeText = async (req: Request, res: Response): Promis
             const preferred = withGenero.filter((x) => x.g === preferGenero).map((x) => x.it);
             const unisex = withGenero.filter((x) => x.g === 'unisex' || x.g == null).map((x) => x.it);
             const other = withGenero.filter((x) => x.g && x.g !== preferGenero && x.g !== 'unisex').map((x) => x.it);
-            reco = ensureRecoRange(preferred.concat(unisex, other), fallbackReco, 4, 6);
+            reco = ensureRecoRange(preferred.concat(unisex, other), fallbackReco, 4, 8);
         }
 
         recordEvent(req, 'free_query', { query, tokens: tokens.slice(0, 40), candidates: top.length }, session_id);
 
         res.status(200).json({
             mode: 'free',
-            recommendations: buildResponse(candidatesById, reco).slice(0, 6)
+            recommendations: buildResponse(candidatesById, reco).slice(0, 8)
         });
     } catch (e: any) {
         res.status(500).json({ error: e?.message || 'No se pudo generar recomendacion' });
@@ -716,7 +716,7 @@ export const recommendSimilar = async (req: Request, res: Response): Promise<voi
         const candidatesById = new Map(top.map((p) => [p.id, p] as const));
 
         const ai = await runAiRanking({ mode: 'similar', user_text: 'Perfumes similares', base_product: base, candidates: top });
-        const fallbackReco: RecoItem[] = scored.slice(0, 6).map((x, idx) => ({
+        const fallbackReco: RecoItem[] = scored.slice(0, 8).map((x, idx) => ({
             id: x.p.id,
             rank: idx + 1,
             reasons: ['Similar por notas/estilo', 'Misma categoria o perfil cercano'],
@@ -726,7 +726,7 @@ export const recommendSimilar = async (req: Request, res: Response): Promise<voi
 
         let reco: RecoItem[] = (ai && ai.length) ? ai : fallbackReco;
         const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
-        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 6) : ensureRecoRange([], fallbackReco, 4, 6);
+        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 8) : ensureRecoRange([], fallbackReco, 4, 8);
 
         recordEvent(req, 'similar', { base_product_id: base.id, candidates: top.length }, session_id);
 
@@ -735,7 +735,7 @@ export const recommendSimilar = async (req: Request, res: Response): Promise<voi
                 id: base.id,
                 nombre: base.nombre
             },
-            recommendations: buildResponse(candidatesById, reco).slice(0, 6)
+            recommendations: buildResponse(candidatesById, reco).slice(0, 8)
         });
     } catch (e: any) {
         res.status(500).json({ error: e?.message || 'No se pudo generar recomendacion' });

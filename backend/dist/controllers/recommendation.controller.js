@@ -102,6 +102,93 @@ const tokenize = (raw) => {
     return s.split(' ').filter(Boolean);
 };
 const unique = (arr) => Array.from(new Set(arr));
+const includesAny = (text, patterns) => patterns.some((r) => r.test(text));
+const parseIntentFromText = (raw) => {
+    const t = normalizeText(raw);
+    const aromas = [];
+    const contexts = [];
+    const keywords = [];
+    const add = (...k) => keywords.push(...k);
+    if (includesAny(t, [/\bfresc\w*\b/, /\bcitric\w*\b/, /\bacuatic\w*\b/, /\blimpi\w*\b/])) {
+        aromas.push('fresco');
+        add('fresco', 'citrico', 'acuatico', 'limpio', 'verde');
+    }
+    if (includesAny(t, [/\bdulc\w*\b/, /\bgourmand\b/, /\bvainill\w*\b/])) {
+        aromas.push('dulce');
+        add('dulce', 'vainilla', 'gourmand', 'afrutado', 'caramelo', 'tonka');
+    }
+    if (includesAny(t, [/\bamaderad\w*\b/, /\bmadera\b/, /\bcedro\b/, /\bvetiver\b/])) {
+        aromas.push('amaderado');
+        add('amaderado', 'madera', 'cedro', 'vetiver', 'intenso', 'elegante');
+    }
+    if (includesAny(t, [/\bfloral\b/, /\bfemenin\w*\b/, /\brosa\b/, /\bjazmin\b/])) {
+        aromas.push('floral');
+        add('floral', 'femenino', 'suave', 'jazmin', 'rosa');
+    }
+    if (includesAny(t, [/\btrabaj\w*\b/, /\boficina\b/])) {
+        contexts.push('trabajo');
+        add('suave', 'elegante', 'limpio', 'versatil', 'no invasivo');
+    }
+    if (includesAny(t, [/\bgym\b/, /\bgimnasio\b/, /\bdeporte\b/, /\bentren\w*\b/])) {
+        contexts.push('gym');
+        add('fresco', 'ligero', 'energetico', 'citrico', 'acuatico');
+    }
+    if (includesAny(t, [/\bnoche\b/, /\bfiesta\b/, /\bcita\w*\b/, /\bseductor\w*\b/])) {
+        contexts.push('noche');
+        add('intenso', 'seductor', 'ambar', 'vainilla', 'especiado');
+    }
+    if (includesAny(t, [/\bdiario\b/, /\bcada dia\b/, /\beveryday\b/])) {
+        contexts.push('diario');
+        add('versatil', 'equilibrado', 'limpio');
+    }
+    if (includesAny(t, [/\bmama\b/, /\bmadre\b/])) {
+        add('femenino', 'elegante', 'floral', 'suave');
+    }
+    const preferGenero = inferPreferGeneroFromText(t);
+    return {
+        aromas: unique(aromas),
+        contexts: unique(contexts),
+        keywords: unique(keywords.concat(tokenize(t))),
+        preferGenero
+    };
+};
+const computeMatchRatio = (p, tokens) => {
+    if (!tokens.length)
+        return 1;
+    const haystack = normalizeText(`${p.nombre} ${p.descripcion || ''} ${p.notas_olfativas || ''} ${p.categoria_nombre || ''} ${p.casa || ''} ${p.genero || ''}`);
+    let hit = 0;
+    for (const t of tokens) {
+        if (!t || t.length < 3)
+            continue;
+        if (haystack.includes(t))
+            hit += 1;
+    }
+    return hit / Math.max(1, tokens.length);
+};
+const ensureRecoRange = (reco, fallback, min = 4, max = 6) => {
+    const out = [];
+    const seen = new Set();
+    for (const it of reco || []) {
+        const id = String(it?.id || '').trim();
+        if (!id || seen.has(id))
+            continue;
+        seen.add(id);
+        out.push(it);
+        if (out.length >= max)
+            break;
+    }
+    for (const it of fallback || []) {
+        if (out.length >= max)
+            break;
+        const id = String(it?.id || '').trim();
+        if (!id || seen.has(id))
+            continue;
+        seen.add(id);
+        out.push(it);
+    }
+    // Si no hay suficientes, devolvemos lo disponible, pero intentamos llegar al mínimo siempre que exista inventario.
+    return out.slice(0, max);
+};
 // ── Normalizacion de genero / filtros ────────────────────────────────────────
 const normalizeGenero = (raw) => {
     const g = String(raw || '').trim().toLowerCase();
@@ -220,6 +307,7 @@ const selectCandidates = async (opts) => {
     const canJoin = hasCategories && hasCasa;
     const join = canJoin ? 'LEFT JOIN categorias c ON c.slug = p.casa' : '';
     const categorySelect = canJoin ? ', c.nombre AS categoria_nombre, c.slug AS categoria_slug' : '';
+    const casaSelect = hasCasa ? ', p.casa AS casa' : '';
     const idRead = await productIdReadExpr();
     const whereParts = ['p.stock > 0'];
     const params = [];
@@ -234,7 +322,7 @@ const selectCandidates = async (opts) => {
     const whereSql = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '';
     const baseSelect = `SELECT ${idRead} AS id, p.nombre AS name, p.nombre, p.genero, p.descripcion AS description, p.descripcion,
                 p.notas_olfativas AS notes, p.notas_olfativas, p.precio AS price, p.precio, p.stock,
-                p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url${categorySelect}
+                p.unidades_vendidas AS soldCount, p.unidades_vendidas, p.imagen_url AS imageUrl, p.imagen_url${casaSelect}${categorySelect}
          FROM productos p
          ${join}
          ${whereSql}`;
@@ -284,13 +372,16 @@ const runAiRanking = async (payload) => {
         return null;
     if (!payload.candidates?.length)
         return [];
-    const system = 'Eres un asesor experto en perfumeria de lujo para e-commerce. Devuelve SOLO JSON valido, sin markdown. ' +
-        'No inventes productos; solo puedes recomendar IDs presentes en candidates. ' +
-        'Maximo 6 recomendaciones. reasons deben ser cortas, concretas y en tono positivo (no uses negaciones tipo "no es" / "no cumple"). ' +
-        'Si el usuario indica hombre/mujer, prioriza ese genero y evita recomendar genero opuesto (usa unisex solo si hace falta).';
+    const system = 'Eres un asistente experto en recomendación de perfumes. ' +
+        'Interpreta intención (tipo de aroma, contexto de uso y perfil), y recomienda entre 4 y 6 opciones realmente útiles. ' +
+        'Devuelve SOLO JSON valido, sin markdown. ' +
+        'No inventes productos; solo puedes usar IDs presentes en candidates. ' +
+        'Prioriza disponibilidad, relevancia por intención y popularidad. ' +
+        'Evita recomendaciones repetitivas o casi idénticas.';
     const candidatesLite = payload.candidates.slice(0, 25).map((p) => ({
         id: p.id,
         nombre: p.nombre,
+        casa: p.casa || null,
         genero: p.genero,
         categoria_nombre: p.categoria_nombre || null,
         precio: Number(p.precio || 0),
@@ -300,20 +391,23 @@ const runAiRanking = async (payload) => {
     const user = {
         mode: payload.mode,
         user_text: payload.user_text,
+        intent_profile: payload.intent_profile || null,
         quiz_answers: payload.quiz_answers || null,
         base_product: payload.base_product || null,
         candidates: candidatesLite
     };
-    const prompt = 'Analiza user_text y/o quiz_answers y devuelve un ranking de perfumes. ' +
+    const prompt = 'Analiza user_text y/o quiz_answers e interpreta intención de compra/uso. ' +
+        'Si la consulta es ambigua, mezcla resultados coherentes (ej. dulce + fresco) priorizando utilidad. ' +
         'Formato exacto:\n' +
         '{"recommendations":[{"id":"<uuid>","rank":1,"reasons":["...","..."],"short_explanation":"..."}]}' +
         '\nReglas:\n' +
         '- rank empieza en 1\n' +
+        '- entrega entre 4 y 6 recomendaciones\n' +
         '- reasons: 2 a 4 bullets cortos (sin emojis)\n' +
         '- short_explanation: max 140 caracteres\n' +
         '- solo IDs existentes\n' +
         '- no repitas perfumes\n' +
-        '- evita razones negativas; si no hay match perfecto, explica por que es la mejor opcion disponible\n';
+        '- evita razones negativas; justifica por qué cada opción es ideal para la intención\n';
     const resp = await gemini.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: system + '\n\n' + prompt + '\nINPUT:\n' + JSON.stringify(user)
@@ -376,12 +470,15 @@ const buildResponse = (candidatesById, reco) => {
                 id: p.id,
                 name: p.name || p.nombre,
                 nombre: p.nombre || p.name,
+                marca: p.categoria_nombre || p.casa || null,
+                casa: p.casa || null,
                 price: Number(p.price || p.precio || 0),
                 precio: Number(p.precio || p.price || 0),
                 imageUrl: p.imageUrl || p.imagen_url,
                 imagen_url: p.imagen_url || p.imageUrl,
                 notes: p.notes || p.notas_olfativas,
                 notas_olfativas: p.notas_olfativas || p.notes,
+                descripcion: p.descripcion || p.description || '',
                 genero: p.genero,
                 categoria_nombre: p.categoria_nombre || null,
                 categoria_slug: p.categoria_slug || null
@@ -400,9 +497,12 @@ const recommendFromQuiz = async (req, res) => {
         if (!candidates.length && preferGenero && preferGenero !== 'unisex') {
             candidates = await selectCandidates({});
         }
+        const freeText = String(req.body?.free_text || '');
+        const intent = parseIntentFromText(freeText);
         const baseTokens = unique([
             ...tokenize(req.body?.free_text || ''),
-            ...buildKeywordHintsFromQuiz(answers)
+            ...buildKeywordHintsFromQuiz(answers),
+            ...intent.keywords
         ]);
         const scored = candidates
             .map((p) => ({ p, s: computeHeuristicScore(p, baseTokens, preferGenero) }))
@@ -410,8 +510,8 @@ const recommendFromQuiz = async (req, res) => {
             .slice(0, 50);
         const top = scored.map((x) => x.p);
         const candidatesById = new Map(top.map((p) => [p.id, p]));
-        const userText = `Respuestas quiz: ${JSON.stringify(answers)}`;
-        const ai = await runAiRanking({ mode: 'quiz', user_text: userText, quiz_answers: answers, candidates: top });
+        const userText = `Respuestas quiz: ${JSON.stringify(answers)} ${freeText ? `| Texto: ${freeText}` : ''}`;
+        const ai = await runAiRanking({ mode: 'quiz', user_text: userText, intent_profile: intent, quiz_answers: answers, candidates: top });
         const fallbackReco = scored.slice(0, 6).map((x, idx) => ({
             id: x.p.id,
             rank: idx + 1,
@@ -422,15 +522,7 @@ const recommendFromQuiz = async (req, res) => {
         let reco = (ai && ai.length) ? ai : fallbackReco;
         // Validar IDs: el modelo a veces devuelve IDs invalidos.
         const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
-        if (!valid.length) {
-            reco = fallbackReco;
-        }
-        else {
-            // Completar hasta 6 con fallback si hace falta
-            const seen = new Set(valid.map((x) => String(x.id)));
-            const fill = fallbackReco.filter((x) => !seen.has(String(x.id)));
-            reco = valid.concat(fill).slice(0, 6);
-        }
+        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 6) : ensureRecoRange([], fallbackReco, 4, 6);
         recordEvent(req, 'quiz_submit', { answers, tokens: baseTokens.slice(0, 30), candidates: top.length }, session_id);
         // Enforce preferGenero: priorizar coincidencias vs unisex
         if (preferGenero && preferGenero !== 'unisex') {
@@ -441,7 +533,7 @@ const recommendFromQuiz = async (req, res) => {
             const preferred = withGenero.filter((x) => x.g === preferGenero).map((x) => x.it);
             const unisex = withGenero.filter((x) => x.g === 'unisex' || x.g == null).map((x) => x.it);
             const other = withGenero.filter((x) => x.g && x.g !== preferGenero && x.g !== 'unisex').map((x) => x.it);
-            reco = preferred.concat(unisex, other).slice(0, 6);
+            reco = ensureRecoRange(preferred.concat(unisex, other), fallbackReco, 4, 6);
         }
         res.status(200).json({
             mode: 'quiz',
@@ -457,36 +549,42 @@ const recommendFromFreeText = async (req, res) => {
     try {
         const session_id = String(req.body?.session_id || '').trim() || undefined;
         const query = String(req.body?.query || '').trim();
-        const preferGenero = inferPreferGeneroFromText(query);
-        const tokens = unique(tokenize(query));
+        const intent = parseIntentFromText(query);
+        const preferGenero = intent.preferGenero || inferPreferGeneroFromText(query);
+        const tokens = unique(tokenize(query).concat(intent.keywords));
         let candidates = await selectCandidates({ preferGenero });
         if (!candidates.length && preferGenero && preferGenero !== 'unisex') {
             candidates = await selectCandidates({});
         }
         const scored = candidates
-            .map((p) => ({ p, s: computeHeuristicScore(p, tokens, preferGenero) }))
+            .map((p) => {
+            const s = computeHeuristicScore(p, tokens, preferGenero);
+            const ratio = computeMatchRatio(p, tokens);
+            const bonus = ratio >= 0.7 ? 3 : ratio >= 0.5 ? 1.2 : 0;
+            return { p, s: s + bonus, r: ratio };
+        })
             .sort((a, b) => b.s - a.s)
-            .slice(0, 50);
-        const top = scored.map((x) => x.p);
+            .slice(0, 80);
+        const highIntent = scored.filter((x) => x.r >= 0.7);
+        const candidatePool = highIntent.length >= 4 ? highIntent.concat(scored.filter((x) => x.r < 0.7)) : scored;
+        const top = candidatePool.map((x) => x.p).slice(0, 50);
         const candidatesById = new Map(top.map((p) => [p.id, p]));
-        const ai = await runAiRanking({ mode: 'free', user_text: query, candidates: top });
-        const fallbackReco = scored.slice(0, 6).map((x, idx) => ({
+        const ai = await runAiRanking({ mode: 'free', user_text: query, intent_profile: intent, candidates: top });
+        const fallbackReco = candidatePool.slice(0, 6).map((x, idx) => ({
             id: x.p.id,
             rank: idx + 1,
-            reasons: ['Coincide con tu busqueda', 'Basado en notas y descripcion'],
-            short_explanation: 'Seleccionado por afinidad con tu descripcion',
+            reasons: [
+                x.r >= 0.7 ? 'Alta coincidencia con tu intención olfativa' : 'Coincide con parte de tu intención',
+                'Buen desempeño en popularidad y disponibilidad'
+            ],
+            short_explanation: x.r >= 0.7
+                ? 'Ajuste fuerte a aroma, contexto y estilo que describiste.'
+                : 'Opción equilibrada para tu intención y uso diario.',
             score: x.s
         }));
         let reco = (ai && ai.length) ? ai : fallbackReco;
         const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
-        if (!valid.length) {
-            reco = fallbackReco;
-        }
-        else {
-            const seen = new Set(valid.map((x) => String(x.id)));
-            const fill = fallbackReco.filter((x) => !seen.has(String(x.id)));
-            reco = valid.concat(fill).slice(0, 6);
-        }
+        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 6) : ensureRecoRange([], fallbackReco, 4, 6);
         if (preferGenero && preferGenero !== 'unisex') {
             const withGenero = reco.map((it) => ({
                 it,
@@ -495,7 +593,7 @@ const recommendFromFreeText = async (req, res) => {
             const preferred = withGenero.filter((x) => x.g === preferGenero).map((x) => x.it);
             const unisex = withGenero.filter((x) => x.g === 'unisex' || x.g == null).map((x) => x.it);
             const other = withGenero.filter((x) => x.g && x.g !== preferGenero && x.g !== 'unisex').map((x) => x.it);
-            reco = preferred.concat(unisex, other).slice(0, 6);
+            reco = ensureRecoRange(preferred.concat(unisex, other), fallbackReco, 4, 6);
         }
         recordEvent(req, 'free_query', { query, tokens: tokens.slice(0, 40), candidates: top.length }, session_id);
         res.status(200).json({
@@ -554,14 +652,7 @@ const recommendSimilar = async (req, res) => {
         }));
         let reco = (ai && ai.length) ? ai : fallbackReco;
         const valid = (reco || []).filter((it) => candidatesById.has(String(it?.id || '').trim()));
-        if (!valid.length) {
-            reco = fallbackReco;
-        }
-        else {
-            const seen = new Set(valid.map((x) => String(x.id)));
-            const fill = fallbackReco.filter((x) => !seen.has(String(x.id)));
-            reco = valid.concat(fill).slice(0, 6);
-        }
+        reco = valid.length ? ensureRecoRange(valid, fallbackReco, 4, 6) : ensureRecoRange([], fallbackReco, 4, 6);
         recordEvent(req, 'similar', { base_product_id: base.id, candidates: top.length }, session_id);
         res.status(200).json({
             base_product: {

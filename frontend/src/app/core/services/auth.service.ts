@@ -46,15 +46,11 @@ export class AuthService {
         } else {
           this.favoritesService.isUserAuthenticated = false;
           this.currentUserSubject.next(null);
-          this.cartService.clearCartStorage();
-          this.favoritesService.clearFavorites();
         }
       },
       error: () => {
         this.favoritesService.isUserAuthenticated = false;
         this.currentUserSubject.next(null);
-        this.cartService.clearCartStorage();
-        this.favoritesService.clearFavorites();
       }
     });
   }

@@ -48,6 +48,8 @@ export class FavoritesService {
     private loadFavoritesFromAPI(): void {
         if (!this.isUserAuthenticated) return;
 
+        const localFavorites = [...this.favorites];
+
         this.http.get<Product[]>(this.apiUrl, { withCredentials: true }).subscribe({
             next: (favs) => {
                 const products: Product[] = favs.map(f => ({
@@ -64,6 +66,14 @@ export class FavoritesService {
                     isNew: !!(f as any).es_nuevo,
                     genero: f.genero || ''
                 }));
+
+                for (const localFav of localFavorites) {
+                    if (!products.some(p => p.id === localFav.id)) {
+                        products.push(localFav);
+                        this.addToAPI(localFav.id, products);
+                    }
+                }
+
                 this.favoritesSubject.next(products);
                 this.saveToLocal(products);
             },
@@ -80,17 +90,6 @@ export class FavoritesService {
     }
 
     toggleFavorite(product: Product): void {
-        if (!this.isUserAuthenticated) {
-            import('sweetalert2').then(Swal => {
-                Swal.default.fire({
-                    icon: 'info',
-                    title: 'Inicia sesión',
-                    text: 'Debes iniciar sesión para guardar tus extractos y perfumes favoritos.',
-                    confirmButtonColor: '#d4af37'
-                });
-            });
-            return;
-        }
 
         const previousFavorites = [...this.favorites];
         const nextFavorites = [...previousFavorites];

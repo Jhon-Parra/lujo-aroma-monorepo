@@ -17,10 +17,19 @@ RewriteBase /
 
 # Configuración de seguridad para Google OAuth (Formato Apache)
 <IfModule mod_headers.c>
-    Header set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+    Header set Cross-Origin-Opener-Policy "unsafe-none"
     Header set Cross-Origin-Embedder-Policy "unsafe-none"
     Header set Access-Control-Allow-Origin "*"
 </IfModule>
+
+# Evitar que index.html quede cacheado y apunte a chunks antiguos.
+<FilesMatch "^(index\.html|.*\.html)$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </IfModule>
+</FilesMatch>
 
 # Redirigir sitemap.xml al generador dinámico en tiempo real del backend
 RewriteRule ^sitemap\.xml$ https://api.perfumesbogota.com/sitemap.xml [R=301,L]

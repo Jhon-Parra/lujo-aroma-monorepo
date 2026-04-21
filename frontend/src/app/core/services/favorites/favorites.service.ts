@@ -33,7 +33,12 @@ export class FavoritesService {
 
     refreshFavorites(): void {
         if (!this.isUserAuthenticated) return;
-        this.loadFavoritesFromAPI();
+        
+        // Retrasar medio segundo para dar tiempo a que las cookies (cross-origin)
+        // se fijen correctamente en el navegador antes de pedir los favoritos.
+        setTimeout(() => {
+            this.loadFavoritesFromAPI();
+        }, 500);
     }
 
     get favorites(): Product[] {
@@ -145,7 +150,9 @@ export class FavoritesService {
             next: (response) => {
                 if (response?.user) {
                     this.isUserAuthenticated = true;
-                    retryRequest();
+                    setTimeout(() => {
+                        retryRequest();
+                    }, 500);
                     return;
                 }
 

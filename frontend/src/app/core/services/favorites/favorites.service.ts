@@ -14,6 +14,8 @@ export class FavoritesService {
     private favoritesSubject = new BehaviorSubject<Product[]>([]);
     public favorites$: Observable<Product[]> = this.favoritesSubject.asObservable();
 
+    public isUserAuthenticated = false;
+
     constructor(private http: HttpClient) {
         // Importante: no llamamos al API en el constructor.
         // Antes de saber si hay sesion valida, esto genera 401/403 en consola.
@@ -30,6 +32,7 @@ export class FavoritesService {
     }
 
     refreshFavorites(): void {
+        if (!this.isUserAuthenticated) return;
         this.loadFavoritesFromAPI();
     }
 
@@ -38,6 +41,8 @@ export class FavoritesService {
     }
 
     private loadFavoritesFromAPI(): void {
+        if (!this.isUserAuthenticated) return;
+
         this.http.get<Product[]>(this.apiUrl, { withCredentials: true }).subscribe({
             next: (favs) => {
                 const products: Product[] = favs.map(f => ({
@@ -70,6 +75,18 @@ export class FavoritesService {
     }
 
     toggleFavorite(product: Product): void {
+        if (!this.isUserAuthenticated) {
+            import('sweetalert2').then(Swal => {
+                Swal.default.fire({
+                    icon: 'info',
+                    title: 'Inicia sesión',
+                    text: 'Debes iniciar sesión para guardar tus extractos y perfumes favoritos.',
+                    confirmButtonColor: '#d4af37'
+                });
+            });
+            return;
+        }
+
         const previousFavorites = [...this.favorites];
         const nextFavorites = [...previousFavorites];
         const index = nextFavorites.findIndex(p => p.id === product.id);
@@ -86,6 +103,7 @@ export class FavoritesService {
     }
 
     private addToAPI(productId: string, previousFavorites: Product[], hasRetried = false): void {
+        if (!this.isUserAuthenticated) return;
         this.http.post(this.apiUrl, { producto_id: productId }, { withCredentials: true }).subscribe({
             error: (err) => this.handleSyncError(err, previousFavorites, () => {
                 this.addToAPI(productId, previousFavorites, true);
@@ -94,6 +112,7 @@ export class FavoritesService {
     }
 
     private removeFromAPI(productId: string, previousFavorites: Product[], hasRetried = false): void {
+        if (!this.isUserAuthenticated) return;
         this.http.delete(`${this.apiUrl}/${productId}`, { withCredentials: true }).subscribe({
             error: (err) => this.handleSyncError(err, previousFavorites, () => {
                 this.removeFromAPI(productId, previousFavorites, true);
@@ -125,13 +144,16 @@ export class FavoritesService {
         this.http.post<any>(this.refreshUrl, {}, { withCredentials: true }).subscribe({
             next: (response) => {
                 if (response?.user) {
+                    this.isUserAuthenticated = true;
                     retryRequest();
                     return;
                 }
 
+                this.isUserAuthenticated = false;
                 this.clearFavorites();
             },
             error: () => {
+                this.isUserAuthenticated = false;
                 this.clearFavorites();
             }
         });

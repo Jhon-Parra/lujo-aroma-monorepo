@@ -40,15 +40,18 @@ export class AuthService {
     this.refreshUser().subscribe({
       next: (response) => {
         if (response?.user) {
+          this.favoritesService.isUserAuthenticated = true;
           this.currentUserSubject.next(response.user);
           this.favoritesService.refreshFavorites();
         } else {
+          this.favoritesService.isUserAuthenticated = false;
           this.currentUserSubject.next(null);
           this.cartService.clearCartStorage();
           this.favoritesService.clearFavorites();
         }
       },
       error: () => {
+        this.favoritesService.isUserAuthenticated = false;
         this.currentUserSubject.next(null);
         this.cartService.clearCartStorage();
         this.favoritesService.clearFavorites();
@@ -61,6 +64,7 @@ export class AuthService {
       .pipe(
         tap(response => {
           if (response.user) {
+            this.favoritesService.isUserAuthenticated = true;
             this.currentUserSubject.next(response.user);
             this.favoritesService.refreshFavorites();
           }
@@ -72,6 +76,7 @@ export class AuthService {
     return this.http.post<any>(`${this.apiUrl}/register`, userData, { withCredentials: true }).pipe(
       tap(response => {
         if (response.user) {
+          this.favoritesService.isUserAuthenticated = true;
           this.currentUserSubject.next(response.user);
           try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
           this.favoritesService.refreshFavorites();
@@ -95,6 +100,7 @@ export class AuthService {
       }),
       tap(response => {
         if (response.user) {
+          this.favoritesService.isUserAuthenticated = true;
           this.currentUserSubject.next(response.user);
           try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
           this.favoritesService.refreshFavorites();
@@ -109,6 +115,7 @@ export class AuthService {
 
     this.http.post<any>(`${this.apiUrl}/logout`, {}, { withCredentials: true }).subscribe({
       complete: () => {
+        this.favoritesService.isUserAuthenticated = false;
         this.currentUserSubject.next(null);
         this.cartService.clearCartStorage();
         this.favoritesService.clearFavorites();
@@ -123,14 +130,17 @@ export class AuthService {
       .pipe(
         tap((response) => {
           if (response?.user) {
+            this.favoritesService.isUserAuthenticated = true;
             this.currentUserSubject.next(response.user);
             try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
           } else {
+            this.favoritesService.isUserAuthenticated = false;
             this.currentUserSubject.next(null);
             try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
           }
         }),
         catchError(() => {
+          this.favoritesService.isUserAuthenticated = false;
           this.currentUserSubject.next(null);
           try { localStorage.removeItem('lujo_aroma_permissions_me_v1'); } catch {}
           return of({ user: null });

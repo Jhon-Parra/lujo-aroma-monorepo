@@ -122,13 +122,15 @@ export class HomeComponent implements OnInit, OnDestroy {
         video.pause();
         video.currentTime = 0;
 
-        // Drop source to free decoder/buffer memory.
-        try {
-          video.removeAttribute('src');
-          video.load();
-        } catch {
-          // ignore
-        }
+        // Drop source to free decoder/buffer memory sin bloquear el hilo principal
+        setTimeout(() => {
+          try {
+            video.removeAttribute('src');
+            video.load();
+          } catch {
+            // ignore
+          }
+        }, 100);
 
         this.videoElements.delete(idx);
       }

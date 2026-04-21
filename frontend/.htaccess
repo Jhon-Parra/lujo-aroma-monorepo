@@ -13,3 +13,8 @@ RewriteRule ^ - [L]
 
 # SPA Angular
 RewriteRule ^ index.html [L]
+
+# Configuración de cabeceras de seguridad
+<IfModule mod_headers.c>
+  Header set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+</IfModule>

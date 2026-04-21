@@ -117,7 +117,8 @@ export const getFavorites = async (req: AuthRequest, res: Response): Promise<voi
         const userId = req.user?.id;
 
         if (!userId) {
-            res.status(401).json({ error: 'Usuario no autenticado' });
+            // Se retorna array vacio en lugar de 401 para silenciar errores en el frontend
+            res.status(200).json([]);
             return;
         }
 

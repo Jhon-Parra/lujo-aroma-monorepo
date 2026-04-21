@@ -37,7 +37,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
 
 
-  private carouselTimer: any;
+  private carouselTimer?: ReturnType<typeof setTimeout>;
 
   @HostListener('document:mouseout', ['$event'])
   onDocumentMouseOut(e: MouseEvent): void {
@@ -93,7 +93,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.carouselTimer) {
-      clearInterval(this.carouselTimer);
+      clearTimeout(this.carouselTimer);
       this.carouselTimer = undefined;
     }
   }
@@ -445,10 +445,16 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   startCarousel(): void {
     if (this.carouselTimer) return;
-    this.carouselTimer = setInterval(() => {
-      if (this.carouselPaused) return;
-      this.nextSlide();
-    }, 4500); // Speeds up autoplay to 4.5s so it's obvious to the user
+    this.scheduleCarouselTick();
+  }
+
+  private scheduleCarouselTick(): void {
+    this.carouselTimer = setTimeout(() => {
+      if (!this.carouselPaused) {
+        this.nextSlide();
+      }
+      this.scheduleCarouselTick();
+    }, 4500);
   }
 
   pauseCarousel(): void {

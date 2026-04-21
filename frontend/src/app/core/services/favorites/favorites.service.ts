@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { Product } from '../../../shared/components/product-card/product-card.component';
 
 import { API_CONFIG } from '../../config/api-config';
@@ -10,6 +10,7 @@ import { API_CONFIG } from '../../config/api-config';
 })
 export class FavoritesService {
     private apiUrl = `${API_CONFIG.baseUrl}/favorites`;
+    private refreshUrl = `${API_CONFIG.baseUrl}/auth/refresh`;
     private favoritesSubject = new BehaviorSubject<Product[]>([]);
     public favorites$: Observable<Product[]> = this.favoritesSubject.asObservable();
 
@@ -69,29 +70,70 @@ export class FavoritesService {
     }
 
     toggleFavorite(product: Product): void {
-        const currentFavorites = [...this.favorites];
-        const index = currentFavorites.findIndex(p => p.id === product.id);
+        const previousFavorites = [...this.favorites];
+        const nextFavorites = [...previousFavorites];
+        const index = nextFavorites.findIndex(p => p.id === product.id);
 
         if (index !== -1) {
-            this.removeFromAPI(product.id);
-            currentFavorites.splice(index, 1);
+            nextFavorites.splice(index, 1);
+            this.updateFavorites(nextFavorites);
+            this.removeFromAPI(product.id, previousFavorites);
         } else {
-            this.addToAPI(product.id);
-            currentFavorites.push(product);
+            nextFavorites.push(product);
+            this.updateFavorites(nextFavorites);
+            this.addToAPI(product.id, previousFavorites);
         }
-
-        this.updateFavorites(currentFavorites);
     }
 
-    private addToAPI(productId: string): void {
+    private addToAPI(productId: string, previousFavorites: Product[], hasRetried = false): void {
         this.http.post(this.apiUrl, { producto_id: productId }, { withCredentials: true }).subscribe({
-            error: (err) => console.error('Error adding favorite:', err)
+            error: (err) => this.handleSyncError(err, previousFavorites, () => {
+                this.addToAPI(productId, previousFavorites, true);
+            }, hasRetried)
         });
     }
 
-    private removeFromAPI(productId: string): void {
+    private removeFromAPI(productId: string, previousFavorites: Product[], hasRetried = false): void {
         this.http.delete(`${this.apiUrl}/${productId}`, { withCredentials: true }).subscribe({
-            error: (err) => console.error('Error removing favorite:', err)
+            error: (err) => this.handleSyncError(err, previousFavorites, () => {
+                this.removeFromAPI(productId, previousFavorites, true);
+            }, hasRetried)
+        });
+    }
+
+    private handleSyncError(
+        err: any,
+        previousFavorites: Product[],
+        retryRequest: () => void,
+        hasRetried: boolean
+    ): void {
+        if ((err?.status === 401 || err?.status === 403) && !hasRetried) {
+            this.tryRefreshSession(retryRequest);
+            return;
+        }
+
+        if (err?.status === 401 || err?.status === 403) {
+            this.clearFavorites();
+            return;
+        }
+
+        this.updateFavorites(previousFavorites);
+        console.error('Error syncing favorites:', err);
+    }
+
+    private tryRefreshSession(retryRequest: () => void): void {
+        this.http.post<any>(this.refreshUrl, {}, { withCredentials: true }).subscribe({
+            next: (response) => {
+                if (response?.user) {
+                    retryRequest();
+                    return;
+                }
+
+                this.clearFavorites();
+            },
+            error: () => {
+                this.clearFavorites();
+            }
         });
     }
 

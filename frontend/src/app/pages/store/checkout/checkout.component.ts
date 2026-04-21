@@ -67,7 +67,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     cartRecoveryApplied = false;
     cartRecoveryDiscountAmount = 0;
     showClearCartConfirm = false;
-    private cartRecoveryTimer?: any;
+    private cartRecoveryTimer?: ReturnType<typeof setTimeout>;
     private exitIntentHandler?: (event: MouseEvent) => void;
     private cartRecoveryPendingAction: 'cancel' | 'clear' | null = null;
     private readonly cartRecoveryStoragePrefix = 'lujo_aroma_cart_recovery';
@@ -293,7 +293,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             document.removeEventListener('mouseout', this.exitIntentHandler);
         }
         if (this.cartRecoveryTimer) {
-            clearInterval(this.cartRecoveryTimer);
+            clearTimeout(this.cartRecoveryTimer);
             this.cartRecoveryTimer = undefined;
         }
         if (this.cartRecoveryExpiryTimer) {
@@ -437,14 +437,19 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.setRecoveryShown();
 
         if (this.cartRecoveryTimer) {
-            clearInterval(this.cartRecoveryTimer);
+            clearTimeout(this.cartRecoveryTimer);
         }
+        this.scheduleCartRecoveryTick();
+    }
 
-        this.cartRecoveryTimer = setInterval(() => {
+    private scheduleCartRecoveryTick(): void {
+        this.cartRecoveryTimer = setTimeout(() => {
             this.cartRecoveryRemaining = Math.max(0, this.cartRecoveryRemaining - 1);
             if (this.cartRecoveryRemaining <= 0) {
                 this.closeCartRecovery();
+                return;
             }
+            this.scheduleCartRecoveryTick();
         }, 1000);
     }
 
@@ -453,7 +458,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.showCartRecovery = false;
         this.cartRecoveryPendingAction = null;
         if (this.cartRecoveryTimer) {
-            clearInterval(this.cartRecoveryTimer);
+            clearTimeout(this.cartRecoveryTimer);
             this.cartRecoveryTimer = undefined;
         }
     }

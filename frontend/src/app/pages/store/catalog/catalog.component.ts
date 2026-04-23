@@ -38,6 +38,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
   categories: Category[] = [];
   houseSearchTerm = '';
   showOnlyPromotions = false;
+  exactMatch = false;
+  selectedProductId = '';
 
   smartSearchTerm = '';
   smartSuggestions: any[] = [];
@@ -177,7 +179,9 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.route.queryParams.subscribe(params => {
       this.searchTerm = params['q'] || '';
       this.smartSearchTerm = this.searchTerm;
-      const isSmart = params['smart'] === 'true';
+      this.exactMatch = params['exact'] === 'true';
+      this.selectedProductId = String(params['pid'] || '').trim();
+      const isSmart = !this.exactMatch && params['smart'] === 'true';
       this.selectedCategory = this.normalizeSlug(params['category'] ?? params['house']);
       this.selectedPromotionId = params['promo'] || '';
       const g = String(params['gender'] || '').trim().toLowerCase();
@@ -283,7 +287,16 @@ export class CatalogComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe((results) => {
-        this.smartSuggestions = results || [];
+        const normalizedTerm = this.normalizeText(this.smartSearchTerm);
+        const incoming = results || [];
+        const filtered = normalizedTerm
+          ? incoming.filter((p: any) => {
+              const label = this.normalizeText((p as any)?.name || (p as any)?.nombre || '');
+              return label.includes(normalizedTerm);
+            })
+          : incoming;
+
+        this.smartSuggestions = filtered.length > 0 ? filtered : incoming;
         this.smartSuggestionsLoading = false;
         this.showSmartSuggestions = this.smartSearchTerm.trim().length >= 2;
       });
@@ -319,6 +332,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
       queryParams: {
         q: term,
         smart: 'true',
+        exact: null,
+        pid: null,
         category: null,
         gender: null,
         promo: null,
@@ -334,16 +349,35 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.hideSmartSuggestions();
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { q: null, smart: null, page: null },
+      queryParams: { q: null, smart: null, exact: null, pid: null, page: null },
       queryParamsHandling: 'merge',
     });
   }
 
   pickSmartSuggestion(product: any): void {
     const term = String((product as any)?.name || (product as any)?.nombre || '').trim();
+    const productId = String((product as any)?.id || '').trim();
     if (!term) return;
+
     this.smartSearchTerm = term;
-    this.submitSmartSearch();
+    this.hideSmartSuggestions();
+    this.isMobileMenuOpen = false;
+    this.setBodyScrollLock(false);
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        q: term,
+        smart: 'false',
+        exact: 'true',
+        pid: productId || null,
+        category: null,
+        gender: null,
+        promo: null,
+        page: null
+      },
+      queryParamsHandling: 'merge',
+    });
   }
 
   hideSmartSuggestions(): void {
@@ -452,9 +486,10 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.loading = true;
     const category = this.selectedCategory !== 'todos' ? this.selectedCategory : null;
     const gender = this.selectedGender !== 'all' ? this.selectedGender : null;
+    const exactMode = this.exactMatch;
     
     // Prioritize passed param, otherwise fallback to snapshot
-    const isSmart = isSmartParam !== undefined ? isSmartParam : this.route.snapshot.queryParams['smart'] === 'true';
+    const isSmart = !exactMode && (isSmartParam !== undefined ? isSmartParam : this.route.snapshot.queryParams['smart'] === 'true');
     const requestLimit = isSmart && this.searchTerm ? 6 : this.itemsPerPage;
 
     this.productService.getPublicCatalog(this.currentPage, requestLimit, this.searchTerm, { category, gender }, isSmart).subscribe({
@@ -465,12 +500,12 @@ export class CatalogComponent implements OnInit, OnDestroy {
         if (isSmart && this.searchTerm && mapped.length < 6) {
           const fallbackQueries = this.buildSmartFallbackQueries(this.searchTerm);
           this.fillWithFallbackQueries(mapped, fallbackQueries, (finalProducts) => {
-            this.applyCatalogResponse(finalProducts, res, true);
+            this.applyCatalogResponse(finalProducts, res, true, exactMode);
           });
           return;
         }
 
-        this.applyCatalogResponse(mapped, res, isSmart);
+        this.applyCatalogResponse(mapped, res, isSmart, exactMode);
       },
       error: (err) => {
         console.error(err);
@@ -571,11 +606,43 @@ export class CatalogComponent implements OnInit, OnDestroy {
     });
   }
 
-  private applyCatalogResponse(inputProducts: Product[], res: any, smartMode: boolean): void {
+  private applyCatalogResponse(inputProducts: Product[], res: any, smartMode: boolean, exactMode: boolean): void {
     this.products = this.showOnlyPromotions ? (inputProducts || []).filter(p => p.tiene_promocion) : (inputProducts || []);
     this.filteredProducts = this.products;
 
-    if (smartMode && this.searchTerm) {
+    if (exactMode && this.searchTerm) {
+      const normalizedTerm = this.normalizeText(this.searchTerm);
+      const byId = this.selectedProductId
+        ? this.products.find((p: any) => String((p as any)?.id || '') === this.selectedProductId)
+        : null;
+
+      let exactResults: Product[] = byId ? [byId] : [];
+
+      if (exactResults.length === 0 && normalizedTerm) {
+        exactResults = this.products.filter((p: any) => {
+          const name = this.normalizeText((p as any)?.name || (p as any)?.nombre || '');
+          return name === normalizedTerm;
+        });
+      }
+
+      if (exactResults.length === 0 && normalizedTerm) {
+        exactResults = this.products.filter((p: any) => {
+          const name = this.normalizeText((p as any)?.name || (p as any)?.nombre || '');
+          return name.startsWith(normalizedTerm);
+        });
+      }
+
+      if (exactResults.length > 0) {
+        this.products = exactResults;
+        this.filteredProducts = exactResults;
+      }
+    }
+
+    if (exactMode) {
+      this.currentPage = 1;
+      this.totalProducts = this.products.length;
+      this.totalPages = 1;
+    } else if (smartMode && this.searchTerm) {
       this.currentPage = 1;
       this.totalProducts = this.products.length;
       this.totalPages = 1;
@@ -626,7 +693,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.setBodyScrollLock(false);
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { category: null, gender: null, page: null },
+      queryParams: { category: null, gender: null, exact: null, pid: null, page: null },
       queryParamsHandling: 'merge',
     });
   }
@@ -637,7 +704,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     const normalized = this.normalizeSlug(category);
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { category: normalized !== 'todos' ? normalized : null, page: null },
+      queryParams: { category: normalized !== 'todos' ? normalized : null, exact: null, pid: null, page: null },
       queryParamsHandling: 'merge',
     });
   }
@@ -647,7 +714,7 @@ export class CatalogComponent implements OnInit, OnDestroy {
     this.setBodyScrollLock(false);
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { gender: gender !== 'all' ? gender : null, page: null },
+      queryParams: { gender: gender !== 'all' ? gender : null, exact: null, pid: null, page: null },
       queryParamsHandling: 'merge',
     });
   }
@@ -703,6 +770,8 @@ export class CatalogComponent implements OnInit, OnDestroy {
         page: null,
         q: this.searchTerm || null,
         smart: this.searchTerm && keepSmart ? 'true' : null,
+        exact: null,
+        pid: null,
         category: this.selectedCategory !== 'todos' ? this.selectedCategory : null,
         gender: this.selectedGender !== 'all' ? this.selectedGender : null
       },

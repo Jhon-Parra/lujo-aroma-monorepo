@@ -172,7 +172,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe((results: Product[]) => {
-        this.suggestions = (results || []).slice(0, 6);
+        const normalizedTerm = this.normalizeSearch(this.searchTerm);
+        const incoming = results || [];
+        const filtered = normalizedTerm
+          ? incoming.filter((p) => this.normalizeSearch(this.getSuggestionLabel(p)).includes(normalizedTerm))
+          : incoming;
+
+        this.suggestions = (filtered.length > 0 ? filtered : incoming).slice(0, 6);
         this.suggestionsLoading = false;
         this.showSuggestions =
           this.searchTerm.trim().length >= 2 &&
@@ -183,6 +189,20 @@ export class NavbarComponent implements OnInit, OnDestroy {
   // =========================================================
   // SEARCH
   // =========================================================
+  private normalizeSearch(raw: any): string {
+    return String(raw ?? '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim()
+      .replace(/\s+/g, ' ');
+  }
+
+  private getSuggestionLabel(product: Product): string {
+    return String(product?.name || product?.nombre || '').trim();
+  }
+
   onSearchInput(): void {
     const term = this.searchTerm.trim();
 
@@ -203,6 +223,8 @@ export class NavbarComponent implements OnInit, OnDestroy {
       queryParams: {
         q: term,
         smart: 'false',
+        exact: null,
+        pid: null,
         category: null,
         gender: null,
         promo: null,
@@ -217,13 +239,16 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   selectSuggestion(product: Product): void {
-    const term = String(product?.name || product?.nombre || product?.slug || product?.id || '').trim();
+    const term = this.getSuggestionLabel(product);
+    const productId = String(product?.id || '').trim();
     if (!term) return;
 
     this.router.navigate(['/catalog'], {
       queryParams: {
         q: term,
-        smart: 'true',
+        smart: 'false',
+        exact: 'true',
+        pid: productId || null,
         category: null,
         gender: null,
         promo: null,
@@ -449,11 +474,20 @@ export class NavbarComponent implements OnInit, OnDestroy {
           const cw = Math.max(1, maxX - minX + 1);
           const ch = Math.max(1, maxY - minY + 1);
 
-          // Evitar generar un PNG enorme; mantenemos el resultado en un tamano razonable.
-          const outMax = 900;
-          const outScale = Math.min(1, outMax / Math.max(cw, ch));
-          const ow = Math.max(1, Math.round(cw * outScale));
-          const oh = Math.max(1, Math.round(ch * outScale));
+          // Bounding box detectado en escala reducida -> convertir a coordenadas originales.
+          const invScale = 1 / scale;
+          const srcX = Math.max(0, Math.floor(minX * invScale));
+          const srcY = Math.max(0, Math.floor(minY * invScale));
+          const srcMaxX = Math.min(iw, Math.ceil((maxX + 1) * invScale));
+          const srcMaxY = Math.min(ih, Math.ceil((maxY + 1) * invScale));
+          const srcW = Math.max(1, srcMaxX - srcX);
+          const srcH = Math.max(1, srcMaxY - srcY);
+
+          // Evitar PNG gigantes, pero conservar la mayor calidad posible.
+          const outMax = 2048;
+          const outScale = Math.min(1, outMax / Math.max(srcW, srcH));
+          const ow = Math.max(1, Math.round(srcW * outScale));
+          const oh = Math.max(1, Math.round(srcH * outScale));
 
           const out = document.createElement('canvas');
           out.width = ow;
@@ -465,7 +499,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
           }
 
           octx.clearRect(0, 0, ow, oh);
-          octx.drawImage(scan, minX, minY, cw, ch, 0, 0, ow, oh);
+          octx.imageSmoothingEnabled = true;
+          octx.imageSmoothingQuality = 'high';
+          octx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, ow, oh);
 
           const dataUrl = out.toDataURL('image/png');
           resolve(dataUrl);

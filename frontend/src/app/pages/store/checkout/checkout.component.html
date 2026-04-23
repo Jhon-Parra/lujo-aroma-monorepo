@@ -126,19 +126,33 @@
                                 class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3.5 text-sm text-gray-500 cursor-not-allowed">
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Ciudad *</label>
-                            <input type="text" [(ngModel)]="city" (ngModelChange)="scheduleDraftSave()" (blur)="touchedCity = true"
-                                placeholder="Ej: Bogotá, Medellín..."
-                                [ngClass]="touchedCity && !city.trim() ? 'border-red-300 bg-red-50/30' : 'border-gray-100 bg-white'"
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Departamento *</label>
+                            <select [ngModel]="department" (ngModelChange)="onDepartmentChange($event)" (blur)="touchedDepartment = true"
+                                [ngClass]="touchedDepartment && !department.trim() ? 'border-red-300 bg-red-50/30' : 'border-gray-100 bg-white'"
                                 class="w-full border rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-gold focus:ring-4 focus:ring-gold/5 transition-all">
+                                <option value="">Selecciona un departamento</option>
+                                <option *ngFor="let departmentName of departments" [value]="departmentName">{{ departmentName }}</option>
+                            </select>
+                            <div *ngIf="touchedDepartment && !department.trim()" class="text-[11px] text-red-700 px-1">Selecciona un departamento.</div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Ciudad *</label>
+                            <select [(ngModel)]="city" (ngModelChange)="scheduleDraftSave()" (blur)="touchedCity = true"
+                                [disabled]="!department.trim()"
+                                [ngClass]="touchedCity && !city.trim() ? 'border-red-300 bg-red-50/30' : 'border-gray-100 bg-white'"
+                                class="w-full border rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-gold focus:ring-4 focus:ring-gold/5 transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed">
+                                <option value="">{{ department.trim() ? 'Selecciona una ciudad' : 'Primero selecciona un departamento' }}</option>
+                                <option *ngFor="let cityName of availableCities" [value]="cityName">{{ cityName }}</option>
+                            </select>
+                            <div *ngIf="touchedCity && !city.trim()" class="text-[11px] text-red-700 px-1">Selecciona una ciudad.</div>
                         </div>
                         <div class="space-y-1">
                             <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Teléfono *</label>
-                            <input type="tel" [(ngModel)]="phone" (ngModelChange)="scheduleDraftSave()" (blur)="touchedPhone = true"
-                                placeholder="300 123 4567"
-                                [ngClass]="touchedPhone && phoneDigits.length < 7 ? 'border-red-300 bg-red-50/30' : 'border-gray-100 bg-white'"
+                            <input type="tel" [ngModel]="phone" (ngModelChange)="onPhoneInput($event)" (blur)="touchedPhone = true"
+                                inputmode="numeric" maxlength="10" placeholder="3001234567"
+                                [ngClass]="touchedPhone && !isValidPhoneNumber() ? 'border-red-300 bg-red-50/30' : 'border-gray-100 bg-white'"
                                 class="w-full border rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-gold focus:ring-4 focus:ring-gold/5 transition-all">
-                            <div *ngIf="touchedPhone && phoneDigits.length < 7" class="text-[11px] text-red-700 px-1">Ingresa un telefono valido.</div>
+                            <div *ngIf="touchedPhone && !isValidPhoneNumber()" class="text-[11px] text-red-700 px-1">Ingresa un telefono de 10 digitos.</div>
                         </div>
                     </div>
                     <div class="space-y-1">

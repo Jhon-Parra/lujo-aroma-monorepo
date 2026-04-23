@@ -48,6 +48,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     giftWrapImg = '';
 
     shippingAddress = '';
+    department = '';
     city = '';
     phone = '';
     isPlacingOrder = false;
@@ -111,13 +112,83 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     cardCvc = '';
     cardInstallments = 1;
 
+    readonly departmentCities: Record<string, string[]> = {
+        'Amazonas': ['Leticia', 'Puerto Nariño'],
+        'Antioquia': ['Medellín', 'Bello', 'Itagüí', 'Envigado', 'Rionegro', 'Apartadó', 'Turbo', 'Caucasia', 'Sabaneta'],
+        'Arauca': ['Arauca', 'Arauquita', 'Saravena', 'Tame', 'Fortul', 'Puerto Rondón'],
+        'Atlántico': ['Barranquilla', 'Soledad', 'Malambo', 'Puerto Colombia', 'Sabanalarga', 'Baranoa', 'Galapa'],
+        'Bogotá D.C.': ['Bogotá'],
+        'Bolívar': ['Cartagena', 'Magangué', 'Turbaco', 'Arjona', 'El Carmen de Bolívar', 'Mompox'],
+        'Boyacá': ['Tunja', 'Duitama', 'Sogamoso', 'Chiquinquirá', 'Paipa', 'Puerto Boyacá', 'Villa de Leyva'],
+        'Caldas': ['Manizales', 'Chinchiná', 'La Dorada', 'Villamaría', 'Riosucio', 'Anserma'],
+        'Caquetá': ['Florencia', 'San Vicente del Caguán', 'Puerto Rico', 'El Doncello', 'Belén de los Andaquíes'],
+        'Casanare': ['Yopal', 'Aguazul', 'Villanueva', 'Paz de Ariporo', 'Tauramena', 'Monterrey'],
+        'Cauca': ['Popayán', 'Santander de Quilichao', 'Puerto Tejada', 'Patía', 'Piendamó', 'Timbío'],
+        'Cesar': ['Valledupar', 'Aguachica', 'Curumaní', 'Bosconia', 'Agustín Codazzi', 'La Jagua de Ibirico'],
+        'Chocó': ['Quibdó', 'Istmina', 'Tadó', 'Condoto', 'Acandí', 'Bahía Solano'],
+        'Córdoba': ['Montería', 'Cereté', 'Lorica', 'Sahagún', 'Planeta Rica', 'Montelíbano', 'Ciénaga de Oro'],
+        'Cundinamarca': ['Soacha', 'Chía', 'Zipaquirá', 'Facatativá', 'Fusagasugá', 'Girardot', 'Madrid', 'Mosquera', 'Cajicá'],
+        'Guainía': ['Inírida', 'Barrancominas'],
+        'Guaviare': ['San José del Guaviare', 'Calamar', 'El Retorno', 'Miraflores'],
+        'Huila': ['Neiva', 'Pitalito', 'Garzón', 'La Plata', 'Campoalegre', 'Gigante'],
+        'La Guajira': ['Riohacha', 'Maicao', 'Uribia', 'San Juan del Cesar', 'Fonseca', 'Manaure'],
+        'Magdalena': ['Santa Marta', 'Ciénaga', 'Fundación', 'El Banco', 'Plato', 'Aracataca'],
+        'Meta': ['Villavicencio', 'Acacías', 'Granada', 'Puerto López', 'Cumaral', 'Restrepo'],
+        'Nariño': ['Pasto', 'Ipiales', 'Tumaco', 'Túquerres', 'La Unión', 'Samaniego'],
+        'Norte de Santander': ['Cúcuta', 'Ocaña', 'Villa del Rosario', 'Pamplona', 'Los Patios', 'Tibú'],
+        'Putumayo': ['Mocoa', 'Puerto Asís', 'Orito', 'Sibundoy', 'Valle del Guamuez', 'Puerto Guzmán'],
+        'Quindío': ['Armenia', 'Calarcá', 'Montenegro', 'La Tebaida', 'Quimbaya', 'Circasia'],
+        'Risaralda': ['Pereira', 'Dosquebradas', 'Santa Rosa de Cabal', 'La Virginia', 'Marsella', 'Belén de Umbría'],
+        'San Andrés y Providencia': ['San Andrés', 'Providencia'],
+        'Santander': ['Bucaramanga', 'Floridablanca', 'Girón', 'Piedecuesta', 'Barrancabermeja', 'San Gil', 'Socorro'],
+        'Sucre': ['Sincelejo', 'Corozal', 'San Marcos', 'Sampués', 'Tolú', 'Since'],
+        'Tolima': ['Ibagué', 'Espinal', 'Melgar', 'Honda', 'Chaparral', 'Líbano', 'Mariquita'],
+        'Valle del Cauca': ['Cali', 'Palmira', 'Buenaventura', 'Tuluá', 'Buga', 'Cartago', 'Jamundí', 'Yumbo'],
+        'Vaupés': ['Mitú', 'Carurú', 'Taraira'],
+        'Vichada': ['Puerto Carreño', 'La Primavera', 'Santa Rosalía', 'Cumaribo']
+    };
+
     // ── Real-time validation touch tracking ──────────────────────────────────
     touchedAddress = false;
+    touchedDepartment = false;
     touchedCity = false;
     touchedPhone = false;
 
     /** Returns the numeric-only characters of the phone field, for template validation */
     get phoneDigits(): string { return this.phone.replace(/\D/g, ''); }
+
+    get departments(): string[] {
+        return Object.keys(this.departmentCities);
+    }
+
+    get availableCities(): string[] {
+        return this.getCitiesByDepartment(this.department);
+    }
+
+    isValidPhoneNumber(): boolean {
+        return this.phoneDigits.length === 10;
+    }
+
+    onPhoneInput(value: string): void {
+        this.phone = String(value || '').replace(/\D/g, '').slice(0, 10);
+        this.scheduleDraftSave();
+    }
+
+    onDepartmentChange(value: string): void {
+        this.department = String(value || '').trim();
+        const cities = this.getCitiesByDepartment(this.department);
+        if (!cities.includes(this.city)) {
+            this.city = '';
+        }
+        this.scheduleDraftSave();
+    }
+
+    private getCitiesByDepartment(department: string): string[] {
+        const normalized = String(department || '').trim();
+        if (!normalized) return [];
+        return this.departmentCities[normalized] || [];
+    }
+
     touchedPseDoc = false;
     touchedPseBank = false;
     touchedNequi = false;
@@ -338,9 +409,14 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             const step = Math.max(1, Math.min(3, Math.trunc(Number(parsed?.step || 1))));
             this.checkoutStep = step;
 
+            this.department = String(parsed?.department || this.department);
             this.shippingAddress = String(parsed?.shippingAddress || this.shippingAddress);
             this.city = String(parsed?.city || this.city);
-            this.phone = String(parsed?.phone || this.phone);
+            this.phone = String(parsed?.phone || this.phone).replace(/\D/g, '').slice(0, 10);
+
+            if (this.city && !this.getCitiesByDepartment(this.department).includes(this.city)) {
+                this.city = '';
+            }
 
             this.envioPrioritario = !!parsed?.envioPrioritario;
             this.perfumeLujo = !!parsed?.perfumeLujo;
@@ -373,6 +449,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             const payload = {
                 updatedAt: Date.now(),
                 step: this.checkoutStep,
+                department: this.department,
                 shippingAddress: this.shippingAddress,
                 city: this.city,
                 phone: this.phone,
@@ -888,10 +965,22 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             return false;
         }
 
+        if (!this.department.trim()) {
+            this.touchedDepartment = true;
+            this.errorMsg = 'Por favor selecciona un departamento.';
+            return false;
+        }
+
+        if (!this.city.trim()) {
+            this.touchedCity = true;
+            this.errorMsg = 'Por favor selecciona una ciudad.';
+            return false;
+        }
+
         const phoneClean = this.phone.trim().replace(/\D/g, '');
-        if (!phoneClean || phoneClean.length < 7) {
+        if (!phoneClean || phoneClean.length !== 10) {
             this.touchedPhone = true;
-            this.errorMsg = 'Por favor ingresa un número de teléfono válido (mínimo 7 dígitos).';
+            this.errorMsg = 'Por favor ingresa un número de teléfono válido de 10 dígitos.';
             return false;
         }
 
@@ -945,15 +1034,20 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 this.errorMsg = 'Ingresa la dirección de envío.';
                 return;
             }
+            if (!this.department.trim()) {
+                this.touchedDepartment = true;
+                this.errorMsg = 'Selecciona el departamento.';
+                return;
+            }
             if (!this.city.trim()) {
                 this.touchedCity = true;
-                this.errorMsg = 'Ingresa la ciudad.';
+                this.errorMsg = 'Selecciona la ciudad.';
                 return;
             }
             const phoneClean = this.phone.trim().replace(/\D/g, '');
-            if (!phoneClean || phoneClean.length < 7) {
+            if (!phoneClean || phoneClean.length !== 10) {
                 this.touchedPhone = true;
-                this.errorMsg = 'Ingresa un teléfono válido.';
+                this.errorMsg = 'Ingresa un teléfono válido de 10 dígitos.';
                 return;
             }
             this.checkoutStep = 2;
@@ -1312,10 +1406,17 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     private buildOrderData(): CreateOrderDto {
+        const normalizedCity = this.city.trim();
+        const normalizedDepartment = this.department.trim();
+        const normalizedAddress = this.shippingAddress.trim();
+        const shippingAddress = [normalizedCity, normalizedDepartment, normalizedAddress]
+            .filter((value) => !!value)
+            .join(', ');
+
         return {
             total: this.grandTotal,
-            shipping_address: `${this.city.trim()}, ${this.shippingAddress.trim()}`,
-            phone: this.phone.trim(),
+            shipping_address: shippingAddress,
+            phone: this.phoneDigits,
             items: this.cartItems.map((item: CartItem) => ({
                 product_id: item.product.id,
                 quantity: item.quantity,

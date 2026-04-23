@@ -567,6 +567,9 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         if (searchTokens.length > 0) {
             const separator = smart ? ' OR ' : ' AND ';
             const searchClauses = searchTokens.map(() => {
+                // Si no es busqueda inteligente (navbar/standard), solo buscamos por nombre por peticion de usuario
+                if (!smart) return '(p.nombre LIKE ?)';
+                
                 return casaOk 
                     ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
                     : '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
@@ -575,10 +578,20 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             countQuery += searchSql;
             searchTokens.forEach(t => {
                 const tLike = `%${t}%`;
-                queryParams.push(tLike, tLike, tLike);
-                if (casaOk) queryParams.push(tLike);
+                queryParams.push(tLike); // Siempre va para p.nombre
+                if (smart) {
+                    queryParams.push(tLike, tLike); // descripcion, notas_olfativas
+                    if (casaOk) queryParams.push(tLike); // casa
+                }
             });
         }
+        
+        // Debug: Log final query
+        if (q) {
+            console.log(`[CATALOG SEARCH] SQL Count Query: ${countQuery}`);
+            console.log(`[CATALOG SEARCH] Params:`, queryParams);
+        }
+
         const [countRows] = await pool.query<any[]>(countQuery, queryParams);
         let total = countRows?.[0]?.total || 0;
 
@@ -606,6 +619,9 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         if (searchTokens.length > 0) {
             const separator = smart ? ' OR ' : ' AND ';
             const searchClauses = searchTokens.map(() => {
+                // Solo por nombre en modo standard
+                if (!smart) return '(p.nombre LIKE ?)';
+                
                 return casaOk 
                     ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
                     : '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.notas_olfativas LIKE ?)';
@@ -613,12 +629,21 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             productsQuery += ` AND (${searchClauses.join(separator)})`;
             searchTokens.forEach(t => {
                 const tLike = `%${t}%`;
-                productsParams.push(tLike, tLike, tLike);
-                if (casaOk) productsParams.push(tLike);
+                productsParams.push(tLike); // Siempre va para p.nombre
+                if (smart) {
+                    productsParams.push(tLike, tLike); // descripcion, notas_olfativas
+                    if (casaOk) productsParams.push(tLike); // casa
+                }
             });
         }
+
+        // Debug: Log final query
+        if (q) {
+            console.log(`[CATALOG SEARCH] SQL Products Query: ${productsQuery}`);
+            console.log(`[CATALOG SEARCH] Params:`, productsParams);
+        }
         // Stable ordering avoids duplicates/missing items across pages when creado_en ties.
-        const candidateLimit = smart ? Math.max(targetSmartResults * 12, 72) : limit;
+        const candidateLimit = smart ? 500 : limit;
         const candidateOffset = smart ? 0 : offset;
         productsQuery += ' ORDER BY p.creado_en DESC, p.id DESC LIMIT ? OFFSET ?';
         productsParams.push(candidateLimit, candidateOffset);
@@ -761,23 +786,15 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             total = products.length;
         } else {
             if (q) {
-                const tokens = q.split(' ').filter(Boolean);
+                // Tokens de mas de 2 caracteres para evitar 'de', 'la', etc.
+                const tokens = q.split(' ').filter(t => t.length > 2);
+                const finalTokens = tokens.length > 0 ? tokens : q.split(' ').filter(Boolean);
+
                 products = products.filter((p: any) => {
-                    const blob = normalizeSearch([
-                        p?.nombre,
-                        p?.name,
-                        p?.descripcion,
-                        p?.description,
-                        p?.notas_olfativas,
-                        p?.notes,
-                        p?.categoria_nombre,
-                        p?.categoria_slug,
-                        p?.genero,
-                        p?.casa,
-                        p?.house,
-                    ].filter(Boolean).join(' '));
+                    // Si es busqueda standard, SOLO consideramos el nombre
+                    const blob = normalizeSearch(`${p?.nombre || ''} ${p?.name || ''}`);
                     if (!blob) return false;
-                    return tokens.every(t => blob.includes(t));
+                    return finalTokens.every(t => blob.includes(t));
                 });
             }
             if (limit && limit > 0) {

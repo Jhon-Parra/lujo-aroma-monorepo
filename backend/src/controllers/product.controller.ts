@@ -656,7 +656,7 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         // Stable ordering avoids duplicates/missing items across pages when creado_en ties.
         const finalLimit = limit || 12;
         // Si hay búsqueda, pedimos más para poder rankear y filtrar mejor en JS
-        const sqlLimit = q ? 200 : finalLimit;
+        const sqlLimit = q ? 500 : finalLimit;
         
         productsQuery += ` ORDER BY p.creado_en DESC, p.id DESC LIMIT ? OFFSET ?`;
         productsParams.push(sqlLimit, offset || 0);

@@ -567,8 +567,12 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         if (searchTokens.length > 0) {
             const separator = smart ? ' OR ' : ' AND ';
             const searchClauses = searchTokens.map(() => {
-                // Si no es busqueda inteligente (navbar/standard), solo buscamos por nombre por peticion de usuario
-                if (!smart) return '(p.nombre LIKE ?)';
+                // Incluimos casa en busqueda standard porque el usuario suele escribir Marca + Nombre
+                if (!smart) {
+                    return casaOk 
+                        ? '(p.nombre LIKE ? OR p.casa LIKE ?)'
+                        : '(p.nombre LIKE ?)';
+                }
                 
                 return casaOk 
                     ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
@@ -578,8 +582,10 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             countQuery += searchSql;
             searchTokens.forEach(t => {
                 const tLike = `%${t}%`;
-                queryParams.push(tLike); // Siempre va para p.nombre
-                if (smart) {
+                queryParams.push(tLike); // p.nombre
+                if (!smart) {
+                    if (casaOk) queryParams.push(tLike); // p.casa
+                } else {
                     queryParams.push(tLike, tLike); // descripcion, notas_olfativas
                     if (casaOk) queryParams.push(tLike); // casa
                 }
@@ -619,8 +625,11 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
         if (searchTokens.length > 0) {
             const separator = smart ? ' OR ' : ' AND ';
             const searchClauses = searchTokens.map(() => {
-                // Solo por nombre en modo standard
-                if (!smart) return '(p.nombre LIKE ?)';
+                if (!smart) {
+                    return casaOk 
+                        ? '(p.nombre LIKE ? OR p.casa LIKE ?)'
+                        : '(p.nombre LIKE ?)';
+                }
                 
                 return casaOk 
                     ? '(p.nombre LIKE ? OR p.descripcion LIKE ? OR p.casa LIKE ? OR p.notas_olfativas LIKE ?)'
@@ -629,8 +638,10 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             productsQuery += ` AND (${searchClauses.join(separator)})`;
             searchTokens.forEach(t => {
                 const tLike = `%${t}%`;
-                productsParams.push(tLike); // Siempre va para p.nombre
-                if (smart) {
+                productsParams.push(tLike); // p.nombre
+                if (!smart) {
+                    if (casaOk) productsParams.push(tLike); // p.casa
+                } else {
                     productsParams.push(tLike, tLike); // descripcion, notas_olfativas
                     if (casaOk) productsParams.push(tLike); // casa
                 }
@@ -643,10 +654,12 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             console.log(`[CATALOG SEARCH] Params:`, productsParams);
         }
         // Stable ordering avoids duplicates/missing items across pages when creado_en ties.
-        const candidateLimit = smart ? 500 : limit;
-        const candidateOffset = smart ? 0 : offset;
-        productsQuery += ' ORDER BY p.creado_en DESC, p.id DESC LIMIT ? OFFSET ?';
-        productsParams.push(candidateLimit, candidateOffset);
+        const finalLimit = limit || 12;
+        // Si hay búsqueda, pedimos más para poder rankear y filtrar mejor en JS
+        const sqlLimit = q ? 200 : finalLimit;
+        
+        productsQuery += ` ORDER BY p.creado_en DESC, p.id DESC LIMIT ? OFFSET ?`;
+        productsParams.push(sqlLimit, offset || 0);
 
         const [pRows] = await pool.query<any[]>(productsQuery, productsParams);
 
@@ -786,16 +799,46 @@ export const getPublicCatalog = async (req: Request, res: Response): Promise<voi
             total = products.length;
         } else {
             if (q) {
-                // Tokens de mas de 2 caracteres para evitar 'de', 'la', etc.
-                const tokens = q.split(' ').filter(t => t.length > 2);
-                const finalTokens = tokens.length > 0 ? tokens : q.split(' ').filter(Boolean);
+                const tokens = q.split(' ').filter(t => t.length > 0);
+                const finalTokens = tokens.map(t => t.toLowerCase());
 
                 products = products.filter((p: any) => {
-                    // Si es busqueda standard, SOLO consideramos el nombre
-                    const blob = normalizeSearch(`${p?.nombre || ''} ${p?.name || ''}`);
+                    // Incluimos nombre y casa en el blob de comparacion
+                    const blob = normalizeSearch(`${p?.nombre || ''} ${p?.name || ''} ${p?.casa || ''} ${p?.house || ''}`);
                     if (!blob) return false;
                     return finalTokens.every(t => blob.includes(t));
                 });
+
+                // Rankear resultados para que el nombre exacto o mas parecido vaya primero
+                products.sort((a: any, b: any) => {
+                    const normA = normalizeSearch(a.nombre || '');
+                    const normB = normalizeSearch(b.nombre || '');
+                    const normQ = q; // q ya viene normalizada
+
+                    // Prioridad 1: Coincidencia exacta del nombre (normalizado)
+                    if (normA === normQ) return -1;
+                    if (normB === normQ) return 1;
+
+                    // Prioridad 2: El nombre empieza con la query (normalizado)
+                    if (normA.startsWith(normQ)) return -1;
+                    if (normB.startsWith(normQ)) return 1;
+
+                    // Prioridad 3: Coincidencia de Marca (exacta)
+                    const casaA = normalizeSearch(a.casa || '');
+                    const casaB = normalizeSearch(b.casa || '');
+                    if (casaA === normQ) return -1;
+                    if (casaB === normQ) return 1;
+
+                    // Prioridad 4: Mayor numero de unidades vendidas (popularidad)
+                    const soldA = Number(a.unidades_vendidas || 0);
+                    const soldB = Number(b.unidades_vendidas || 0);
+                    if (soldB !== soldA) return soldB - soldA;
+
+                    return String(b.creado_en || '').localeCompare(String(a.creado_en || ''));
+                });
+
+                // Aplicar el limite real despues del filtrado y ranking
+                products = products.slice(0, finalLimit);
             }
             if (limit && limit > 0) {
                 products = products.slice(0, limit);

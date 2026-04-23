@@ -112,38 +112,40 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     cardCvc = '';
     cardInstallments = 1;
 
-    readonly departmentCities: Record<string, string[]> = {
+    private readonly departmentCitiesUrl = 'https://raw.githubusercontent.com/marcovega/colombia-json/master/colombia.min.json';
+
+    departmentCities: Record<string, string[]> = {
         'Amazonas': ['Leticia', 'Puerto Nariño'],
-        'Antioquia': ['Medellín', 'Bello', 'Itagüí', 'Envigado', 'Rionegro', 'Apartadó', 'Turbo', 'Caucasia', 'Sabaneta'],
-        'Arauca': ['Arauca', 'Arauquita', 'Saravena', 'Tame', 'Fortul', 'Puerto Rondón'],
-        'Atlántico': ['Barranquilla', 'Soledad', 'Malambo', 'Puerto Colombia', 'Sabanalarga', 'Baranoa', 'Galapa'],
+        'Antioquia': ['Medellín', 'Bello', 'Itagüí', 'Envigado', 'Rionegro', 'Apartadó', 'Turbo', 'Caucasia', 'Sabaneta', 'Copacabana', 'La Ceja', 'Marinilla', 'Santa Fe de Antioquia'],
+        'Arauca': ['Arauca', 'Arauquita', 'Saravena', 'Tame', 'Fortul', 'Puerto Rondón', 'Cravo Norte'],
+        'Atlántico': ['Barranquilla', 'Soledad', 'Malambo', 'Puerto Colombia', 'Sabanalarga', 'Baranoa', 'Galapa', 'Sabanagrande', 'Santo Tomás', 'Palmar de Varela'],
         'Bogotá D.C.': ['Bogotá'],
-        'Bolívar': ['Cartagena', 'Magangué', 'Turbaco', 'Arjona', 'El Carmen de Bolívar', 'Mompox'],
-        'Boyacá': ['Tunja', 'Duitama', 'Sogamoso', 'Chiquinquirá', 'Paipa', 'Puerto Boyacá', 'Villa de Leyva'],
-        'Caldas': ['Manizales', 'Chinchiná', 'La Dorada', 'Villamaría', 'Riosucio', 'Anserma'],
-        'Caquetá': ['Florencia', 'San Vicente del Caguán', 'Puerto Rico', 'El Doncello', 'Belén de los Andaquíes'],
-        'Casanare': ['Yopal', 'Aguazul', 'Villanueva', 'Paz de Ariporo', 'Tauramena', 'Monterrey'],
-        'Cauca': ['Popayán', 'Santander de Quilichao', 'Puerto Tejada', 'Patía', 'Piendamó', 'Timbío'],
-        'Cesar': ['Valledupar', 'Aguachica', 'Curumaní', 'Bosconia', 'Agustín Codazzi', 'La Jagua de Ibirico'],
-        'Chocó': ['Quibdó', 'Istmina', 'Tadó', 'Condoto', 'Acandí', 'Bahía Solano'],
-        'Córdoba': ['Montería', 'Cereté', 'Lorica', 'Sahagún', 'Planeta Rica', 'Montelíbano', 'Ciénaga de Oro'],
-        'Cundinamarca': ['Soacha', 'Chía', 'Zipaquirá', 'Facatativá', 'Fusagasugá', 'Girardot', 'Madrid', 'Mosquera', 'Cajicá'],
+        'Bolívar': ['Cartagena', 'Magangué', 'Turbaco', 'Arjona', 'El Carmen de Bolívar', 'Mompox', 'Turbana', 'Santa Rosa', 'San Juan Nepomuceno', 'Mahates'],
+        'Boyacá': ['Tunja', 'Duitama', 'Sogamoso', 'Chiquinquirá', 'Paipa', 'Puerto Boyacá', 'Villa de Leyva', 'Moniquirá', 'Nobsa', 'Samacá', 'Garagoa'],
+        'Caldas': ['Manizales', 'Chinchiná', 'La Dorada', 'Villamaría', 'Riosucio', 'Anserma', 'Supía', 'Neira', 'Aguadas'],
+        'Caquetá': ['Florencia', 'San Vicente del Caguán', 'Puerto Rico', 'El Doncello', 'Belén de los Andaquíes', 'Cartagena del Chairá', 'Solano', 'Morelia'],
+        'Casanare': ['Yopal', 'Aguazul', 'Villanueva', 'Paz de Ariporo', 'Tauramena', 'Monterrey', 'Maní', 'Orocué', 'Trinidad'],
+        'Cauca': ['Popayán', 'Santander de Quilichao', 'Puerto Tejada', 'Patía', 'Piendamó', 'Timbío', 'El Tambo', 'Corinto', 'Miranda', 'Guapi'],
+        'Cesar': ['Valledupar', 'Aguachica', 'Curumaní', 'Bosconia', 'Agustín Codazzi', 'La Jagua de Ibirico', 'Chiriguaná', 'El Copey', 'Becerril'],
+        'Chocó': ['Quibdó', 'Istmina', 'Tadó', 'Condoto', 'Acandí', 'Bahía Solano', 'Nuquí', 'Riosucio', 'Carmen del Darién'],
+        'Córdoba': ['Montería', 'Cereté', 'Lorica', 'Sahagún', 'Planeta Rica', 'Montelíbano', 'Ciénaga de Oro', 'Tierralta', 'Chinú', 'San Antero'],
+        'Cundinamarca': ['Soacha', 'Chía', 'Zipaquirá', 'Facatativá', 'Fusagasugá', 'Girardot', 'Madrid', 'Mosquera', 'Cajicá', 'Funza', 'Tocancipá', 'La Calera', 'Gachancipá', 'Ubaté'],
         'Guainía': ['Inírida', 'Barrancominas'],
         'Guaviare': ['San José del Guaviare', 'Calamar', 'El Retorno', 'Miraflores'],
-        'Huila': ['Neiva', 'Pitalito', 'Garzón', 'La Plata', 'Campoalegre', 'Gigante'],
-        'La Guajira': ['Riohacha', 'Maicao', 'Uribia', 'San Juan del Cesar', 'Fonseca', 'Manaure'],
-        'Magdalena': ['Santa Marta', 'Ciénaga', 'Fundación', 'El Banco', 'Plato', 'Aracataca'],
-        'Meta': ['Villavicencio', 'Acacías', 'Granada', 'Puerto López', 'Cumaral', 'Restrepo'],
-        'Nariño': ['Pasto', 'Ipiales', 'Tumaco', 'Túquerres', 'La Unión', 'Samaniego'],
-        'Norte de Santander': ['Cúcuta', 'Ocaña', 'Villa del Rosario', 'Pamplona', 'Los Patios', 'Tibú'],
-        'Putumayo': ['Mocoa', 'Puerto Asís', 'Orito', 'Sibundoy', 'Valle del Guamuez', 'Puerto Guzmán'],
-        'Quindío': ['Armenia', 'Calarcá', 'Montenegro', 'La Tebaida', 'Quimbaya', 'Circasia'],
-        'Risaralda': ['Pereira', 'Dosquebradas', 'Santa Rosa de Cabal', 'La Virginia', 'Marsella', 'Belén de Umbría'],
+        'Huila': ['Neiva', 'Pitalito', 'Garzón', 'La Plata', 'Campoalegre', 'Gigante', 'Rivera', 'Palermo', 'Aipe'],
+        'La Guajira': ['Riohacha', 'Maicao', 'Uribia', 'San Juan del Cesar', 'Fonseca', 'Manaure', 'Albania', 'Dibulla', 'Villanueva'],
+        'Magdalena': ['Santa Marta', 'Ciénaga', 'Fundación', 'El Banco', 'Plato', 'Aracataca', 'Zona Bananera', 'Pivijay'],
+        'Meta': ['Villavicencio', 'Acacías', 'Granada', 'Puerto López', 'Cumaral', 'Restrepo', 'San Martín', 'Guamal', 'Puerto Gaitán'],
+        'Nariño': ['Pasto', 'Ipiales', 'Tumaco', 'Túquerres', 'La Unión', 'Samaniego', 'Sandoná', 'El Charco', 'Guachucal'],
+        'Norte de Santander': ['Cúcuta', 'Ocaña', 'Villa del Rosario', 'Pamplona', 'Los Patios', 'Tibú', 'El Zulia', 'Chinácota', 'Sardinata'],
+        'Putumayo': ['Mocoa', 'Puerto Asís', 'Orito', 'Sibundoy', 'Valle del Guamuez', 'Puerto Guzmán', 'Villagarzón', 'San Miguel'],
+        'Quindío': ['Armenia', 'Calarcá', 'Montenegro', 'La Tebaida', 'Quimbaya', 'Circasia', 'Salento', 'Filandia'],
+        'Risaralda': ['Pereira', 'Dosquebradas', 'Santa Rosa de Cabal', 'La Virginia', 'Marsella', 'Belén de Umbría', 'Apía', 'Quinchía'],
         'San Andrés y Providencia': ['San Andrés', 'Providencia'],
-        'Santander': ['Bucaramanga', 'Floridablanca', 'Girón', 'Piedecuesta', 'Barrancabermeja', 'San Gil', 'Socorro'],
-        'Sucre': ['Sincelejo', 'Corozal', 'San Marcos', 'Sampués', 'Tolú', 'Since'],
-        'Tolima': ['Ibagué', 'Espinal', 'Melgar', 'Honda', 'Chaparral', 'Líbano', 'Mariquita'],
-        'Valle del Cauca': ['Cali', 'Palmira', 'Buenaventura', 'Tuluá', 'Buga', 'Cartago', 'Jamundí', 'Yumbo'],
+        'Santander': ['Bucaramanga', 'Floridablanca', 'Girón', 'Piedecuesta', 'Barrancabermeja', 'San Gil', 'Socorro', 'Barbosa', 'Málaga', 'Vélez'],
+        'Sucre': ['Sincelejo', 'Corozal', 'San Marcos', 'Sampués', 'Tolú', 'Since', 'Coveñas', 'Los Palmitos'],
+        'Tolima': ['Ibagué', 'Espinal', 'Melgar', 'Honda', 'Chaparral', 'Líbano', 'Mariquita', 'Purificación', 'Cajamarca'],
+        'Valle del Cauca': ['Cali', 'Palmira', 'Buenaventura', 'Tuluá', 'Buga', 'Cartago', 'Jamundí', 'Yumbo', 'Sevilla', 'Candelaria', 'Zarzal', 'Roldanillo'],
         'Vaupés': ['Mitú', 'Carurú', 'Taraira'],
         'Vichada': ['Puerto Carreño', 'La Primavera', 'Santa Rosalía', 'Cumaribo']
     };
@@ -187,6 +189,69 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         const normalized = String(department || '').trim();
         if (!normalized) return [];
         return this.departmentCities[normalized] || [];
+    }
+
+    private async loadAllMunicipalities(): Promise<void> {
+        try {
+            const response = await fetch(this.departmentCitiesUrl, { cache: 'force-cache' });
+            if (!response.ok) return;
+
+            const payload = await response.json();
+            if (!Array.isArray(payload)) return;
+
+            const map = new Map<string, Set<string>>();
+
+            payload.forEach((row: any) => {
+                const departmentRaw = String(row?.departamento || '').trim();
+                const citiesRaw = Array.isArray(row?.ciudades) ? row.ciudades : [];
+                if (!departmentRaw || citiesRaw.length === 0) return;
+
+                const department = departmentRaw === 'San Andrés y Providencia'
+                    ? 'San Andrés y Providencia'
+                    : departmentRaw;
+
+                if (!map.has(department)) map.set(department, new Set<string>());
+                const citySet = map.get(department);
+                if (!citySet) return;
+
+                citiesRaw.forEach((city: any) => {
+                    const name = String(city || '').trim();
+                    if (name) citySet.add(name);
+                });
+            });
+
+            const cundinamarcaSet = map.get('Cundinamarca');
+            if (cundinamarcaSet?.has('Bogotá')) {
+                cundinamarcaSet.delete('Bogotá');
+            }
+
+            map.set('Bogotá D.C.', new Set<string>(['Bogotá']));
+
+            const sortedDepartments = Array.from(map.keys()).sort((a, b) => a.localeCompare(b, 'es'));
+            const nextMap: Record<string, string[]> = {};
+            sortedDepartments.forEach((department) => {
+                const cities = Array.from(map.get(department) || [])
+                    .sort((a, b) => a.localeCompare(b, 'es'));
+                if (cities.length > 0) nextMap[department] = cities;
+            });
+
+            if (Object.keys(nextMap).length === 0) return;
+
+            this.departmentCities = nextMap;
+
+            if (this.department && !this.departmentCities[this.department]) {
+                this.department = '';
+                this.city = '';
+            }
+
+            if (this.city && !this.getCitiesByDepartment(this.department).includes(this.city)) {
+                this.city = '';
+            }
+
+            this.scheduleDraftSave();
+        } catch {
+            // Keep fallback list
+        }
     }
 
     touchedPseDoc = false;
@@ -260,6 +325,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
+        this.loadAllMunicipalities();
+
         // Restaurar borrador (direccion/paso/metodo/extras) antes de pintar
         this.loadCheckoutDraft();
 
@@ -973,7 +1040,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
         if (!this.city.trim()) {
             this.touchedCity = true;
-            this.errorMsg = 'Por favor selecciona una ciudad.';
+            this.errorMsg = 'Por favor selecciona una ciudad o municipio.';
             return false;
         }
 
@@ -1041,7 +1108,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
             }
             if (!this.city.trim()) {
                 this.touchedCity = true;
-                this.errorMsg = 'Selecciona la ciudad.';
+                this.errorMsg = 'Selecciona la ciudad o municipio.';
                 return;
             }
             const phoneClean = this.phone.trim().replace(/\D/g, '');

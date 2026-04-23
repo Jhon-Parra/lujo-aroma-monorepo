@@ -136,15 +136,15 @@
                             <div *ngIf="touchedDepartment && !department.trim()" class="text-[11px] text-red-700 px-1">Selecciona un departamento.</div>
                         </div>
                         <div class="space-y-1">
-                            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Ciudad *</label>
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Ciudad o Municipio *</label>
                             <select [(ngModel)]="city" (ngModelChange)="scheduleDraftSave()" (blur)="touchedCity = true"
                                 [disabled]="!department.trim()"
                                 [ngClass]="touchedCity && !city.trim() ? 'border-red-300 bg-red-50/30' : 'border-gray-100 bg-white'"
                                 class="w-full border rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-gold focus:ring-4 focus:ring-gold/5 transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed">
-                                <option value="">{{ department.trim() ? 'Selecciona una ciudad' : 'Primero selecciona un departamento' }}</option>
+                                <option value="">{{ department.trim() ? 'Selecciona una ciudad o municipio' : 'Primero selecciona un departamento' }}</option>
                                 <option *ngFor="let cityName of availableCities" [value]="cityName">{{ cityName }}</option>
                             </select>
-                            <div *ngIf="touchedCity && !city.trim()" class="text-[11px] text-red-700 px-1">Selecciona una ciudad.</div>
+                            <div *ngIf="touchedCity && !city.trim()" class="text-[11px] text-red-700 px-1">Selecciona una ciudad o municipio.</div>
                         </div>
                         <div class="space-y-1">
                             <label class="block text-[10px] font-bold uppercase tracking-widest text-gray-400 ml-1">Teléfono *</label>
